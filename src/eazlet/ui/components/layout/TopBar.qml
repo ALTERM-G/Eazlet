@@ -1,0 +1,52 @@
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+import components
+
+Rectangle {
+    id: topBar
+    implicitHeight: LayoutMetrics.size.topBarHeight
+    Layout.fillWidth: true
+    color: Theme.topBarColor
+
+    Rectangle {
+        id: divider
+        height: LayoutMetrics.spacing.xxs
+        color: Theme.dividerColor
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+    }
+
+    IconButton {
+        id: leftSidebarButton
+        iconPath: SVGLibrary.leftSidebar
+        buttonWidth: LayoutMetrics.size.iconL * 0.9
+        buttonHeight: LayoutMetrics.size.iconL * 0.9
+        anchors.left: parent.left
+        anchors.leftMargin: LayoutMetrics.spacing.md
+        anchors.verticalCenter: parent.verticalCenter
+        onPressed: topBar.sidebarToggleClicked()
+
+        ToolTip {
+            text: Lang.titles.sideBar
+            visible: leftSidebarButton.hovered
+            delay: 600
+        }
+    }
+
+    signal sidebarToggleClicked()
+
+    Text {
+        id: app_title
+        color: Theme.themeColor
+        anchors.left: parent.left
+        anchors.leftMargin: LayoutMetrics.spacing.xxl * 1.5
+        anchors.verticalCenter: parent.verticalCenter
+        text: Lang.titles.appName
+        font.pointSize: Typography.h3
+        font.family: Typography.fontBold
+        font.weight: Font.Bold
+        verticalAlignment: Text.AlignVCenter
+    }
+}

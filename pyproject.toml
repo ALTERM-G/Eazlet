@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eazlet"
+version = "0.1.0"
+description = "Eazlet"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pyside6>=6.10.1",
+]
+
+[project.scripts]
+eazlet = "eazlet.__main__:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-qt>=4.4", "ruff>=0.6"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.package-data]
+"eazlet" = [
+    "resources/**/*.qml",
+    "resources/**/*.json",
+    "resources/**/*.ttf",
+    "resources/**/*.otf",
+    "resources/**/*.ttc",
+    "resources/**/*.svg",
+    "resources/**/*.rtf",
+    "resources/**/*.png",
+    "resources/**/*.jpg",
+    "resources/**/*.ico",
+    "ui/**/*.qml",
+    "ui/components/**/*.qml",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+pythonpath = [".", "src"]
+testpaths = ["tests"]

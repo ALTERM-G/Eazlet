@@ -1,0 +1,46 @@
+{
+    "language": "Italiano",
+    "titles": {
+        "appName": "Eazlet",
+        "settings": "Impostazioni",
+        "sideBar": "Barra laterale"
+    },
+    "tabs": {
+        "general": "Generale",
+        "appearance": "Aspetto",
+        "advanced": "Avanzate"
+    },
+    "greeting": "Divertiti!",
+    "labels": {
+        "theme": "Tema",
+        "font": "Carattere",
+        "scale": "Scala",
+        "language": "Lingua",
+        "shortcutEditor": "Editor di scorciatoie",
+        "apply": "Applica",
+        "responsiveScaling": "Scala adattiva",
+        "cornerRadius": "Raggio degli angoli",
+        "animations": "Animazioni",
+        "pressShortcut": "Premi i tasti…",
+        "shortcutInUse": "Già in uso",
+        "resetShortcut": "Ripristina",
+        "resetAllShortcuts": "Ripristina tutto"
+    },
+    "shortcuts": {
+        "openSettings": "Apri impostazioni",
+        "toggleSidebar": "Attiva/disattiva barra laterale",
+        "zoomIn": "Ingrandisci",
+        "zoomOut": "Riduci",
+        "nextTab": "Scheda successiva",
+        "prevTab": "Scheda precedente",
+        "applyChanges": "Applica modifiche",
+        "closeSidebar": "Chiudi barra laterale"
+    },
+    "languages": [
+        "Inglese",
+        "Francese",
+        "Tedesco",
+        "Spagnolo",
+        "Italiano"
+    ]
+}

@@ -19,7 +19,7 @@ Item {
     property real pressOffset: mouseArea.pressed ? depth : 0
     readonly property color faceColor: primary ? Theme.themeColor : (mouseArea.containsMouse ? Theme.hoverBackgroundColor : Theme.backgroundColor)
 
-    width: LayoutMetrics.size.buttonWidth
+    width: Math.max(LayoutMetrics.size.buttonWidth, contentRow.implicitWidth + horizontalPadding * 2)
     height: LayoutMetrics.size.controlHeight * heightMultiplier + depth
     implicitWidth: Math.max(LayoutMetrics.size.buttonWidth, contentRow.implicitWidth + horizontalPadding * 2)
 

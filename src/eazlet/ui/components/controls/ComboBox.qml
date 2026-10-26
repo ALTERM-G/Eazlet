@@ -245,13 +245,22 @@ ComboBox {
 
                         Text {
                             anchors.fill: parent
-                            text: control.textRole ? model[control.textRole] : modelData
-                            font.pixelSize: Typography.h4
-                            font.family: Typography.fontBold
-                            font.weight: Font.Bold
+                            anchors.margins: 4
+                            text: {
+                                if (control.textRole) {
+                                    if (model && model[control.textRole] !== undefined) return model[control.textRole]
+                                    if (typeof modelData === 'object' && modelData[control.textRole] !== undefined) return modelData[control.textRole]
+                                    return ""
+                                }
+                                return modelData !== undefined ? modelData : ""
+                            }
+                            font.pixelSize: Typography.h5
+                            font.family: Typography.fontRegular
+                            font.weight: Font.Normal
                             color: index === dropdownPopup.highlightedIndex ? Theme.hoverTextColor : Theme.textColor
-                            horizontalAlignment: Text.AlignHCenter
+                            horizontalAlignment: Text.AlignLeft
                             verticalAlignment: Text.AlignVCenter
+                            elide: Text.ElideRight
                         }
                     }
                 }

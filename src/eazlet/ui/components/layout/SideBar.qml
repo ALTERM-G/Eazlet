@@ -118,9 +118,8 @@ Rectangle {
         Repeater {
             id: navRepeater
             model: [
-                { label: "Workspace 1", icon: "home" },
-                { label: "Workspace 2", icon: "settings" },
-                { label: "Workspace 3", icon: "info" }
+                { label: "Home", icon: "home" },
+                { label: "Download", icon: "home" }
             ]
 
             delegate: SideBarItem {

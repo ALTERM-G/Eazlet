@@ -1,6 +1,9 @@
 import QtQuick
 import QtQuick.Window
+import QtQuick.Controls
+import QtQuick.Layouts
 import components
+import "pages"
 
 Window {
     id: window
@@ -43,6 +46,7 @@ Window {
         anchors.left: parent.left
         anchors.bottom: parent.bottom
         z: 100
+        onNavigationClicked: function(index) { stackLayout.currentIndex = index }
     }
 
     MouseArea {
@@ -66,16 +70,13 @@ Window {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
 
-        Surface {
-            anchors.centerIn: parent
-            width: parent.width * 0.8
-            height: parent.height * 0.8
+        StackLayout {
+            id: stackLayout
+            anchors.fill: parent
+            currentIndex: sidebar.currentIndex >= 0 ? sidebar.currentIndex : 0
 
-            Title {
-                id: title
-                text: Lang.greeting
-                anchors.centerIn: parent
-            }
+            Home {}
+            DownloadUnified {}
         }
     }
 }

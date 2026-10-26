@@ -23,7 +23,14 @@ Rectangle {
         width: LayoutMetrics.size.iconS
         height: LayoutMetrics.size.iconS
         path: root.collapsed ? SVGLibrary.chevronRight : SVGLibrary.chevronLeft
-        color: Theme.textColor
+        color: mouseArea.containsMouse ? Theme.hoverTextColor : Theme.textColor
+
+        Behavior on color {
+            enabled: LayoutMetrics.animationsEnabled
+            ColorAnimation {
+                duration: 150
+            }
+        }
     }
 
     MouseArea {

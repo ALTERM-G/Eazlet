@@ -149,6 +149,9 @@ def build_engine(src_path: Path | None = None) -> QQmlApplicationEngine:
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("mainVM", controller.mainVM)
     engine.rootContext().setContextProperty("settingsVM", controller.settingsVM)
+    engine.rootContext().setContextProperty("downloadVM", controller.downloadVM)
+    engine.rootContext().setContextProperty("socialMediaVM", controller.socialMediaVM)
+    engine.rootContext().setContextProperty("unifiedDownloadVM", controller.unifiedDownloadVM)
 
     saved_family = controller.get_font_family()
     if saved_family and saved_family in all_families:

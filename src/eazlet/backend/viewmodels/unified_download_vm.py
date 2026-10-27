@@ -202,11 +202,7 @@ class UnifiedDownloadVM(BaseVM):
 
     @Slot()
     def chooseDestination(self) -> None:
-        from PySide6.QtWidgets import QFileDialog
-
-        path = QFileDialog.getExistingDirectory(None, "Select destination", self._destination)
-        if path:
-            self.destination = path
+        pass
 
     @Slot()
     def fetchFormats(self) -> None:

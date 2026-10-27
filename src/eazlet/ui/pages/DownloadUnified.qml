@@ -13,10 +13,18 @@ Item {
         width: parent.width * 0.9
         height: parent.height * 0.9
 
-        Column {
+        Flickable {
             anchors.fill: parent
             anchors.margins: LayoutMetrics.spacing.lg
-            spacing: LayoutMetrics.spacing.lg
+            contentHeight: contentColumn.implicitHeight
+            clip: true
+            flickableDirection: Flickable.VerticalFlick
+            boundsBehavior: Flickable.StopAtBounds
+
+            Column {
+                id: contentColumn
+                width: parent.width
+                spacing: LayoutMetrics.spacing.lg
 
             Text {
                 text: unifiedDownloadVM.mode === "social" ? "Social Media Download" : "Direct Download"
@@ -104,11 +112,13 @@ Item {
 
             Text { text: unifiedDownloadVM.status; color: Theme.textColor; elide: Text.ElideRight; width: parent.width }
             Text { text: unifiedDownloadVM.error; color: "red"; visible: unifiedDownloadVM.error !== "" }
-        }
-    }
+            Item { width: 1; height: LayoutMetrics.spacing.xl }
+            }
 
-    FolderDialog {
-        id: unifFolderDialog
-        onAccepted: unifiedDownloadVM.destination = selectedFolder.toString().replace("file://", "")
+            FolderDialog {
+                id: unifFolderDialog
+                onAccepted: unifiedDownloadVM.destination = selectedFolder.toString().replace("file://", "")
+            }
+        }
     }
 }

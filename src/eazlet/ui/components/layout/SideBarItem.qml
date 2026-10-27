@@ -17,6 +17,8 @@ Rectangle {
     height: LayoutMetrics.size.sideBarItemHeight
     color: "transparent"
     visible: !collapsed
+    activeFocusOnTab: true
+    focusPolicy: Qt.TabFocus
 
     Rectangle {
         id: background
@@ -88,6 +90,14 @@ Rectangle {
         onEntered: root.hovered = true
         onExited: root.hovered = false
         onClicked: root.clicked()
+    }
+
+    Keys.onPressed: (event) => {
+        if (event.key === Qt.Key_Tab && !event.modifiers) {
+            event.accepted = false
+        } else if (event.key === Qt.Key_Tab && (event.modifiers & Qt.ShiftModifier)) {
+            event.accepted = false
+        }
     }
 
     FocusRing {

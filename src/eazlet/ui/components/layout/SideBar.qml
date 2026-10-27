@@ -119,10 +119,12 @@ Rectangle {
             id: navRepeater
             model: [
                 { label: "Home", icon: "home" },
-                { label: "Download", icon: "home" }
+                { label: "Download", icon: "home" },
+                { label: "Converter", icon: "home" }
             ]
 
             delegate: SideBarItem {
+                id: sidebarItemDelegate
                 itemText: modelData.label
                 itemIcon: sidebar.getIconUrl(modelData.icon)
                 isActive: sidebar.currentIndex === index
@@ -137,6 +139,22 @@ Rectangle {
                     } else if (event.key === Qt.Key_Up) {
                         sidebar.keyboardNavigated = true
                         sidebar.focusItemAt(index - 1)
+                        event.accepted = true
+                    } else if (event.key === Qt.Key_Tab && !event.modifiers) {
+                        sidebar.keyboardNavigated = true
+                        if (index < navRepeater.count - 1) {
+                            sidebar.focusItemAt(index + 1)
+                        } else {
+                            sidebarItemDelegate.focus = false
+                        }
+                        event.accepted = true
+                    } else if (event.key === Qt.Key_Tab && (event.modifiers & Qt.ShiftModifier)) {
+                        sidebar.keyboardNavigated = true
+                        if (index > 0) {
+                            sidebar.focusItemAt(index - 1)
+                        } else {
+                            sidebarItemDelegate.focus = false
+                        }
                         event.accepted = true
                     } else if (event.key === Qt.Key_Home) {
                         sidebar.keyboardNavigated = true

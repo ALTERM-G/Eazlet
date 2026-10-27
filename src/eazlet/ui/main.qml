@@ -70,6 +70,12 @@ Window {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
 
+        MouseArea {
+            anchors.fill: parent
+            z: -1
+            onClicked: contentArea.forceActiveFocus()
+        }
+
         StackLayout {
             id: stackLayout
             anchors.fill: parent
@@ -77,6 +83,7 @@ Window {
 
             Home {}
             DownloadUnified {}
+            Converter {}
         }
     }
 }

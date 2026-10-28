@@ -160,6 +160,7 @@ import "tabs"
             settingsMenu.loadAppearance()
             appearanceTab.resetControls()
             generalTab.resetControls()
+            settingsPopup.forceActiveFocus()
         }
     }
 
@@ -201,6 +202,12 @@ import "tabs"
         y: LayoutMetrics.size.topBarHeight + (LayoutMetrics.window.height - LayoutMetrics.size.topBarHeight - height) / 2
         padding: 0
         background: Item {}
+        focus: true
+        modal: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        onOpened: {
+            settingsPopup.forceActiveFocus()
+        }
         onClosed: Shortcuts.capturing = false
 
         enter: LayoutMetrics.animationsEnabled ? settingsPopupFadeEnter : settingsPopupInstantEnter

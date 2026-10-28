@@ -81,6 +81,19 @@ Rectangle {
             width: root.tabWidth
             height: listView.height
 
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: 2
+                radius: LayoutMetrics.radius.m
+                color: Theme.inputBackgroundColor
+                opacity: mouseArea.containsMouse && listView.currentIndex !== index ? 1.0 : 0.0
+
+                Behavior on opacity {
+                    enabled: LayoutMetrics.animationsEnabled
+                    NumberAnimation { duration: 150; easing.type: Easing.InOutQuad }
+                }
+            }
+
             Row {
                 spacing: LayoutMetrics.spacing.sm
                 anchors.centerIn: parent
@@ -100,7 +113,9 @@ Rectangle {
             }
 
             MouseArea {
+                id: mouseArea
                 anchors.fill: parent
+                hoverEnabled: true
                 onClicked: listView.currentIndex = index
                 cursorShape: Qt.PointingHandCursor
             }

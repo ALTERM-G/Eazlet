@@ -79,44 +79,24 @@ ComboBox {
         id: dropdownPopup
         focus: true
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
-        property int horizontalMargin: 8
-        property int excludedIndex: control.currentIndex
-        readonly property real delegateHeight: control.optionHeight * 1.4
-        readonly property int visibleOptionCount: Math.max(
-            0,
-            control.count - (excludedIndex >= 0 ? 1 : 0)
-        )
+        property int horizontalMargin: 0
+        readonly property real delegateHeight: control.optionHeight * 1.8
+        readonly property int visibleOptionCount: control.count
         property int highlightedIndex: -1
 
         function firstVisible() {
-            for (var i = 0; i < control.count; ++i) {
-                if (i !== excludedIndex)
-                    return i
-            }
-            return -1
+            return control.count > 0 ? 0 : -1
         }
 
         function lastVisible() {
-            for (var i = control.count - 1; i >= 0; --i) {
-                if (i !== excludedIndex)
-                    return i
-            }
-            return -1
+            return control.count > 0 ? control.count - 1 : -1
         }
 
         function stepVisible(from, dir) {
             if (control.count <= 0)
                 return -1
-            var i = from
-            for (var n = 0; n < control.count; ++n) {
-                if (i < 0)
-                    i = dir > 0 ? 0 : control.count - 1
-                else
-                    i = (i + dir + control.count) % control.count
-                if (i !== excludedIndex)
-                    return i
-            }
-            return -1
+            var i = from < 0 ? (dir > 0 ? 0 : control.count - 1) : (from + dir + control.count) % control.count
+            return i
         }
 
         function acceptHighlighted() {
@@ -125,17 +105,16 @@ ComboBox {
             dropdownPopup.close()
         }
 
-        width: control.width - horizontalMargin * 2
+        width: control.width
         implicitHeight: visibleOptionCount * delegateHeight + control.popupPadding * 2
 
-        x: horizontalMargin
-        y: control.height - LayoutMetrics.border.m
+        x: 0
+        y: control.height + LayoutMetrics.spacing.xs
         clip: true
 
         onVisibleChanged: {
             if (visible) {
-                excludedIndex = control.currentIndex
-                highlightedIndex = firstVisible()
+                highlightedIndex = control.currentIndex >= 0 ? control.currentIndex : firstVisible()
             }
         }
 
@@ -181,10 +160,7 @@ ComboBox {
 
         background: Rectangle {
             anchors.fill: parent
-            bottomLeftRadius: LayoutMetrics.radius.m
-            bottomRightRadius: LayoutMetrics.radius.m
-            topLeftRadius: 0
-            topRightRadius: 0
+            radius: LayoutMetrics.radius.m
 
             color: Theme.backgroundColor
             border.color: Theme.borderColor
@@ -223,10 +199,9 @@ ComboBox {
                     model: control.model
 
                     delegate: Rectangle {
-                        visible: index !== dropdownPopup.excludedIndex
-                        enabled: visible
+                        visible: true
                         width: parent.width
-                        height: visible ? dropdownPopup.delegateHeight : 0
+                        height: dropdownPopup.delegateHeight
                         radius: LayoutMetrics.radius.m
                         color: index === dropdownPopup.highlightedIndex
                                ? Theme.hoverBackgroundColor
@@ -254,11 +229,11 @@ ComboBox {
                                 }
                                 return modelData !== undefined ? modelData : ""
                             }
-                            font.pixelSize: Typography.h5
-                            font.family: Typography.fontRegular
-                            font.weight: Font.Normal
+                            font.pixelSize: Typography.h4
+                            font.family: Typography.fontBold
+                            font.weight: Font.Bold
                             color: index === dropdownPopup.highlightedIndex ? Theme.hoverTextColor : Theme.textColor
-                            horizontalAlignment: Text.AlignLeft
+                            horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
                             elide: Text.ElideRight
                         }

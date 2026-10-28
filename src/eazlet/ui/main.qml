@@ -54,7 +54,7 @@ Window {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        enabled: sidebar.expanded && sidebar.autoCollapse
+        enabled: sidebar.expanded
         propagateComposedEvents: true
         onPressed: function (mouse) {
             sidebar.expanded = false

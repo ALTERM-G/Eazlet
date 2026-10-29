@@ -16,6 +16,8 @@ Rectangle {
     property real resizableWidth: LayoutMetrics.size.sideBarWidth * resizeRatio
 
     signal navigationClicked(int index)
+    signal tabForwardExited()
+    signal tabBackwardExited()
 
     function toggle() {
         expanded = !expanded
@@ -144,18 +146,30 @@ Rectangle {
                         sidebar.keyboardNavigated = true
                         if (index < navRepeater.count - 1) {
                             sidebar.focusItemAt(index + 1)
+                            event.accepted = true
                         } else {
                             sidebarItemDelegate.focus = false
+                            sidebar.keyboardNavigated = false
+                            if (window && window.contentItem) {
+                                window.contentItem.forceActiveFocus()
+                            }
+                            event.accepted = true
                         }
-                        event.accepted = true
+                        return
                     } else if (event.key === Qt.Key_Tab && (event.modifiers & Qt.ShiftModifier)) {
                         sidebar.keyboardNavigated = true
                         if (index > 0) {
                             sidebar.focusItemAt(index - 1)
+                            event.accepted = true
                         } else {
                             sidebarItemDelegate.focus = false
+                            sidebar.keyboardNavigated = false
+                            if (window && window.contentItem) {
+                                window.contentItem.forceActiveFocus()
+                            }
+                            event.accepted = true
                         }
-                        event.accepted = true
+                        return
                     } else if (event.key === Qt.Key_Home) {
                         sidebar.keyboardNavigated = true
                         sidebar.focusItemAt(0)

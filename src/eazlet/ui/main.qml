@@ -45,17 +45,17 @@ Window {
         anchors.top: topBar.bottom
         anchors.left: parent.left
         anchors.bottom: parent.bottom
-        z: 100
-        onNavigationClicked: function(index) { stackLayout.currentIndex = index }
+        z: 200
+        onNavigationClicked: function(index) { stackLayout.currentIndex = index; sidebar.expanded = false }
     }
 
     MouseArea {
         anchors.top: topBar.bottom
-        anchors.left: parent.left
+        anchors.left: sidebar.right
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        enabled: sidebar.expanded
-        propagateComposedEvents: true
+        z: 999
+        visible: sidebar.expanded
         onPressed: function (mouse) {
             sidebar.expanded = false
             mouse.accepted = false
@@ -73,7 +73,12 @@ Window {
         MouseArea {
             anchors.fill: parent
             z: -1
-            onClicked: contentArea.forceActiveFocus()
+            onClicked: function(mouse) {
+                if (sidebar.expanded) {
+                    sidebar.expanded = false
+                }
+                contentArea.forceActiveFocus()
+            }
         }
 
         StackLayout {

@@ -14,6 +14,9 @@ Item {
         height: parent.height * 0.9
 
         Flickable {
+                ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+                interactive: true
+
             anchors.fill: parent
             anchors.margins: LayoutMetrics.spacing.lg
             contentHeight: contentColumn.implicitHeight

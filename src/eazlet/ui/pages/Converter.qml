@@ -14,6 +14,9 @@ Item {
         height: parent.height * 0.9
 
         Flickable {
+                ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+                interactive: true
+
             anchors.fill: parent
             anchors.margins: LayoutMetrics.spacing.lg
             contentHeight: convColumn.implicitHeight
@@ -41,8 +44,6 @@ Item {
                         for (var i = 0; i < drop.urls.length; i++) {
                             converterVM.addFile(drop.urls[i].toString())
                         }
-                    } else if (drop.hasText) {
-                        // not expected
                     }
                 }
 
@@ -93,11 +94,20 @@ Item {
 
             Row {
                 spacing: LayoutMetrics.spacing.md
+                visible: converterVM.files.length > 0 && converterVM.validTargetFormats.length > 0
                 Text { text: "Convert to:"; color: Theme.textColor; anchors.verticalCenter: parent.verticalCenter }
                 ComboBox {
                     width: 200
-                    model: ["mp4", "webm", "mkv", "avi", "mov", "flv", "gif", "mp3", "aac", "flac", "wav", "ogg", "m4a", "opus", "jpg", "png", "webp", "bmp", "tiff", "avif", "pdf", "txt", "md", "html"]
-                    onCurrentTextChanged: converterVM.targetFormat = currentText
+                    model: converterVM.validTargetFormats
+                    currentIndex: {
+                        var idx = model.indexOf(converterVM.targetFormat)
+                        return idx >= 0 ? idx : 0
+                    }
+                    onCurrentTextChanged: {
+                        if (currentText && currentText !== converterVM.targetFormat) {
+                            converterVM.targetFormat = currentText
+                        }
+                    }
                 }
             }
 
@@ -109,7 +119,7 @@ Item {
 
             Row {
                 spacing: LayoutMetrics.spacing.sm
-                Button { buttonText: "Convert"; primary: true; enabled: !converterVM.converting && converterVM.files.length > 0; onPressed: converterVM.convert() }
+                Button { buttonText: "Convert"; primary: true; enabled: !converterVM.converting && converterVM.files.length > 0 && converterVM.targetFormat !== ""; onPressed: converterVM.convert() }
                 Button { buttonText: "Cancel"; enabled: converterVM.converting; onPressed: converterVM.cancel() }
             }
 

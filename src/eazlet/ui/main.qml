@@ -89,6 +89,9 @@ Window {
             Home {}
             DownloadUnified {}
             Converter {}
+            Archive {}
+            Organizer {}
+            Cipher {}
         }
     }
 }

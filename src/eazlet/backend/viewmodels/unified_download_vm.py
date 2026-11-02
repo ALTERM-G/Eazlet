@@ -14,7 +14,7 @@ from .base_vm import BaseVM
 class UnifiedDownloadVM(BaseVM):
     urlChanged = Signal()
     destinationChanged = Signal()
-    modeChanged = Signal()  # 'direct' or 'social'
+    modeChanged = Signal()
     formatsChanged = Signal()
     statusChanged = Signal()
     downloadingChanged = Signal()
@@ -210,8 +210,10 @@ class UnifiedDownloadVM(BaseVM):
             return
         ytdlp = shutil.which("yt-dlp")
         if ytdlp is None:
-            self._error = "yt-dlp not found"
+            self._error = "yt-dlp not found in PATH"
             self.errorChanged.emit()
+            self._status = "Failed"
+            self.statusChanged.emit()
             return
         self._error = ""
         self.errorChanged.emit()
@@ -219,7 +221,7 @@ class UnifiedDownloadVM(BaseVM):
         self.statusChanged.emit()
         proc = QProcess(self)
         proc.setProgram(ytdlp)
-        proc.setArguments(["-J", "--no-playlist", self._url.strip()])
+        proc.setArguments(["-J", "--no-playlist", "--ignore-errors", self._url.strip()])
         proc.finished.connect(self._on_formats_finished)
         proc.start()
         self._formats_proc = proc
@@ -227,18 +229,32 @@ class UnifiedDownloadVM(BaseVM):
     def _on_formats_finished(self, code: int, status) -> None:
         if code != 0:
             try:
-                err = bytes(self._formats_proc.readAllStandardError()).decode("utf-8", "replace")
-                self._error = err[:200] if err else "Failed to fetch formats"
+                err = bytes(self._formats_proc.readAllStandardError()).decode("utf-8", "replace") if self._formats_proc else ""
+                if err.strip():
+                    self._error = err.strip()[:240]
+                else:
+                    self._error = f"yt-dlp exited with code {code}"
                 self.errorChanged.emit()
             except Exception:
                 self._error = "Failed to fetch formats"
                 self.errorChanged.emit()
             self._status = "Failed"
             self.statusChanged.emit()
+            self._formats_proc = None
             return
         try:
+            if not self._formats_proc:
+                return
             data = bytes(self._formats_proc.readAllStandardOutput()).decode("utf-8", "replace")
-            info = json.loads(data)
+            try:
+                info = json.loads(data)
+            except Exception:
+                self._error = "Failed to parse formats"
+                self.errorChanged.emit()
+                self._status = "Failed"
+                self.statusChanged.emit()
+                self._formats_proc = None
+                return
             fmts = []
             for f in info.get("formats", []):
                 if not f.get("format_id"):
@@ -276,16 +292,18 @@ class UnifiedDownloadVM(BaseVM):
                     score -= 1
                 return score
             fmts = sorted(fmts, key=sort_key)
-            fmts = fmts[:20]
+            fmts = fmts[:30]
             self._formats = fmts
             self.formatsChanged.emit()
             self._status = "Formats loaded"
             self.statusChanged.emit()
         except Exception as e:
-            self._error = str(e)
+            self._error = str(e)[:240]
             self.errorChanged.emit()
             self._status = "Error"
             self.statusChanged.emit()
+        finally:
+            self._formats_proc = None
 
     @Slot()
     def startDownload(self) -> None:
@@ -327,18 +345,28 @@ class UnifiedDownloadVM(BaseVM):
         if self._mode == "social":
             ytdlp = shutil.which("yt-dlp")
             if ytdlp is None:
-                self._error = "yt-dlp not found"
+                self._error = "yt-dlp not found in PATH"
                 self.errorChanged.emit()
                 self._downloading = False
                 self.downloadingChanged.emit()
                 return
             outtmpl = os.path.join(os.path.abspath(self._destination), "%(title)s.%(ext)s")
             if self._audio_only:
-                args = ["-x", "--audio-format", "mp3", "-o", outtmpl, self._url.strip()]
+                args = ["-x", "--audio-format", "mp3", "--no-playlist", "-o", outtmpl, self._url.strip()]
             elif self._selected_format:
-                args = ["-f", self._selected_format + "+bestaudio/best", "-o", outtmpl, self._url.strip()]
+                if shutil.which("ffmpeg") is None:
+                    self._error = "ffmpeg not found in PATH (required to merge video+audio). Install ffmpeg or choose a format that doesn't require merging."
+                    self.errorChanged.emit()
+                    self._downloading = False
+                    self.downloadingChanged.emit()
+                    return
+                args = ["-f", self._selected_format + "+bestaudio/best", "--no-playlist", "--merge-output-format", "mp4", "-o", outtmpl, self._url.strip()]
             else:
-                args = ["-f", "best[ext=mp4]/best", "-o", outtmpl, self._url.strip()]
+                if shutil.which("ffmpeg") is None:
+                    # try to fall back to best single stream
+                    args = ["-f", "best[ext=mp4]/best", "--no-playlist", "-o", outtmpl, self._url.strip()]
+                else:
+                    args = ["-f", "bestvideo*+bestaudio/best", "--no-playlist", "--merge-output-format", "mp4", "-o", outtmpl, self._url.strip()]
             proc = QProcess(self)
             proc.setProgram(ytdlp)
             proc.setArguments(args)
@@ -350,14 +378,14 @@ class UnifiedDownloadVM(BaseVM):
         else:
             aria2 = shutil.which("aria2c")
             if aria2 is None:
-                self._error = "aria2c not found"
+                self._error = "aria2c not found in PATH"
                 self.errorChanged.emit()
                 self._downloading = False
                 self.downloadingChanged.emit()
                 return
             proc = QProcess(self)
             proc.setProgram(aria2)
-            proc.setArguments(["-d", os.path.abspath(self._destination), self._url.strip(), "--summary-interval=1", "--continue=true", "--max-tries=5", "--retry-wait=3", "--max-connection-per-server=16", "--split=16"])
+            proc.setArguments(["-d", os.path.abspath(self._destination), self._url.strip(), "--summary-interval=1", "--continue=true", "--max-tries=5", "--retry-wait=3", "--max-connection-per-server=16", "--split=16", "--file-allocation=none"])
             proc.readyReadStandardOutput.connect(self._on_stdout)
             proc.readyReadStandardError.connect(self._on_stderr)
             proc.finished.connect(self._on_finished)
@@ -369,6 +397,7 @@ class UnifiedDownloadVM(BaseVM):
         if self._process is not None:
             try:
                 self._process.kill()
+                self._process.waitForFinished(1000)
             except Exception:
                 pass
         self._downloading = False
@@ -408,7 +437,7 @@ class UnifiedDownloadVM(BaseVM):
                 if m:
                     try:
                         percent = int(m.group(5))
-                        self._progress = percent / 100.0
+                        self._progress = max(0.0, min(1.0, percent / 100.0))
                         self.progressChanged.emit()
                         self._speed = m.group(6)
                         self._eta = m.group(7).strip()
@@ -423,7 +452,7 @@ class UnifiedDownloadVM(BaseVM):
                     if m2:
                         try:
                             percent = int(m2.group(5))
-                            self._progress = percent / 100.0
+                            self._progress = max(0.0, min(1.0, percent / 100.0))
                             self.progressChanged.emit()
                             self._size = f"{m2.group(1)}{m2.group(2)}/{m2.group(3)}{m2.group(4)}"
                             self.sizeChanged.emit()
@@ -433,7 +462,7 @@ class UnifiedDownloadVM(BaseVM):
                 m = self._progress_re.search(line)
                 if m:
                     try:
-                        self._progress = float(m.group(1)) / 100.0
+                        self._progress = max(0.0, min(1.0, float(m.group(1)) / 100.0))
                         self.progressChanged.emit()
                     except Exception:
                         pass
@@ -460,8 +489,17 @@ class UnifiedDownloadVM(BaseVM):
             return
         data = bytes(self._process.readAllStandardError()).decode("utf-8", "replace")
         if data.strip():
-            self._error = data.strip()
-            self.errorChanged.emit()
+            err = data.strip()
+            if len(err) > 300:
+                err = err[:300] + "..."
+            if not self._error:
+                self._error = err
+                self.errorChanged.emit()
+            # also update status with last meaningful line
+            lines = [l.strip() for l in err.splitlines() if l.strip()]
+            if lines:
+                self._status = lines[-1]
+                self.statusChanged.emit()
 
     def _on_finished(self, code: int, status) -> None:
         self._downloading = False
@@ -475,6 +513,7 @@ class UnifiedDownloadVM(BaseVM):
             if not self._error:
                 self._error = f"Process exited with code {code}"
                 self.errorChanged.emit()
-            self._status = "Failed"
-            self.statusChanged.emit()
+            if self._status not in ("Failed", "Cancelled"):
+                self._status = "Failed"
+                self.statusChanged.emit()
         self._process = None

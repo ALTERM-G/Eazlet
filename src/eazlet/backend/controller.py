@@ -4,7 +4,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Property, QIODevice, QObject, QSaveFile, Signal, Slot
 
-from .viewmodels import ConverterVM, DownloadVM, MainVM, SettingsVM, SocialMediaVM, UnifiedDownloadVM
+from .viewmodels import ArchiveVM, CipherVM, ConverterVM, DownloadVM, MainVM, OrganizerVM, SettingsVM, SocialMediaVM, UnifiedDownloadVM
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +35,9 @@ class Controller(QObject):
         self._social_media_vm = SocialMediaVM(self)
         self._unified_download_vm = UnifiedDownloadVM(self)
         self._converter_vm = ConverterVM(self)
+        self._archive_vm = ArchiveVM(self)
+        self._organizer_vm = OrganizerVM(self)
+        self._cipher_vm = CipherVM(self)
 
         self._language_files = ["en.json", "fr.json", "de.json", "es.json", "it.json"]
         self._languages_path = (
@@ -252,3 +255,15 @@ class Controller(QObject):
     @Property(QObject, constant=True)
     def converterVM(self) -> ConverterVM:
         return self._converter_vm
+
+    @Property(QObject, constant=True)
+    def archiveVM(self) -> ArchiveVM:
+        return self._archive_vm
+
+    @Property(QObject, constant=True)
+    def organizerVM(self) -> OrganizerVM:
+        return self._organizer_vm
+
+    @Property(QObject, constant=True)
+    def cipherVM(self) -> CipherVM:
+        return self._cipher_vm

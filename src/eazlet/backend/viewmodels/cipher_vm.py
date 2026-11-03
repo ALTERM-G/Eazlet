@@ -1,7 +1,8 @@
 import base64
 import codecs
 import hashlib
-import math
+import html
+import quopri
 import re
 import urllib.parse
 from PySide6.QtCore import Property, QObject, Signal, Slot
@@ -18,6 +19,7 @@ class CipherVM(BaseVM):
     statusChanged = Signal()
     errorChanged = Signal()
     detectionChanged = Signal()
+    keyChanged = Signal()
 
     CIPHERS = [
         "Base64",
@@ -84,6 +86,7 @@ class CipherVM(BaseVM):
         self._status = "Idle"
         self._error = ""
         self._detections = []
+        self._key = ""
 
     @Property(str, notify=inputChanged)
     def input(self):
@@ -137,6 +140,16 @@ class CipherVM(BaseVM):
     def detections(self):
         return self._detections
 
+    @Property(str, notify=keyChanged)
+    def key(self):
+        return self._key
+
+    @key.setter
+    def key(self, value):
+        if value != self._key:
+            self._key = value or ""
+            self.keyChanged.emit()
+
     @Property(list, constant=True)
     def ciphers(self):
         return self.CIPHERS
@@ -149,71 +162,57 @@ class CipherVM(BaseVM):
         if not text:
             self._detections = []
             self.detectionChanged.emit()
+            self._output = ""
+            self.outputChanged.emit()
+            self._status = "Idle"
+            self.statusChanged.emit()
             return
         scores = {}
-        # Base64
         try:
             base64.b64decode(text, validate=True)
             if re.fullmatch(r"[A-Za-z0-9+/=]+", text) and len(text) % 4 == 0:
                 scores["Base64"] = 0.9
         except Exception:
             pass
-        # Base32
         try:
             base64.b32decode(text, casefold=True)
             if re.fullmatch(r"[A-Z2-7=]+", text.upper()):
                 scores["Base32"] = 0.85
         except Exception:
             pass
-        # Hex
-        if re.fullmatch(r"[0-9a-fA-F\s]+", text) and len(text.replace(" ", "")) % 2 == 0:
+        stripped = text.replace(" ", "")
+        if re.fullmatch(r"[0-9a-fA-F\s]+", text) and len(stripped) % 2 == 0 and stripped:
             scores["Hex"] = 0.95
-        # Binary
-        if re.fullmatch(r"[01\s]+", text) and len(text.replace(" ", "")) % 8 == 0:
+        if re.fullmatch(r"[01\s]+", text) and len(stripped) % 8 == 0 and stripped:
             scores["Binary"] = 0.9
-        # Octal
-        if re.fullmatch(r"[0-7\s]+", text) and len(text.replace(" ", "")) % 3 == 0:
+        if re.fullmatch(r"[0-7\s]+", text) and len(stripped) % 3 == 0 and stripped:
             scores["Octal"] = 0.7
-        # Decimal
-        if re.fullmatch(r"[0-9\s]+", text):
+        if re.fullmatch(r"[0-9\s]+", text) and stripped:
             nums = text.split()
-            if all(0 <= int(n) <= 255 for n in nums if n.isdigit()):
+            if all(n.isdigit() and 0 <= int(n) <= 255 for n in nums):
                 scores["Decimal"] = 0.75
-        # URL encode
         if "%" in text and re.search(r"%[0-9a-fA-F]{2}", text):
             scores["URL Encode/Decode"] = 0.85
-        # ROT13/Caesar
         if text.isalpha() and len(text) > 3:
             scores["Caesar"] = 0.5
             scores["ROT13"] = 0.5
-        # Morse
+            scores["Atbash"] = 0.4
         if re.fullmatch(r"[.\-/ \n]+", text) and "." in text and "-" in text:
             scores["Morse"] = 0.9
-        # MD5
         if re.fullmatch(r"[0-9a-fA-F]{32}", text):
             scores["MD5"] = 0.99
-        # SHA1
         if re.fullmatch(r"[0-9a-fA-F]{40}", text):
             scores["SHA1"] = 0.99
-        # SHA256
         if re.fullmatch(r"[0-9a-fA-F]{64}", text):
             scores["SHA256"] = 0.99
-        # Atbash (letters only, heuristic)
-        if text.isalpha() and len(text) > 3:
-            scores["Atbash"] = 0.4
-        # Rail Fence (heuristic)
-        if re.fullmatch(r"[A-Za-z\s]+", text) and len(text) > 10:
+        if re.fullmatch(r"[A-Za-z\s]+", text) and len(text.strip()) > 10:
             scores["Rail Fence"] = 0.35
-        # Leetspeak
         if re.search(r"[0-9]", text) and re.search(r"[a-zA-Z]", text):
             scores["Leetspeak"] = 0.6
-        # Sort by score
         items = sorted(scores.items(), key=lambda x: -x[1])
         self._detections = [{"name": k, "prob": round(v * 100, 1)} for k, v in items]
         self.detectionChanged.emit()
-        lines = []
-        for k, v in items:
-            lines.append(f"{k}: {round(v*100,1)}%")
+        lines = [f"{k}: {round(v * 100, 1)}%" for k, v in items]
         self._output = "\n".join(lines)
         self.outputChanged.emit()
         self._status = "Detected"
@@ -258,12 +257,25 @@ class CipherVM(BaseVM):
                 else:
                     res = "".join(chr((ord(c) - ord('a') - shift) % 26 + ord('a')) if 'a' <= c <= 'z' else chr((ord(c) - ord('A') - shift) % 26 + ord('A')) if 'A' <= c <= 'Z' else c for c in text)
             elif cipher == "Affine":
-                a, b = 5, 8
+                keystr = self._key or "5,8"
+                try:
+                    if "," in keystr:
+                        a_str, b_str = keystr.split(",")
+                        a, b = int(a_str.strip()), int(b_str.strip())
+                    else:
+                        a, b = int(keystr.strip()) or 5, 8
+                except Exception:
+                    a, b = 5, 8
                 if mode == "encode":
                     res = "".join(chr((a * (ord(c) - ord('a')) + b) % 26 + ord('a')) if 'a' <= c <= 'z' else chr((a * (ord(c) - ord('A')) + b) % 26 + ord('A')) if 'A' <= c <= 'Z' else c for c in text)
                 else:
-                    # modular inverse of 5 mod 26 is 21
-                    a_inv = 21
+                    a_inv = None
+                    for x in range(1, 26):
+                        if (a * x) % 26 == 1:
+                            a_inv = x
+                            break
+                    if a_inv is None:
+                        a_inv = 21
                     res = "".join(chr((a_inv * (ord(c) - ord('a') - b)) % 26 + ord('a')) if 'a' <= c <= 'z' else chr((a_inv * (ord(c) - ord('A') - b)) % 26 + ord('A')) if 'A' <= c <= 'Z' else c for c in text)
             elif cipher == "Vigenere":
                 key = "KEY"
@@ -335,18 +347,15 @@ class CipherVM(BaseVM):
                         rail += 1 if down else -1
                     res = "".join("".join(r) for r in fence)
                 else:
-                    res = text  # simple placeholder
+                    res = text
             elif cipher == "XOR":
                 key = 0x42
                 res = "".join(chr(ord(c) ^ key) for c in text)
             elif cipher == "MD5":
-                import hashlib
                 res = hashlib.md5(text.encode("utf-8")).hexdigest()
             elif cipher == "SHA1":
-                import hashlib
                 res = hashlib.sha1(text.encode("utf-8")).hexdigest()
             elif cipher == "SHA256":
-                import hashlib
                 res = hashlib.sha256(text.encode("utf-8")).hexdigest()
             elif cipher == "Base58":
                 if mode == "encode":
@@ -365,13 +374,11 @@ class CipherVM(BaseVM):
                 else:
                     res = text.encode("ascii").decode("punycode")
             elif cipher == "Quoted Printable":
-                import quopri
                 if mode == "encode":
                     res = quopri.encodestring(text.encode("utf-8")).decode("ascii")
                 else:
                     res = quopri.decodestring(text.encode("ascii")).decode("utf-8")
             elif cipher == "Playfair":
-                # simple placeholder
                 res = text[::-1]
             elif cipher == "Beaufort":
                 key = "KEY"
@@ -403,15 +410,14 @@ class CipherVM(BaseVM):
                 bacon = {"a": "AAAAA", "b": "AAAAB", "c": "AAABA", "d": "AAABB", "e": "AABAA", "f": "AABAB", "g": "AABBA", "h": "AABBB", "i": "ABAAA", "j": "ABAAB", "k": "ABABA", "l": "ABABB", "m": "ABBAA", "n": "ABBAB", "o": "ABBBA", "p": "ABBBB", "q": "BAAAA", "r": "BAAAB", "s": "BAABA", "t": "BAABB", "u": "BABAA", "v": "BABAB", "w": "BABBA", "x": "BABBB", "y": "BBAAA", "z": "BBAAB"}
                 res = " ".join(bacon.get(c.lower(), c) for c in text)
             elif cipher == "Polybius":
-                # simple
                 res = text
             elif cipher == "Simple Substitution":
                 sub = "QWERTYUIOPASDFGHJKLZXCVBNM"
                 res = "".join(sub[ord(c) - ord('A')] if 'A' <= c <= 'Z' else sub[ord(c) - ord('a')].lower() if 'a' <= c <= 'z' else c for c in text)
             elif cipher == "Scytale":
-                res = text  # placeholder
+                res = text
             elif cipher == "Transposition Columnar":
-                res = text  # placeholder
+                res = text
             else:
                 res = text
             self._output = res

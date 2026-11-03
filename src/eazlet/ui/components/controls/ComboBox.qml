@@ -10,6 +10,8 @@ ComboBox {
     focusPolicy: Qt.TabFocus
     property int optionHeight: LayoutMetrics.size.controlHeight
     property int popupPadding: 6
+    property bool scrollablePopup: false
+    property int maxVisibleItems: 10
 
     contentItem: Text {
         text: control.displayText !== "" ? control.displayText : "Select"
@@ -106,7 +108,7 @@ ComboBox {
         }
 
         width: control.width
-        implicitHeight: visibleOptionCount * delegateHeight + control.popupPadding * 2
+        implicitHeight: (control.scrollablePopup ? Math.min(visibleOptionCount, control.maxVisibleItems) * delegateHeight : visibleOptionCount * delegateHeight) + control.popupPadding * 2
 
         x: 0
         y: control.height + LayoutMetrics.spacing.xs
@@ -190,52 +192,67 @@ ComboBox {
                     event.accepted = true
             }
 
-            Column {
+            Item {
                 anchors.fill: parent
                 anchors.margins: control.popupPadding
-                spacing: 0
 
-                Repeater {
-                    model: control.model
+                Flickable {
+                    id: popupFlick
+                    anchors.fill: parent
+                    clip: true
+                    contentHeight: column.implicitHeight
+                    interactive: control.scrollablePopup
+                    boundsBehavior: Flickable.StopAtBounds
+                    ScrollBar.vertical: ScrollBar { policy: control.scrollablePopup ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff }
 
-                    delegate: Rectangle {
-                        visible: true
-                        width: parent.width
-                        height: dropdownPopup.delegateHeight
-                        radius: LayoutMetrics.radius.m
-                        color: index === dropdownPopup.highlightedIndex
-                               ? Theme.hoverBackgroundColor
-                               : "transparent"
+                    Column {
+                        id: column
+                        width: popupFlick.width
+                        spacing: 0
 
-                        MouseArea {
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onEntered: dropdownPopup.highlightedIndex = index
-                            onClicked: {
-                                control.currentIndex = index
-                                dropdownPopup.close()
-                            }
-                        }
+                        Repeater {
+                            model: control.model
 
-                        Text {
-                            anchors.fill: parent
-                            anchors.margins: 4
-                            text: {
-                                if (control.textRole) {
-                                    if (model && model[control.textRole] !== undefined) return model[control.textRole]
-                                    if (typeof modelData === 'object' && modelData[control.textRole] !== undefined) return modelData[control.textRole]
-                                    return ""
+                            delegate: Rectangle {
+                                visible: true
+                                width: parent.width
+                                height: dropdownPopup.delegateHeight
+                                radius: LayoutMetrics.radius.m
+                                color: index === dropdownPopup.highlightedIndex
+                                       ? Theme.hoverBackgroundColor
+                                       : "transparent"
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onEntered: dropdownPopup.highlightedIndex = index
+                                    onClicked: {
+                                        control.currentIndex = index
+                                        dropdownPopup.close()
+                                    }
                                 }
-                                return modelData !== undefined ? modelData : ""
+
+                                Text {
+                                    anchors.fill: parent
+                                    anchors.margins: 4
+                                    text: {
+                                        if (control.textRole) {
+                                            if (model && model[control.textRole] !== undefined) return model[control.textRole]
+                                            if (typeof modelData === 'object' && modelData[control.textRole] !== undefined) return modelData[control.textRole]
+                                            return ""
+                                        }
+                                        return modelData !== undefined ? modelData : ""
+                                    }
+                                    font.pixelSize: Typography.h4
+                                    font.family: Typography.fontBold
+                                    font.weight: Font.Bold
+                                    color: index === dropdownPopup.highlightedIndex ? Theme.hoverTextColor : Theme.textColor
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                    elide: Text.ElideRight
+                                }
                             }
-                            font.pixelSize: Typography.h4
-                            font.family: Typography.fontBold
-                            font.weight: Font.Bold
-                            color: index === dropdownPopup.highlightedIndex ? Theme.hoverTextColor : Theme.textColor
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                            elide: Text.ElideRight
                         }
                     }
                 }

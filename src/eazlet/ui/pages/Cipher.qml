@@ -37,8 +37,10 @@ Item {
                     spacing: LayoutMetrics.spacing.md
                     Text { text: "Cipher:"; color: Theme.textColor; anchors.verticalCenter: parent.verticalCenter }
                     ComboBox {
-                        width: 220
+                        width: 260
                         model: cipherVM.ciphers
+                        scrollablePopup: true
+                        maxVisibleItems: 12
                         currentIndex: {
                             var idx = model.indexOf(cipherVM.cipher)
                             return idx >= 0 ? idx : 0
@@ -49,7 +51,10 @@ Item {
                             }
                         }
                     }
-                    Button { buttonText: cipherVM.mode === "encode" ? "Mode: Encode" : "Mode: Decode"; onPressed: cipherVM.mode = cipherVM.mode === "encode" ? "decode" : "encode" }
+                    Button {
+                        buttonText: cipherVM.mode === "encode" ? "Mode: Encode" : "Mode: Decode"
+                        onPressed: cipherVM.mode = cipherVM.mode === "encode" ? "decode" : "encode"
+                    }
                 }
 
                 Row {
@@ -60,9 +65,6 @@ Item {
                     Button { buttonText: "Clear"; onPressed: cipherVM.clear() }
                 }
 
-
-
-
                 Text { text: "Input:"; color: Theme.textColor }
                 TextEdit {
                     id: cipherInput
@@ -70,8 +72,13 @@ Item {
                     height: 150
                     text: cipherVM.input
                     onTextChanged: cipherVM.input = text
-                    Keys.onPressed: (event) => {
-                        if (event.key === Qt.Key_Return && (event.modifiers & Qt.ShiftModifier)) {
+                    Keys.onShortcutOverride: function(event) {
+                        if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && (event.modifiers & Qt.ShiftModifier)) {
+                            event.accepted = true
+                        }
+                    }
+                    Keys.onPressed: function(event) {
+                        if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && (event.modifiers & Qt.ShiftModifier)) {
                             cipherVM.process()
                             event.accepted = true
                         }
@@ -83,21 +90,12 @@ Item {
                     Text { text: "Output:"; color: Theme.textColor; anchors.verticalCenter: parent.verticalCenter }
                     Button { buttonText: "Copy"; onPressed: cipherVM.copyOutput() }
                 }
-                Rectangle {
+                TextEdit {
+                    id: cipherOutput
                     width: parent.width
                     height: 150
-                    color: Theme.inputBackgroundColor
-                    border.color: Theme.borderColor
-                    border.width: 1
-                    radius: LayoutMetrics.radius.m
-                    clip: true
-                    TextEdit {
-                        id: cipherOutput
-                        anchors.fill: parent
-                        anchors.margins: LayoutMetrics.spacing.sm
-                        text: cipherVM.output
-                        enabled: false
-                    }
+                    text: cipherVM.output
+                    enabled: false
                 }
 
                 Text { text: cipherVM.status; color: Theme.textColor }

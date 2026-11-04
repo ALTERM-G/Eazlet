@@ -44,7 +44,7 @@ Rectangle {
         anchors.leftMargin: LayoutMetrics.spacing.xxl * 1.5
         anchors.verticalCenter: parent.verticalCenter
         text: Lang.titles.appName
-        font.pointSize: Typography.h3
+        font.pixelSize: Typography.h3
         font.family: Typography.fontBold
         font.weight: Font.Bold
         verticalAlignment: Text.AlignVCenter

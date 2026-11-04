@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Dialogs
 import components
 
 Item {
@@ -14,8 +13,8 @@ Item {
         height: parent.height * 0.9
 
         Flickable {
-                ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-                interactive: true
+            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+            interactive: true
 
             anchors.fill: parent
             anchors.margins: LayoutMetrics.spacing.lg
@@ -29,47 +28,33 @@ Item {
                 width: parent.width
                 spacing: LayoutMetrics.spacing.lg
 
-                Text {
+                Title {
                     text: "Archive / Compressor"
-                    color: Theme.textColor
-                    font.bold: true
+                    textColor: Theme.textColor
+                    pixelSize: Typography.h2
                 }
 
-                DropArea {
-                    id: dropArea
+                DropZone {
                     width: parent.width
-                    height: 120
-                    onDropped: (drop) => {
-                        if (drop.hasUrls) {
-                            for (var i = 0; i < drop.urls.length; i++) {
-                                archiveVM.addFile(drop.urls[i].toString())
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: LayoutMetrics.radius.m
-                        color: dropArea.containsDrag ? Theme.hoverBackgroundColor : Theme.inputBackgroundColor
-                        border.color: dropArea.containsDrag ? Theme.themeColor : Theme.borderColor
-                        border.width: LayoutMetrics.border.m
-
-                        Column {
-                            anchors.centerIn: parent
-                            spacing: LayoutMetrics.spacing.sm
-                            Text {
-                                text: "Drop files or folders here"
-                                color: Theme.textColor
-                                anchors.horizontalCenter: parent.horizontalCenter
-                            }
-                        }
+                    title: "Drop files or folders here"
+                    description: "Add files to compress, or an archive to extract"
+                    hint: "Drag and drop files or folders"
+                    clickable: false
+                    onFilesDropped: function(urls) {
+                        for (var i = 0; i < urls.length; i++)
+                            archiveVM.addFile(urls[i])
                     }
                 }
 
                 Row {
                     spacing: LayoutMetrics.spacing.sm
                     Button { buttonText: "Clear"; onPressed: archiveVM.clearFiles() }
-                    Text { text: archiveVM.files.length + " item(s)"; color: Theme.textColor }
+                    Label {
+    bold: false
+                        text: archiveVM.files.length + " item(s)"
+                        textColor: Theme.textColor
+                        pixelSize: Typography.h6
+                    }
                 }
 
                 ListView {
@@ -85,7 +70,14 @@ Item {
                             anchors.fill: parent
                             anchors.margins: LayoutMetrics.spacing.sm
                             spacing: LayoutMetrics.spacing.sm
-                            Text { text: modelData.name; color: Theme.textColor; width: parent.width * 0.8; elide: Text.ElideMiddle }
+                            Label {
+    bold: false
+                                text: modelData.name
+                                textColor: Theme.textColor
+                                pixelSize: Typography.h6
+                                width: parent.width * 0.8
+                                elide: Text.ElideMiddle
+                            }
                             Button { buttonText: "X"; width: 30; onPressed: archiveVM.removeFile(index) }
                         }
                     }
@@ -93,7 +85,13 @@ Item {
 
                 Row {
                     spacing: LayoutMetrics.spacing.md
-                    Text { text: "Format:"; color: Theme.textColor; anchors.verticalCenter: parent.verticalCenter }
+                    Label {
+    bold: false
+                        text: "Format:"
+                        textColor: Theme.textColor
+                        pixelSize: Typography.h6
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
                     ComboBox {
                         width: 150
                         model: ["zip", "tar.gz", "tar.xz", "tar.bz2"]
@@ -107,7 +105,14 @@ Item {
                             }
                         }
                     }
-                    Text { text: "Compression:"; color: Theme.textColor; anchors.verticalCenter: parent.verticalCenter; visible: archiveVM.format === "zip" }
+                    Label {
+    bold: false
+                        text: "Compression:"
+                        textColor: Theme.textColor
+                        pixelSize: Typography.h6
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: archiveVM.format === "zip"
+                    }
                     SpinBox {
                         from: 1
                         to: 9
@@ -119,7 +124,14 @@ Item {
 
                 Row {
                     spacing: LayoutMetrics.spacing.sm
-                    Text { text: "Output: " + archiveVM.outputDir; color: Theme.textColor; elide: Text.ElideMiddle; width: parent.width * 0.7 }
+                    Label {
+    bold: false
+                        text: "Output: " + archiveVM.outputDir
+                        textColor: Theme.textColor
+                        pixelSize: Typography.h6
+                        elide: Text.ElideMiddle
+                        width: parent.width * 0.7
+                    }
                     Button { buttonText: "Open Folder"; onPressed: archiveVM.openOutputDir() }
                 }
 
@@ -130,7 +142,13 @@ Item {
 
                 Row {
                     spacing: LayoutMetrics.spacing.sm
-                    Text { text: "Extract archive:"; color: Theme.textColor; anchors.verticalCenter: parent.verticalCenter }
+                    Label {
+    bold: false
+                        text: "Extract archive:"
+                        textColor: Theme.textColor
+                        pixelSize: Typography.h6
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
                     Button { buttonText: "Extract Selected"; enabled: !archiveVM.extracting && archiveVM.files.length === 1; onPressed: archiveVM.extract(archiveVM.files[0].path) }
                 }
 
@@ -140,8 +158,19 @@ Item {
                     visible: archiveVM.compressing || archiveVM.extracting || archiveVM.progress >= 1.0
                 }
 
-                Text { text: archiveVM.status; color: Theme.textColor }
-                Text { text: archiveVM.error; color: "red"; visible: archiveVM.error !== "" }
+                Label {
+    bold: false
+                    text: archiveVM.status
+                    textColor: Theme.textColor
+                    pixelSize: Typography.h6
+                }
+                Label {
+    bold: false
+                    text: archiveVM.error
+                    textColor: "red"
+                    pixelSize: Typography.h6
+                    visible: archiveVM.error !== ""
+                }
                 Item { width: 1; height: LayoutMetrics.spacing.xl }
             }
         }

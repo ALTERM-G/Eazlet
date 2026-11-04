@@ -75,6 +75,7 @@ QtObject {
         property real lineEditHeight: lm.unit * 5
         property real textEditWidth: lm.unit * 70
         property real textEditHeight: lm.unit * 15
+        property real dropZoneHeight: lm.unit * 15
 
         property real iconS: lm.unit * 2
         property real iconM: lm.unit * 3

@@ -1,10 +1,16 @@
 import base64
 import codecs
 import hashlib
-import html
+import os
 import quopri
 import re
 import urllib.parse
+
+from cryptography.exceptions import InvalidTag
+from cryptography.fernet import Fernet, InvalidToken
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM, ChaCha20Poly1305
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from PySide6.QtCore import Property, QObject, Signal, Slot
 from PySide6.QtGui import QGuiApplication
 
@@ -20,8 +26,13 @@ class CipherVM(BaseVM):
     errorChanged = Signal()
     detectionChanged = Signal()
     keyChanged = Signal()
+    encodingAlgorithmChanged = Signal()
+    cipherAlgorithmChanged = Signal()
+    hashAlgorithmChanged = Signal()
+    encryptionAlgorithmChanged = Signal()
+    passphraseChanged = Signal()
 
-    CIPHERS = [
+    ENCODINGS = [
         "Base64",
         "Base32",
         "Base85",
@@ -37,6 +48,11 @@ class CipherVM(BaseVM):
         "UUencode",
         "XXencode",
         "Quoted Printable",
+        "Morse",
+        "Reverse",
+    ]
+
+    CLASSICAL_CIPHERS = [
         "ROT13",
         "ROT47",
         "Caesar",
@@ -57,14 +73,19 @@ class CipherVM(BaseVM):
         "Rail Fence",
         "Transposition Columnar",
         "Scytale",
-        "Reverse",
         "Leetspeak",
-        "Morse",
         "XOR",
-        "MD5",
-        "SHA1",
-        "SHA256",
     ]
+
+    HASH_ALGORITHMS = ["MD5", "SHA1", "SHA256"]
+
+    CIPHERS = ENCODINGS + CLASSICAL_CIPHERS + HASH_ALGORITHMS
+
+    ENCRYPTION_ALGORITHMS = ["AES-256-GCM", "ChaCha20-Poly1305", "Fernet"]
+    ENCRYPTION_MAGIC = b"EZL2"
+    KDF_ITERATIONS = 200_000
+    SALT_SIZE = 16
+    NONCE_SIZE = 12
 
     MORSE_CODE_DICT = {
         'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
@@ -87,6 +108,11 @@ class CipherVM(BaseVM):
         self._error = ""
         self._detections = []
         self._key = ""
+        self._encoding_algorithm = "Base64"
+        self._cipher_algorithm = "ROT13"
+        self._hash_algorithm = "SHA256"
+        self._encryption_algorithm = "AES-256-GCM"
+        self._passphrase = ""
 
     @Property(str, notify=inputChanged)
     def input(self):
@@ -150,9 +176,75 @@ class CipherVM(BaseVM):
             self._key = value or ""
             self.keyChanged.emit()
 
+    @Property(str, notify=encodingAlgorithmChanged)
+    def encodingAlgorithm(self):
+        return self._encoding_algorithm
+
+    @encodingAlgorithm.setter
+    def encodingAlgorithm(self, value):
+        if value and value != self._encoding_algorithm:
+            self._encoding_algorithm = value
+            self.encodingAlgorithmChanged.emit()
+
+    @Property(str, notify=cipherAlgorithmChanged)
+    def cipherAlgorithm(self):
+        return self._cipher_algorithm
+
+    @cipherAlgorithm.setter
+    def cipherAlgorithm(self, value):
+        if value and value != self._cipher_algorithm:
+            self._cipher_algorithm = value
+            self.cipherAlgorithmChanged.emit()
+
+    @Property(str, notify=hashAlgorithmChanged)
+    def hashAlgorithm(self):
+        return self._hash_algorithm
+
+    @hashAlgorithm.setter
+    def hashAlgorithm(self, value):
+        if value and value != self._hash_algorithm:
+            self._hash_algorithm = value
+            self.hashAlgorithmChanged.emit()
+
+    @Property(str, notify=encryptionAlgorithmChanged)
+    def encryptionAlgorithm(self):
+        return self._encryption_algorithm
+
+    @encryptionAlgorithm.setter
+    def encryptionAlgorithm(self, value):
+        if value and value != self._encryption_algorithm:
+            self._encryption_algorithm = value
+            self.encryptionAlgorithmChanged.emit()
+
+    @Property(str, notify=passphraseChanged)
+    def passphrase(self):
+        return self._passphrase
+
+    @passphrase.setter
+    def passphrase(self, value):
+        if value != self._passphrase:
+            self._passphrase = value or ""
+            self.passphraseChanged.emit()
+
     @Property(list, constant=True)
     def ciphers(self):
         return self.CIPHERS
+
+    @Property(list, constant=True)
+    def encodings(self):
+        return self.ENCODINGS
+
+    @Property(list, constant=True)
+    def classicalCiphers(self):
+        return self.CLASSICAL_CIPHERS
+
+    @Property(list, constant=True)
+    def hashAlgorithms(self):
+        return self.HASH_ALGORITHMS
+
+    @Property(list, constant=True)
+    def encryptionAlgorithms(self):
+        return self.ENCRYPTION_ALGORITHMS
 
     @Slot()
     def detect(self):
@@ -218,6 +310,115 @@ class CipherVM(BaseVM):
         self._status = "Detected"
         self.statusChanged.emit()
 
+    def _run_selected(self, algorithm: str) -> None:
+        if algorithm != self._cipher:
+            self._cipher = algorithm
+            self.cipherChanged.emit()
+        self.process()
+
+    def _fail(self, message: str) -> None:
+        self._error = message or "Operation failed"
+        self.errorChanged.emit()
+        self._status = "Failed"
+        self.statusChanged.emit()
+
+    @staticmethod
+    def _derive_key(passphrase: str, salt: bytes) -> bytes:
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=CipherVM.KDF_ITERATIONS,
+        )
+        return kdf.derive(passphrase.encode("utf-8"))
+
+    @Slot()
+    def processEncoding(self):
+        self._run_selected(self._encoding_algorithm)
+
+    @Slot()
+    def processCipher(self):
+        self._run_selected(self._cipher_algorithm)
+
+    @Slot()
+    def hashInput(self):
+        self._run_selected(self._hash_algorithm)
+
+    @Slot()
+    def encrypt(self):
+        self._error = ""
+        self.errorChanged.emit()
+        if not self._passphrase:
+            self._fail("Enter a passphrase")
+            return
+        try:
+            algorithm = self._encryption_algorithm
+            algorithm_id = self.ENCRYPTION_ALGORITHMS.index(algorithm) + 1
+            salt = os.urandom(self.SALT_SIZE)
+            nonce = os.urandom(self.NONCE_SIZE)
+            key = self._derive_key(self._passphrase, salt)
+            header = self.ENCRYPTION_MAGIC + bytes([algorithm_id]) + salt + nonce
+            if algorithm == "Fernet":
+                token = Fernet(base64.urlsafe_b64encode(key)).encrypt(
+                    self._input.encode("utf-8")
+                )
+                payload = token
+            else:
+                aead = (
+                    AESGCM(key)
+                    if algorithm == "AES-256-GCM"
+                    else ChaCha20Poly1305(key)
+                )
+                payload = aead.encrypt(nonce, self._input.encode("utf-8"), header)
+            self._output = base64.b64encode(header + payload).decode("ascii")
+            self.outputChanged.emit()
+            self._status = f"Encrypted with {algorithm}"
+            self.statusChanged.emit()
+        except Exception as exc:
+            self._fail(str(exc)[:200])
+
+    @Slot()
+    def decrypt(self):
+        self._error = ""
+        self.errorChanged.emit()
+        if not self._passphrase:
+            self._fail("Enter a passphrase")
+            return
+        try:
+            raw = base64.b64decode(self._input.strip(), validate=True)
+            header_size = (
+                len(self.ENCRYPTION_MAGIC) + 1 + self.SALT_SIZE + self.NONCE_SIZE
+            )
+            if len(raw) <= header_size or not raw.startswith(self.ENCRYPTION_MAGIC):
+                raise ValueError("Not a valid Eazlet encrypted payload")
+            algorithm_id = raw[len(self.ENCRYPTION_MAGIC)]
+            if not 1 <= algorithm_id <= len(self.ENCRYPTION_ALGORITHMS):
+                raise ValueError("Unsupported encryption algorithm")
+            algorithm = self.ENCRYPTION_ALGORITHMS[algorithm_id - 1]
+            salt_start = len(self.ENCRYPTION_MAGIC) + 1
+            nonce_start = salt_start + self.SALT_SIZE
+            salt = raw[salt_start:nonce_start]
+            nonce = raw[nonce_start:header_size]
+            payload = raw[header_size:]
+            key = self._derive_key(self._passphrase, salt)
+            if algorithm == "Fernet":
+                clear = Fernet(base64.urlsafe_b64encode(key)).decrypt(payload)
+            else:
+                aead = (
+                    AESGCM(key)
+                    if algorithm == "AES-256-GCM"
+                    else ChaCha20Poly1305(key)
+                )
+                clear = aead.decrypt(nonce, payload, raw[:header_size])
+            self._output = clear.decode("utf-8")
+            self.outputChanged.emit()
+            self._status = f"Decrypted with {algorithm}"
+            self.statusChanged.emit()
+        except (InvalidToken, InvalidTag):
+            self._fail("Wrong passphrase or corrupted payload")
+        except Exception as exc:
+            self._fail(str(exc)[:200])
+
     @Slot()
     def process(self):
         self._error = ""
@@ -278,7 +479,7 @@ class CipherVM(BaseVM):
                         a_inv = 21
                     res = "".join(chr((a_inv * (ord(c) - ord('a') - b)) % 26 + ord('a')) if 'a' <= c <= 'z' else chr((a_inv * (ord(c) - ord('A') - b)) % 26 + ord('A')) if 'A' <= c <= 'Z' else c for c in text)
             elif cipher == "Vigenere":
-                key = "KEY"
+                key = "".join(c for c in (self._key or "KEY") if c.isalpha()) or "KEY"
                 res_out = []
                 k = 0
                 if mode == "encode":
@@ -349,8 +550,11 @@ class CipherVM(BaseVM):
                 else:
                     res = text
             elif cipher == "XOR":
-                key = 0x42
-                res = "".join(chr(ord(c) ^ key) for c in text)
+                key_bytes = (self._key or "A").encode("utf-8")
+                res = "".join(
+                    chr(ord(c) ^ key_bytes[i % len(key_bytes)])
+                    for i, c in enumerate(text)
+                )
             elif cipher == "MD5":
                 res = hashlib.md5(text.encode("utf-8")).hexdigest()
             elif cipher == "SHA1":
@@ -381,7 +585,7 @@ class CipherVM(BaseVM):
             elif cipher == "Playfair":
                 res = text[::-1]
             elif cipher == "Beaufort":
-                key = "KEY"
+                key = "".join(c for c in (self._key or "KEY") if c.isalpha()) or "KEY"
                 res_out = []
                 k = 0
                 for c in text:
@@ -395,7 +599,7 @@ class CipherVM(BaseVM):
                         res_out.append(c)
                 res = "".join(res_out)
             elif cipher == "Autokey":
-                key = "KEY"
+                key = "".join(c for c in (self._key or "KEY") if c.isalpha()) or "KEY"
                 full_key = (key + text).lower()
                 res_out = []
                 for i, c in enumerate(text):

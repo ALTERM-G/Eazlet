@@ -14,8 +14,8 @@ Item {
         height: parent.height * 0.9
 
         Flickable {
-                ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-                interactive: true
+            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+            interactive: true
 
             anchors.fill: parent
             anchors.margins: LayoutMetrics.spacing.lg
@@ -29,10 +29,10 @@ Item {
                 width: parent.width
                 spacing: LayoutMetrics.spacing.lg
 
-                Text {
+                Title {
                     text: "Organizer / Sorter"
-                    color: Theme.textColor
-                    font.bold: true
+                    textColor: Theme.textColor
+                    pixelSize: Typography.h2
                 }
 
                 Row {
@@ -70,10 +70,26 @@ Item {
                     visible: organizerVM.scanning
                 }
 
-                Text { text: organizerVM.status; color: Theme.textColor }
-                Text { text: organizerVM.error; color: "red"; visible: organizerVM.error !== "" }
+                Label {
+    bold: false
+                    text: organizerVM.status
+                    textColor: Theme.textColor
+                    pixelSize: Typography.h6
+                }
+                Label {
+    bold: false
+                    text: organizerVM.error
+                    textColor: "red"
+                    pixelSize: Typography.h6
+                    visible: organizerVM.error !== ""
+                }
 
-                Text { text: "Duplicate groups: " + organizerVM.duplicates.length; color: Theme.textColor; visible: organizerVM.duplicates.length > 0 }
+                Label {
+                    text: "Duplicate groups: " + organizerVM.duplicates.length
+                    textColor: Theme.textColor
+                    pixelSize: Typography.h4
+                    visible: organizerVM.duplicates.length > 0
+                }
 
                 Column {
                     width: parent.width
@@ -84,10 +100,21 @@ Item {
                         delegate: Column {
                             width: parent.width
                             spacing: LayoutMetrics.spacing.xs
-                            Text { text: "Group (" + (modelData.files ? modelData.files.length : 0) + " files)"; color: Theme.textColor; font.bold: true }
+                            Label {
+                                text: "Group (" + (modelData.files ? modelData.files.length : 0) + " files)"
+                                textColor: Theme.textColor
+                                pixelSize: Typography.h4
+                            }
                             Repeater {
                                 model: modelData.files
-                                delegate: Text { text: "  " + (modelData.path ? modelData.path : ""); color: Theme.textColor; elide: Text.ElideMiddle; width: parent.width }
+                                delegate: Label {
+    bold: false
+                                    text: "  " + (modelData.path ? modelData.path : "")
+                                    textColor: Theme.textColor
+                                    pixelSize: Typography.h6
+                                    elide: Text.ElideMiddle
+                                    width: parent.width
+                                }
                             }
                             Rectangle { width: parent.width; height: 1; color: Theme.dividerColor }
                         }

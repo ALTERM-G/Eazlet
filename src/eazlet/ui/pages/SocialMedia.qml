@@ -18,9 +18,22 @@ Item {
             anchors.margins: LayoutMetrics.spacing.lg
             spacing: LayoutMetrics.spacing.lg
 
+            Title {
+                text: "Social Media Download"
+                textColor: Theme.textColor
+                pixelSize: Typography.h2
+            }
+
             Row {
                 spacing: LayoutMetrics.spacing.sm
-                Text { text: "Platforms: YouTube, TikTok, Instagram, Facebook, X, Reddit, Vimeo, Twitch"; color: Theme.textColor; elide: Text.ElideRight; width: parent.width }
+                Label {
+    bold: false
+                    text: "Platforms: YouTube, TikTok, Instagram, Facebook, X, Reddit, Vimeo, Twitch"
+                    textColor: Theme.textColor
+                    pixelSize: Typography.h6
+                    elide: Text.ElideRight
+                    width: parent.width
+                }
             }
 
             LineEdit {
@@ -35,7 +48,14 @@ Item {
                 spacing: LayoutMetrics.spacing.md
                 Button { buttonText: "Fetch Formats"; onPressed: socialMediaVM.fetchFormats() }
                 Button { buttonText: "Destination"; onPressed: smFolderDialog.open() }
-                Text { text: socialMediaVM.destination; color: Theme.textColor; elide: Text.ElideMiddle; width: parent.width * 0.4 }
+                Label {
+    bold: false
+                    text: socialMediaVM.destination
+                    textColor: Theme.textColor
+                    pixelSize: Typography.h6
+                    elide: Text.ElideMiddle
+                    width: parent.width * 0.4
+                }
                 Button { buttonText: "Open Folder"; onPressed: socialMediaVM.openDestination() }
             }
 
@@ -71,8 +91,21 @@ Item {
                 visible: socialMediaVM.downloading || socialMediaVM.progress >= 1.0
             }
 
-            Text { text: socialMediaVM.status; color: Theme.textColor; elide: Text.ElideRight; width: parent.width }
-            Text { text: socialMediaVM.error; color: "red"; visible: socialMediaVM.error !== "" }
+            Label {
+    bold: false
+                text: socialMediaVM.status
+                textColor: Theme.textColor
+                pixelSize: Typography.h6
+                elide: Text.ElideRight
+                width: parent.width
+            }
+            Label {
+    bold: false
+                text: socialMediaVM.error
+                textColor: "red"
+                pixelSize: Typography.h6
+                visible: socialMediaVM.error !== ""
+            }
         }
     }
 

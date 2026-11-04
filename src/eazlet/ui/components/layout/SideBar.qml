@@ -14,7 +14,6 @@ Rectangle {
     property bool keyboardNavigated: false
     property real resizeRatio: 1.0
     property real resizableWidth: LayoutMetrics.size.sideBarWidth * resizeRatio
-    property bool fileUtilsExpanded: true
 
     signal navigationClicked(int index)
     signal tabForwardExited()
@@ -118,116 +117,17 @@ Rectangle {
             height: LayoutMetrics.spacing.md
         }
 
-        Column {
-            width: parent.width
-            spacing: 0
-
-            SideBarItem {
-                itemText: "Home"
-                itemIcon: sidebar.getIconUrl("home")
-                isActive: sidebar.currentIndex === 0
-                collapsed: sidebar.collapsed
-                showFocusRing: sidebar.keyboardNavigated
-                onClicked: {
-                    sidebar.keyboardNavigated = false
-                    sidebar.currentIndex = 0
-                    sidebar.navigationClicked(0)
-                }
-            }
-
-            Item {
-                width: parent.width
-                height: LayoutMetrics.spacing.sm
-            }
-
-            SideBarItem {
-                itemText: "File Tools"
-                itemIcon: sidebar.getIconUrl("home")
-                isActive: sidebar.currentIndex >= 1 && sidebar.currentIndex <= 4
-                collapsed: sidebar.collapsed
-                showFocusRing: false
-                onClicked: {
-                    sidebar.fileUtilsExpanded = !sidebar.fileUtilsExpanded
-                }
-            }
-
-            Column {
-                width: parent.width
-                visible: sidebar.fileUtilsExpanded && !sidebar.collapsed
-                spacing: 0
-                leftPadding: LayoutMetrics.spacing.md
-
-                SideBarItem {
-                    itemText: "Downloader"
-                    itemIcon: sidebar.getIconUrl("home")
-                    isActive: sidebar.currentIndex === 1
-                    collapsed: sidebar.collapsed
-                    showFocusRing: sidebar.keyboardNavigated
-                    onClicked: {
-                        sidebar.keyboardNavigated = false
-                        sidebar.currentIndex = 1
-                        sidebar.navigationClicked(1)
-                    }
-                }
-
-                SideBarItem {
-                    itemText: "Converter"
-                    itemIcon: sidebar.getIconUrl("home")
-                    isActive: sidebar.currentIndex === 2
-                    collapsed: sidebar.collapsed
-                    showFocusRing: sidebar.keyboardNavigated
-                    onClicked: {
-                        sidebar.keyboardNavigated = false
-                        sidebar.currentIndex = 2
-                        sidebar.navigationClicked(2)
-                    }
-                }
-
-                SideBarItem {
-                    itemText: "Archive"
-                    itemIcon: sidebar.getIconUrl("home")
-                    isActive: sidebar.currentIndex === 3
-                    collapsed: sidebar.collapsed
-                    showFocusRing: sidebar.keyboardNavigated
-                    onClicked: {
-                        sidebar.keyboardNavigated = false
-                        sidebar.currentIndex = 3
-                        sidebar.navigationClicked(3)
-                    }
-                }
-
-                SideBarItem {
-                    itemText: "Organizer"
-                    itemIcon: sidebar.getIconUrl("home")
-                    isActive: sidebar.currentIndex === 4
-                    collapsed: sidebar.collapsed
-                    showFocusRing: sidebar.keyboardNavigated
-                    onClicked: {
-                        sidebar.keyboardNavigated = false
-                        sidebar.currentIndex = 4
-                        sidebar.navigationClicked(4)
-                    }
-                }
-            }
-
-            SideBarItem {
-                itemText: "Code Tools"
-                itemIcon: sidebar.getIconUrl("home")
-                isActive: sidebar.currentIndex === 5
-                collapsed: sidebar.collapsed
-                showFocusRing: sidebar.keyboardNavigated
-                onClicked: {
-                    sidebar.keyboardNavigated = false
-                    sidebar.currentIndex = 5
-                    sidebar.navigationClicked(5)
-                }
-            }
-        }
-
         Repeater {
             id: navRepeater
-            model: []
-            visible: false
+            model: [
+                { label: "Home", icon: "home" },
+                { label: "Downloader", icon: "home" },
+                { label: "Converter", icon: "home" },
+                { label: "Archive", icon: "home" },
+                { label: "Organizer", icon: "home" },
+                { label: "Code Tools", icon: "home" },
+                { label: "Text Analysis", icon: "home" }
+            ]
 
             delegate: SideBarItem {
                 id: sidebarItemDelegate

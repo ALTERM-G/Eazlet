@@ -18,6 +18,12 @@ Item {
             anchors.margins: LayoutMetrics.spacing.lg
             spacing: LayoutMetrics.spacing.lg
 
+            Title {
+                text: "Downloader"
+                textColor: Theme.textColor
+                pixelSize: Typography.h2
+            }
+
             LineEdit {
                 id: urlInput
                 width: parent.width
@@ -30,7 +36,14 @@ Item {
                 spacing: LayoutMetrics.spacing.md
                 Button { buttonText: "Paste"; onPressed: downloadVM.pasteFromClipboard() }
                 Button { buttonText: "Destination"; onPressed: folderDialog.open() }
-                Text { text: downloadVM.destination; color: Theme.textColor; elide: Text.ElideMiddle; width: parent.width * 0.5 }
+                Label {
+    bold: false
+                    text: downloadVM.destination
+                    textColor: Theme.textColor
+                    pixelSize: Typography.h6
+                    elide: Text.ElideMiddle
+                    width: parent.width * 0.5
+                }
                 Button { buttonText: "Open Folder"; onPressed: downloadVM.openDestination() }
             }
 
@@ -51,21 +64,57 @@ Item {
 
             Row {
                 spacing: LayoutMetrics.spacing.lg
-                Text { text: "Size: " + downloadVM.size; color: Theme.textColor }
-                Text { text: "Speed: " + downloadVM.speed; color: Theme.textColor }
-                Text { text: "ETA: " + downloadVM.eta; color: Theme.textColor }
+                Label {
+    bold: false
+                    text: "Size: " + downloadVM.size
+                    textColor: Theme.textColor
+                    pixelSize: Typography.h6
+                }
+                Label {
+    bold: false
+                    text: "Speed: " + downloadVM.speed
+                    textColor: Theme.textColor
+                    pixelSize: Typography.h6
+                }
+                Label {
+    bold: false
+                    text: "ETA: " + downloadVM.eta
+                    textColor: Theme.textColor
+                    pixelSize: Typography.h6
+                }
             }
 
-            Text { text: downloadVM.status; color: Theme.textColor; elide: Text.ElideRight; width: parent.width }
-            Text { text: downloadVM.error; color: "red"; visible: downloadVM.error !== "" }
+            Label {
+    bold: false
+                text: downloadVM.status
+                textColor: Theme.textColor
+                pixelSize: Typography.h6
+                elide: Text.ElideRight
+                width: parent.width
+            }
+            Label {
+    bold: false
+                text: downloadVM.error
+                textColor: "red"
+                pixelSize: Typography.h6
+                visible: downloadVM.error !== ""
+            }
 
-            Text { text: "Queue (" + downloadVM.queue.length + ")"; color: Theme.textColor; font.bold: true }
+            Label {
+                text: "Queue (" + downloadVM.queue.length + ")"
+                textColor: Theme.textColor
+                pixelSize: Typography.h4
+            }
             Row {
                 spacing: LayoutMetrics.spacing.sm
                 Button { buttonText: "Clear Queue"; onPressed: downloadVM.clearQueue() }
             }
 
-            Text { text: "History"; color: Theme.textColor; font.bold: true }
+            Label {
+                text: "History"
+                textColor: Theme.textColor
+                pixelSize: Typography.h4
+            }
         }
     }
 

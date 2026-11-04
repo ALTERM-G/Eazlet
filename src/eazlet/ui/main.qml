@@ -92,6 +92,7 @@ Window {
             Archive {}
             Organizer {}
             Cipher {}
+            TextAnalysis {}
         }
     }
 }

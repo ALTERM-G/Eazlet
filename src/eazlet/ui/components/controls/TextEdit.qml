@@ -7,7 +7,7 @@ Item {
     width: LayoutMetrics.size.textEditWidth
     height: LayoutMetrics.size.textEditHeight
 
-    property alias placeholderText: area.placeholderText
+    property string placeholderText: ""
     property alias text: area.text
 
     ScrollView {
@@ -90,9 +90,23 @@ Item {
                 }
             }
 
-            placeholderTextColor: Theme.dividerColor
-
             background: null
+
+            Text {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.leftMargin: area.leftPadding
+                anchors.rightMargin: area.rightPadding
+                anchors.topMargin: area.topPadding
+                text: control.placeholderText
+                color: Theme.dividerColor
+                font: area.font
+                wrapMode: Text.Wrap
+                visible: text.length > 0 && area.text.length === 0
+                enabled: false
+                z: 1
+            }
 
             TextCursor {
                 cursorRect: area.cursorRectangle

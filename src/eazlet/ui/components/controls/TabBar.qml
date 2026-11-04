@@ -58,7 +58,7 @@ Rectangle {
             Label {
                 required property var modelData
                 text: root.tabLabel(modelData)
-                pointSize: Typography.body
+                pixelSize: Typography.body
                 font.bold: true
             }
         }
@@ -102,7 +102,7 @@ Rectangle {
                     id: tabText
                     text: root.tabLabel(root.tabData[index])
                     color: listView.currentIndex === index ? Theme.hoverTextColor : Theme.textColor
-                    pointSize: Typography.body
+                    pixelSize: Typography.body
                     font.bold: true
 
                     Behavior on color {

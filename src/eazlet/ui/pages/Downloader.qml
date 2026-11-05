@@ -34,10 +34,10 @@ Item {
 
             Row {
                 spacing: LayoutMetrics.spacing.md
-                Button { buttonText: "Paste"; onPressed: downloadVM.pasteFromClipboard() }
+                Button { buttonText: "Paste"; iconPath: SVGLibrary.paste; onPressed: downloadVM.pasteFromClipboard() }
                 Button { buttonText: "Destination"; onPressed: folderDialog.open() }
                 Label {
-    bold: false
+                    bold: false
                     text: downloadVM.destination
                     textColor: Theme.textColor
                     pixelSize: Typography.h6
@@ -65,19 +65,19 @@ Item {
             Row {
                 spacing: LayoutMetrics.spacing.lg
                 Label {
-    bold: false
+                    bold: false
                     text: "Size: " + downloadVM.size
                     textColor: Theme.textColor
                     pixelSize: Typography.h6
                 }
                 Label {
-    bold: false
+                    bold: false
                     text: "Speed: " + downloadVM.speed
                     textColor: Theme.textColor
                     pixelSize: Typography.h6
                 }
                 Label {
-    bold: false
+                    bold: false
                     text: "ETA: " + downloadVM.eta
                     textColor: Theme.textColor
                     pixelSize: Typography.h6
@@ -85,7 +85,7 @@ Item {
             }
 
             Label {
-    bold: false
+                bold: false
                 text: downloadVM.status
                 textColor: Theme.textColor
                 pixelSize: Typography.h6
@@ -93,7 +93,7 @@ Item {
                 width: parent.width
             }
             Label {
-    bold: false
+                bold: false
                 text: downloadVM.error
                 textColor: "red"
                 pixelSize: Typography.h6

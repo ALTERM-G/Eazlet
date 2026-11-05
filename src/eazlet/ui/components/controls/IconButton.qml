@@ -39,12 +39,6 @@ Rectangle {
         }
     }
 
-    scale: mouseArea.containsMouse ? 1.05 : 1.0
-    Behavior on scale {
-        enabled: LayoutMetrics.animationsEnabled
-        NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
-    }
-
     FocusRing {
         cornerRadius: LayoutMetrics.radius.s
     }

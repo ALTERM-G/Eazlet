@@ -1,7 +1,43 @@
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<!-- Uploaded to: SVG Repo, www.svgrepo.com, Transformed by: SVG Repo Mixer Tools -->
-<svg width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g id="SVGRepo_bgCarrier" stroke-width="0"/>
-<g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"/>
-<g id="SVGRepo_iconCarrier"> <rect x="3" y="3" width="18" height="18" rx="3" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> <line x1="9" y1="4" x2="9" y2="20" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </g>
-</svg>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+
+<svg
+   fill="#000000"
+   version="1.1"
+   id="Capa_1"
+   width="263.81284"
+   height="223.8412"
+   viewBox="0 0 8.1617096 6.9250871"
+   xml:space="preserve"
+   sodipodi:docname="left_sidebar.svg"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><defs
+   id="defs1" /><sodipodi:namedview
+   id="namedview1"
+   pagecolor="#ffffff"
+   bordercolor="#000000"
+   borderopacity="0.25"
+   inkscape:showpageshadow="2"
+   inkscape:pageopacity="0.0"
+   inkscape:pagecheckerboard="0"
+   inkscape:deskcolor="#d1d1d1"
+   inkscape:zoom="0.35875"
+   inkscape:cx="132.40418"
+   inkscape:cy="105.92334"
+   inkscape:window-width="1920"
+   inkscape:window-height="1080"
+   inkscape:window-x="0"
+   inkscape:window-y="0"
+   inkscape:window-maximized="1"
+   inkscape:current-layer="Capa_1" />
+<g
+   id="g1"
+   transform="matrix(0.32976606,0,0,0.32976606,0,-0.61831136)">
+	<path
+   d="m 0,3.875 c 0,-1.104 0.896,-2 2,-2 h 20.75 c 1.104,0 2,0.896 2,2 0,1.104 -0.896,2 -2,2 H 2 c -1.104,0 -2,-0.896 -2,-2 z m 22.75,6.5 H 2 c -1.104,0 -2,0.896 -2,2 0,1.104 0.896,2 2,2 h 20.75 c 1.104,0 2,-0.896 2,-2 0,-1.104 -0.895,-2 -2,-2 z m 0,8.5 H 2 c -1.104,0 -2,0.896 -2,2 0,1.104 0.896,2 2,2 h 20.75 c 1.104,0 2,-0.896 2,-2 0,-1.104 -0.895,-2 -2,-2 z"
+   id="path1" />
+</g>
+</svg>

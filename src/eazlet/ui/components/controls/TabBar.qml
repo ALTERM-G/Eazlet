@@ -58,8 +58,7 @@ Rectangle {
             Label {
                 required property var modelData
                 text: root.tabLabel(modelData)
-                pixelSize: Typography.body
-                font.bold: true
+                pixelSize: Typography.h6
             }
         }
     }
@@ -101,9 +100,8 @@ Rectangle {
                 Label {
                     id: tabText
                     text: root.tabLabel(root.tabData[index])
-                    color: listView.currentIndex === index ? Theme.hoverTextColor : Theme.textColor
-                    pixelSize: Typography.body
-                    font.bold: true
+                    textColor: listView.currentIndex === index ? Theme.hoverTextColor : Theme.textColor
+                    pixelSize: Typography.h6
 
                     Behavior on color {
                         enabled: LayoutMetrics.animationsEnabled

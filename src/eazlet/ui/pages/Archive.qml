@@ -13,8 +13,12 @@ Item {
         height: parent.height * 0.9
 
         Flickable {
-            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-            interactive: true
+            id: flick
+            ScrollBar.vertical: ScrollBar {
+                policy: ScrollBar.AsNeeded
+                implicitWidth: LayoutMetrics.unit * 1.2
+            }
+            interactive: false
 
             anchors.fill: parent
             anchors.margins: LayoutMetrics.spacing.lg
@@ -22,6 +26,19 @@ Item {
             clip: true
             flickableDirection: Flickable.VerticalFlick
             boundsBehavior: Flickable.StopAtBounds
+
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.NoButton
+                onWheel: function(wheel) {
+                    var delta = wheel.pixelDelta.y !== 0
+                        ? wheel.pixelDelta.y * 2
+                        : wheel.angleDelta.y / 120 * LayoutMetrics.unit * 24
+                    var maxY = Math.max(0, flick.contentHeight - flick.height)
+                    flick.contentY = Math.max(0, Math.min(maxY, flick.contentY - delta))
+                    wheel.accepted = true
+                }
+            }
 
             Column {
                 id: archColumn
@@ -50,7 +67,7 @@ Item {
                     spacing: LayoutMetrics.spacing.sm
                     Button { buttonText: "Clear"; onPressed: archiveVM.clearFiles() }
                     Label {
-    bold: false
+                        bold: false
                         text: archiveVM.files.length + " item(s)"
                         textColor: Theme.textColor
                         pixelSize: Typography.h6
@@ -71,7 +88,7 @@ Item {
                             anchors.margins: LayoutMetrics.spacing.sm
                             spacing: LayoutMetrics.spacing.sm
                             Label {
-    bold: false
+                                bold: false
                                 text: modelData.name
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
@@ -86,7 +103,7 @@ Item {
                 Row {
                     spacing: LayoutMetrics.spacing.md
                     Label {
-    bold: false
+                        bold: false
                         text: "Format:"
                         textColor: Theme.textColor
                         pixelSize: Typography.h6
@@ -106,7 +123,7 @@ Item {
                         }
                     }
                     Label {
-    bold: false
+                        bold: false
                         text: "Compression:"
                         textColor: Theme.textColor
                         pixelSize: Typography.h6
@@ -125,7 +142,7 @@ Item {
                 Row {
                     spacing: LayoutMetrics.spacing.sm
                     Label {
-    bold: false
+                        bold: false
                         text: "Output: " + archiveVM.outputDir
                         textColor: Theme.textColor
                         pixelSize: Typography.h6
@@ -143,7 +160,7 @@ Item {
                 Row {
                     spacing: LayoutMetrics.spacing.sm
                     Label {
-    bold: false
+                        bold: false
                         text: "Extract archive:"
                         textColor: Theme.textColor
                         pixelSize: Typography.h6
@@ -159,13 +176,13 @@ Item {
                 }
 
                 Label {
-    bold: false
+                    bold: false
                     text: archiveVM.status
                     textColor: Theme.textColor
                     pixelSize: Typography.h6
                 }
                 Label {
-    bold: false
+                    bold: false
                     text: archiveVM.error
                     textColor: "red"
                     pixelSize: Typography.h6

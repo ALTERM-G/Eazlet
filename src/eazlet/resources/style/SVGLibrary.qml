@@ -12,4 +12,6 @@ QtObject {
     readonly property url chevronRight: Qt.resolvedUrl("../assets/icons/navigation/chevron_right.svg")
     readonly property url chevronUp: Qt.resolvedUrl("../assets/icons/navigation/chevron_up.svg")
     readonly property url chevronDown: Qt.resolvedUrl("../assets/icons/navigation/chevron_down.svg")
+    readonly property url copy: Qt.resolvedUrl("../assets/icons/actions/copy.svg")
+    readonly property url paste: Qt.resolvedUrl("../assets/icons/actions/clipboard-paste.svg")
 }

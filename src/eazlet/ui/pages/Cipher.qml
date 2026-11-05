@@ -42,8 +42,42 @@ Item {
                 clip: true
                 flickableDirection: Flickable.VerticalFlick
                 boundsBehavior: Flickable.StopAtBounds
-                ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-                interactive: true
+                ScrollBar.vertical: ScrollBar {
+                policy: ScrollBar.AsNeeded
+                implicitWidth: LayoutMetrics.unit * 1.2
+            }
+                interactive: false
+
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
+                    onWheel: function(wheel) {
+                        var delta = wheel.pixelDelta.y !== 0
+                            ? wheel.pixelDelta.y * 2
+                            : wheel.angleDelta.y / 120 * LayoutMetrics.unit * 24
+                        var maxY = Math.max(0, toolScroll.contentHeight - toolScroll.height)
+                        toolScroll.contentY = Math.max(0, Math.min(maxY, toolScroll.contentY - delta))
+                        wheel.accepted = true
+                    }
+                }
+
+                Shortcut {
+                    sequence: "Ctrl+Tab"
+                    enabled: page.visible
+                    onActivated: toolTabs.currentIndex = (toolTabs.currentIndex + 1) % toolTabs.tabData.length
+                }
+
+                Shortcut {
+                    sequence: "Ctrl+Shift+Tab"
+                    enabled: page.visible
+                    onActivated: toolTabs.currentIndex = (toolTabs.currentIndex - 1 + toolTabs.tabData.length) % toolTabs.tabData.length
+                }
+
+                Shortcut {
+                    sequence: "Ctrl+Backtab"
+                    enabled: page.visible
+                    onActivated: toolTabs.currentIndex = (toolTabs.currentIndex - 1 + toolTabs.tabData.length) % toolTabs.tabData.length
+                }
 
                 Column {
                     id: toolContent
@@ -58,7 +92,7 @@ Item {
                         visible: toolTabs.currentIndex === 0
 
                         Label {
-    bold: false
+                            bold: false
                             text: "Convert text to and from reversible encodings."
                             textColor: Theme.dividerColor
                             pixelSize: Typography.h6
@@ -68,7 +102,7 @@ Item {
                             spacing: LayoutMetrics.spacing.md
 
                             Label {
-    bold: false
+                                bold: false
                                 text: "Encoding:"
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
@@ -91,9 +125,10 @@ Item {
                                 }
                             }
 
-                            Button {
-                                buttonText: cipherVM.mode === "encode" ? "Mode: Encode" : "Mode: Decode"
-                                onPressed: cipherVM.mode = cipherVM.mode === "encode" ? "decode" : "encode"
+                            Switch {
+                                text: "Decode"
+                                checked: cipherVM.mode === "decode"
+                                onCheckedChanged: cipherVM.mode = checked ? "decode" : "encode"
                             }
                         }
 
@@ -114,7 +149,7 @@ Item {
                         visible: toolTabs.currentIndex === 1
 
                         Label {
-    bold: false
+                            bold: false
                             text: "Apply classical substitution and transposition ciphers."
                             textColor: Theme.dividerColor
                             pixelSize: Typography.h6
@@ -124,7 +159,7 @@ Item {
                             spacing: LayoutMetrics.spacing.md
 
                             Label {
-    bold: false
+                                bold: false
                                 text: "Cipher:"
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
@@ -147,9 +182,10 @@ Item {
                                 }
                             }
 
-                            Button {
-                                buttonText: cipherVM.mode === "encode" ? "Mode: Encode" : "Mode: Decode"
-                                onPressed: cipherVM.mode = cipherVM.mode === "encode" ? "decode" : "encode"
+                            Switch {
+                                text: "Decode"
+                                checked: cipherVM.mode === "decode"
+                                onCheckedChanged: cipherVM.mode = checked ? "decode" : "encode"
                             }
                         }
 
@@ -157,7 +193,7 @@ Item {
                             spacing: LayoutMetrics.spacing.md
 
                             Label {
-    bold: false
+                                bold: false
                                 text: "Key:"
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
@@ -174,7 +210,7 @@ Item {
                         }
 
                         Label {
-    bold: false
+                            bold: false
                             width: parent.width
                             text: "Used by Affine (a,b), Vigenere, Beaufort, Autokey, and XOR."
                             textColor: Theme.dividerColor
@@ -198,7 +234,7 @@ Item {
                         visible: toolTabs.currentIndex === 2
 
                         Label {
-    bold: false
+                            bold: false
                             text: "Authenticated encryption. The passphrase is used to derive the key."
                             textColor: Theme.dividerColor
                             pixelSize: Typography.h6
@@ -210,7 +246,7 @@ Item {
                             spacing: LayoutMetrics.spacing.md
 
                             Label {
-    bold: false
+                                bold: false
                                 text: "Algorithm:"
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
@@ -236,7 +272,7 @@ Item {
                             spacing: LayoutMetrics.spacing.md
 
                             Label {
-    bold: false
+                                bold: false
                                 text: "Passphrase:"
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
@@ -252,16 +288,14 @@ Item {
                                 onTextChanged: cipherVM.passphrase = text
                             }
 
-                            Button {
+                            Switch {
                                 id: revealPassphrase
-                                property bool checked: false
-                                buttonText: checked ? "Hide" : "Show"
-                                onPressed: checked = !checked
+                                text: "Show passphrase"
                             }
                         }
 
                         Label {
-    bold: false
+                            bold: false
                             width: parent.width
                             text: "Anyone with the passphrase can decrypt the payload. There is no recovery if it is lost."
                             textColor: Theme.dividerColor
@@ -285,7 +319,7 @@ Item {
                         visible: toolTabs.currentIndex === 3
 
                         Label {
-    bold: false
+                            bold: false
                             text: "Create a one-way digest. Hashing cannot be reversed."
                             textColor: Theme.dividerColor
                             pixelSize: Typography.h6
@@ -295,7 +329,7 @@ Item {
                             spacing: LayoutMetrics.spacing.md
 
                             Label {
-    bold: false
+                                bold: false
                                 text: "Hash:"
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
@@ -325,10 +359,28 @@ Item {
                     }
 
                     // Shared input / output ------------------------------------
-                    Label {
-                        text: "Input"
-                        textColor: Theme.textColor
-                        pixelSize: Typography.h4
+                    Row {
+                        spacing: LayoutMetrics.spacing.sm
+                        width: parent.width
+
+                        Label {
+                            text: "Input"
+                            textColor: Theme.textColor
+                            pixelSize: Typography.h4
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        Button {
+                            buttonText: "Paste"
+                            iconPath: SVGLibrary.paste
+                            onPressed: toolInput.paste()
+                        }
+
+                        Button {
+                            buttonText: "Clear"
+                            iconPath: ""
+                            onPressed: cipherVM.clear()
+                        }
                     }
 
                     TextEdit {
@@ -367,7 +419,11 @@ Item {
                             anchors.verticalCenter: parent.verticalCenter
                         }
 
-                        Button { buttonText: "Copy"; onPressed: cipherVM.copyOutput() }
+                        Button {
+                            buttonText: "Copy"
+                            iconPath: SVGLibrary.copy
+                            onPressed: cipherVM.copyOutput()
+                        }
                     }
 
                     TextEdit {
@@ -379,14 +435,14 @@ Item {
                     }
 
                     Label {
-    bold: false
+                        bold: false
                         text: cipherVM.status
                         textColor: Theme.textColor
                         pixelSize: Typography.h6
                     }
 
                     Label {
-    bold: false
+                        bold: false
                         width: parent.width
                         text: cipherVM.error
                         textColor: "red"

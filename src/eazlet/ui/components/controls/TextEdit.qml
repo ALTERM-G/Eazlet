@@ -9,6 +9,22 @@ Item {
 
     property string placeholderText: ""
     property alias text: area.text
+    property alias readOnly: area.readOnly
+
+    function paste() {
+        area.forceActiveFocus()
+        area.paste()
+    }
+
+    function copy() {
+        area.forceActiveFocus()
+        area.copy()
+    }
+
+    function selectAll() {
+        area.forceActiveFocus()
+        area.selectAll()
+    }
 
     ScrollView {
         id: view
@@ -16,6 +32,14 @@ Item {
 
         clip: true
         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+        Binding {
+            target: view.contentItem
+            property: "boundsBehavior"
+            value: Flickable.StopAtBounds
+            when: view.contentItem !== null
+            restoreMode: Binding.RestoreNone
+        }
 
         ScrollBar.vertical: ScrollBar {
             id: vbar
@@ -31,7 +55,7 @@ Item {
             padding: 0
 
             contentItem: Rectangle {
-                implicitWidth: LayoutMetrics.spacing.sm
+                implicitWidth: LayoutMetrics.unit * 1.2
                 implicitHeight: LayoutMetrics.spacing.sm
                 radius: width / 2
                 color: vbar.pressed ? Theme.themeColor

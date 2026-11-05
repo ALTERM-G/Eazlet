@@ -27,7 +27,7 @@ Item {
             Row {
                 spacing: LayoutMetrics.spacing.sm
                 Label {
-    bold: false
+                    bold: false
                     text: "Platforms: YouTube, TikTok, Instagram, Facebook, X, Reddit, Vimeo, Twitch"
                     textColor: Theme.textColor
                     pixelSize: Typography.h6
@@ -49,7 +49,7 @@ Item {
                 Button { buttonText: "Fetch Formats"; onPressed: socialMediaVM.fetchFormats() }
                 Button { buttonText: "Destination"; onPressed: smFolderDialog.open() }
                 Label {
-    bold: false
+                    bold: false
                     text: socialMediaVM.destination
                     textColor: Theme.textColor
                     pixelSize: Typography.h6
@@ -61,10 +61,10 @@ Item {
 
             Row {
                 spacing: LayoutMetrics.spacing.md
-                CheckBox {
+                Switch {
                     text: "Audio only (MP3)"
                     checked: socialMediaVM.audioOnly
-                    onToggled: socialMediaVM.audioOnly = checked
+                    onCheckedChanged: socialMediaVM.audioOnly = checked
                 }
             }
 
@@ -92,7 +92,7 @@ Item {
             }
 
             Label {
-    bold: false
+                bold: false
                 text: socialMediaVM.status
                 textColor: Theme.textColor
                 pixelSize: Typography.h6
@@ -100,7 +100,7 @@ Item {
                 width: parent.width
             }
             Label {
-    bold: false
+                bold: false
                 text: socialMediaVM.error
                 textColor: "red"
                 pixelSize: Typography.h6

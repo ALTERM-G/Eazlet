@@ -34,8 +34,10 @@ Window {
 
         Settings {
             id: settings
+            width: LayoutMetrics.size.iconM
+            height: LayoutMetrics.size.iconM
             anchors.right: parent.right
-            anchors.rightMargin: LayoutMetrics.spacing.xxl * 1.5
+            anchors.rightMargin: Math.max(0, (LayoutMetrics.size.topBarHeight - height) / 2)
             anchors.verticalCenter: parent.verticalCenter
         }
     }

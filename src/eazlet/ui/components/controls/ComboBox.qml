@@ -201,9 +201,26 @@ ComboBox {
                     anchors.fill: parent
                     clip: true
                     contentHeight: column.implicitHeight
-                    interactive: control.scrollablePopup
+                    interactive: false
                     boundsBehavior: Flickable.StopAtBounds
-                    ScrollBar.vertical: ScrollBar { policy: control.scrollablePopup ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff }
+                    ScrollBar.vertical: ScrollBar {
+                        policy: control.scrollablePopup ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
+                        implicitWidth: LayoutMetrics.unit * 1.2
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        acceptedButtons: Qt.NoButton
+                        enabled: control.scrollablePopup
+                        onWheel: function(wheel) {
+                            var delta = wheel.pixelDelta.y !== 0
+                                ? wheel.pixelDelta.y * 2
+                                : wheel.angleDelta.y / 120 * LayoutMetrics.unit * 24
+                            var maxY = Math.max(0, popupFlick.contentHeight - popupFlick.height)
+                            popupFlick.contentY = Math.max(0, Math.min(maxY, popupFlick.contentY - delta))
+                            wheel.accepted = true
+                        }
+                    }
 
                     Column {
                         id: column

@@ -1,3 +1,5 @@
+from PySide6.QtGui import QGuiApplication
+
 from eazlet.backend.viewmodels.text_analysis_vm import TextAnalysisVM
 
 
@@ -62,3 +64,43 @@ def test_clear_resets_everything():
     assert vm.wordLengths == []
     assert vm.characterComposition == []
     assert vm.status == "Waiting for text"
+    assert vm.insights == []
+    assert vm.reportText == ""
+
+
+def test_insights_and_report_are_generated():
+    vm = TextAnalysisVM()
+    vm.input = SAMPLE
+    vm.process()
+
+    assert len(vm.insights) >= 4
+    assert any("Readability" in insight for insight in vm.insights)
+    assert any("frequent" in insight for insight in vm.insights)
+    assert vm.reportText.startswith("Text Analysis Report")
+    assert "Words: 19" in vm.reportText
+    assert "Insights:" in vm.reportText
+    assert "hello" in vm.reportText
+
+
+def test_load_sample_populates_input_and_analyzes():
+    vm = TextAnalysisVM()
+    vm.loadSample()
+
+    assert vm.input == TextAnalysisVM.SAMPLE_TEXT
+    assert vm.hasResults is True
+    assert vm.status == "Sample loaded"
+    assert vm.stats
+    assert vm.insights
+    assert vm.reportText
+
+
+def test_copy_report_writes_to_clipboard(qtbot):
+    vm = TextAnalysisVM()
+    vm.input = SAMPLE
+    vm.process()
+
+    vm.copyReport()
+
+    clipboard = QGuiApplication.instance().clipboard()
+    assert vm.status == "Report copied to clipboard"
+    assert clipboard.text() == vm.reportText

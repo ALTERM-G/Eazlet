@@ -146,7 +146,7 @@ Item {
         }
 
         Label {
-    bold: false
+            bold: false
             width: parent.width
             text: root.description
             textColor: root.secondaryTextColor
@@ -157,7 +157,7 @@ Item {
         }
 
         Label {
-    bold: false
+            bold: false
             width: parent.width
             text: root.hint
             textColor: root.secondaryTextColor

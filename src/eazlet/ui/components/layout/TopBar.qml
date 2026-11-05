@@ -21,10 +21,10 @@ Rectangle {
     IconButton {
         id: leftSidebarButton
         iconPath: SVGLibrary.leftSidebar
-        buttonWidth: LayoutMetrics.size.iconL * 0.9
-        buttonHeight: LayoutMetrics.size.iconL * 0.9
+        buttonWidth: LayoutMetrics.size.iconS
+        buttonHeight: LayoutMetrics.size.iconS
         anchors.left: parent.left
-        anchors.leftMargin: LayoutMetrics.spacing.md
+        anchors.leftMargin: Math.max(0, (LayoutMetrics.size.topBarHeight - height) / 2)
         anchors.verticalCenter: parent.verticalCenter
         onPressed: topBar.sidebarToggleClicked()
 

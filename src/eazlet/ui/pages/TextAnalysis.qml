@@ -18,10 +18,51 @@ Item {
         }
     }
 
+    component Panel: Rectangle {
+        id: panel
+
+        property string heading: ""
+        property string subtitle: ""
+        default property alias contentData: body.data
+        readonly property real contentHeight: body.implicitHeight
+                                               + LayoutMetrics.spacing.md * 2
+
+        radius: LayoutMetrics.radius.m
+        color: Theme.inputBackgroundColor
+        border.color: Theme.borderColor
+        border.width: LayoutMetrics.border.m
+        clip: true
+
+        Column {
+            id: body
+            anchors.fill: parent
+            anchors.margins: LayoutMetrics.spacing.md
+            spacing: LayoutMetrics.spacing.sm
+
+            Label {
+                width: parent.width
+                text: panel.heading
+                textColor: Theme.textColor
+                pixelSize: Typography.h4
+                elide: Text.ElideRight
+            }
+
+            Label {
+                width: parent.width
+                visible: panel.subtitle !== ""
+                text: panel.subtitle
+                bold: false
+                textColor: Theme.dividerColor
+                pixelSize: Typography.caption
+                elide: Text.ElideRight
+            }
+        }
+    }
+
     Surface {
         anchors.centerIn: parent
-        width: parent.width * 0.92
-        height: parent.height * 0.92
+        width: parent.width * 0.94
+        height: parent.height * 0.94
 
         ColumnLayout {
             anchors.fill: parent
@@ -34,9 +75,11 @@ Item {
 
                 Title {
                     Layout.fillWidth: true
+                    Layout.minimumWidth: 0
                     text: "Text Analysis"
                     textColor: Theme.textColor
                     pixelSize: Typography.h2
+                    elide: Text.ElideRight
                 }
 
                 Button {
@@ -54,7 +97,7 @@ Item {
             TextEdit {
                 id: analysisInput
                 Layout.fillWidth: true
-                Layout.preferredHeight: 120
+                Layout.preferredHeight: LayoutMetrics.unit * 13
                 text: textAnalysisVM.input
                 placeholderText: "Paste or type text here, then press Process..."
                 onTextChanged: textAnalysisVM.input = text
@@ -77,25 +120,34 @@ Item {
                 spacing: LayoutMetrics.spacing.sm
 
                 Label {
-    bold: false
+                    bold: false
                     Layout.fillWidth: true
+                    Layout.minimumWidth: 0
                     text: textAnalysisVM.status
                     textColor: Theme.dividerColor
                     pixelSize: Typography.body
+                    elide: Text.ElideRight
                 }
 
                 Label {
-    bold: false
-                    text: textAnalysisVM.hasResults
-                          ? "Readability: " + textAnalysisVM.readabilityLabel
-                          : ""
+                    bold: false
+                    visible: textAnalysisVM.hasResults
+                    text: "Readability: " + textAnalysisVM.readabilityLabel
                     textColor: Theme.dividerColor
                     pixelSize: Typography.body
+                    elide: Text.ElideRight
+                }
+
+                Button {
+                    buttonText: "Copy report"
+                    iconPath: SVGLibrary.copy
+                    visible: textAnalysisVM.hasResults
+                    onPressed: textAnalysisVM.copyReport()
                 }
             }
 
             Label {
-    bold: false
+                bold: false
                 Layout.fillWidth: true
                 text: textAnalysisVM.error
                 textColor: "red"
@@ -104,29 +156,44 @@ Item {
                 wrapMode: Text.WordWrap
             }
 
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.topMargin: LayoutMetrics.spacing.xs
+                Layout.bottomMargin: LayoutMetrics.spacing.xs
+                height: LayoutMetrics.border.m
+                radius: height / 2
+                color: Theme.dividerColor
+                opacity: 0.6
+            }
+
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 visible: !textAnalysisVM.hasResults
 
                 Column {
+                    width: Math.min(parent.width * 0.8, LayoutMetrics.unit * 60)
                     anchors.centerIn: parent
-                    spacing: LayoutMetrics.spacing.sm
+                    spacing: LayoutMetrics.spacing.md
 
                     Label {
-                        anchors.horizontalCenter: parent.horizontalCenter
+                        width: parent.width
+                        horizontalAlignment: Text.AlignHCenter
                         text: "No analysis yet"
                         textColor: Theme.textColor
                         pixelSize: Typography.h3
                     }
 
                     Label {
-    bold: false
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: "Add some text above and press Process to see the stats and charts."
+                        bold: false
+                        width: parent.width
+                        horizontalAlignment: Text.AlignHCenter
+                        text: "Paste or type some text above and press Process to see what the analyzer reports."
                         textColor: Theme.dividerColor
                         pixelSize: Typography.h6
+                        wrapMode: Text.WordWrap
                     }
+
                 }
             }
 
@@ -137,19 +204,40 @@ Item {
                 visible: textAnalysisVM.hasResults
                 contentHeight: resultsColumn.implicitHeight
                 clip: true
+                interactive: false
                 flickableDirection: Flickable.VerticalFlick
                 boundsBehavior: Flickable.StopAtBounds
-                ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+                ScrollBar.vertical: ScrollBar {
+                policy: ScrollBar.AsNeeded
+                implicitWidth: LayoutMetrics.unit * 1.2
+            }
+
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
+                    onWheel: function(wheel) {
+                        var delta = wheel.pixelDelta.y !== 0
+                            ? wheel.pixelDelta.y * 2
+                            : wheel.angleDelta.y / 120 * LayoutMetrics.unit * 24
+                        var maxY = Math.max(0, resultsFlick.contentHeight - resultsFlick.height)
+                        resultsFlick.contentY = Math.max(0, Math.min(maxY, resultsFlick.contentY - delta))
+                        wheel.accepted = true
+                    }
+                }
 
                 Column {
                     id: resultsColumn
-                    width: resultsFlick.width - LayoutMetrics.spacing.md
+                    width: Math.max(0, resultsFlick.width - LayoutMetrics.spacing.md)
                     spacing: LayoutMetrics.spacing.md
+
+                    readonly property real cardGap: LayoutMetrics.spacing.md
+                    readonly property bool twoColumns: width >= LayoutMetrics.unit * 62
 
                     Grid {
                         id: statsGrid
                         width: parent.width
-                        columns: 4
+                        columns: Math.max(2, Math.min(6,
+                                  Math.floor(width / Math.max(1, LayoutMetrics.unit * 15))))
                         spacing: LayoutMetrics.spacing.md
 
                         Repeater {
@@ -158,118 +246,201 @@ Item {
                             delegate: Rectangle {
                                 width: (statsGrid.width
                                         - statsGrid.spacing * (statsGrid.columns - 1))
-                                       / statsGrid.columns
-                                height: 74
+                                       / Math.max(1, statsGrid.columns)
+                                height: LayoutMetrics.unit * 9
                                 radius: LayoutMetrics.radius.m
                                 color: Theme.inputBackgroundColor
                                 border.color: Theme.borderColor
                                 border.width: LayoutMetrics.border.m
+                                clip: true
 
                                 Column {
+                                    width: Math.max(0, parent.width
+                                                         - LayoutMetrics.spacing.sm * 2)
                                     anchors.centerIn: parent
-                                    spacing: 2
+                                    spacing: LayoutMetrics.unit * 0.3
 
                                     Label {
-                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        width: parent.width
+                                        horizontalAlignment: Text.AlignHCenter
                                         text: modelData.value
                                         textColor: Theme.textColor
                                         pixelSize: Typography.h3
+                                        elide: Text.ElideRight
                                     }
 
                                     Label {
-    bold: false
-                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        bold: false
+                                        width: parent.width
+                                        horizontalAlignment: Text.AlignHCenter
                                         text: modelData.label
                                         textColor: Theme.dividerColor
                                         pixelSize: Typography.caption
+                                        elide: Text.ElideRight
                                     }
                                 }
                             }
                         }
                     }
 
-                    Row {
+                    Grid {
+                        id: cardsGrid
                         width: parent.width
-                        spacing: LayoutMetrics.spacing.md
+                        columns: resultsColumn.twoColumns ? 2 : 1
+                        spacing: resultsColumn.cardGap
 
-                        Rectangle {
-                            id: topWordsCard
-                            width: (parent.width - parent.spacing) * 0.55
-                            height: 340
-                            radius: LayoutMetrics.radius.m
-                            color: Theme.inputBackgroundColor
-                            border.color: Theme.borderColor
-                            border.width: LayoutMetrics.border.m
+                        readonly property real cardWidth: columns > 0
+                            ? (width - spacing * (columns - 1)) / columns
+                            : width
+
+                        Panel {
+                            width: cardsGrid.cardWidth
+                            height: Math.max(LayoutMetrics.unit * 20, contentHeight)
+                            heading: "Top words"
+                            subtitle: "Common stop words are skipped."
 
                             Column {
-                                anchors.fill: parent
-                                anchors.margins: LayoutMetrics.spacing.md
-                                spacing: LayoutMetrics.spacing.sm
+                                width: parent.width
+                                spacing: LayoutMetrics.unit * 0.35
 
-                                Label {
-                                    text: "Top words"
-                                    textColor: Theme.textColor
-                                    pixelSize: Typography.h4
+                                Repeater {
+                                    model: textAnalysisVM.topWords
+
+                                    delegate: Item {
+                                        width: parent.width
+                                        height: LayoutMetrics.unit * 2.6
+
+                                        readonly property real labelWidth: LayoutMetrics.unit * 24
+                                        readonly property real countWidth: LayoutMetrics.unit * 5
+                                        readonly property real barX: labelWidth
+                                                                  + LayoutMetrics.spacing.sm
+                                        readonly property real barWidth: Math.max(
+                                            0, parent.width - labelWidth - countWidth
+                                               - LayoutMetrics.spacing.sm * 2)
+
+                                        Label {
+                                            bold: false
+                                            width: labelWidth
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: modelData.word
+                                            textColor: Theme.textColor
+                                            pixelSize: Typography.h6
+                                            elide: Text.ElideRight
+                                        }
+
+                                        Rectangle {
+                                            x: barX
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            width: barWidth
+                                            height: LayoutMetrics.unit * 1.3
+                                            radius: height / 2
+                                            color: Theme.dividerColor
+                                            opacity: 0.25
+                                        }
+
+                                        Rectangle {
+                                            x: barX
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            width: Math.max(2, barWidth * modelData.count
+                                                               / Math.max(1, textAnalysisVM.topWordMax))
+                                            height: LayoutMetrics.unit * 1.3
+                                            radius: height / 2
+                                            color: Theme.themeColor
+                                        }
+
+                                        Label {
+                                            bold: false
+                                            width: countWidth
+                                            anchors.right: parent.right
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            horizontalAlignment: Text.AlignRight
+                                            text: modelData.count
+                                            textColor: Theme.dividerColor
+                                            pixelSize: Typography.caption
+                                            elide: Text.ElideRight
+                                        }
+                                    }
                                 }
+                            }
+                        }
 
-                                Label {
-    bold: false
-                                    text: "Common stop words are skipped."
-                                    textColor: Theme.dividerColor
-                                    pixelSize: Typography.caption
-                                }
+                        Panel {
+                            width: cardsGrid.cardWidth
+                            height: Math.max(LayoutMetrics.unit * 20, contentHeight)
+                            heading: "Word length distribution"
+                            subtitle: "Number of words by character count."
 
-                                Column {
+                            Label {
+                                bold: false
+                                width: parent.width
+                                visible: textAnalysisVM.wordLengths.length === 0
+                                text: "No word length data yet."
+                                textColor: Theme.dividerColor
+                                pixelSize: Typography.h6
+                                wrapMode: Text.WordWrap
+                            }
+
+                            Item {
+                                width: parent.width
+                                height: textAnalysisVM.wordLengths.length > 0 ? LayoutMetrics.unit * 30 : 0
+                                visible: textAnalysisVM.wordLengths.length > 0
+
+                                Row {
+                                    id: lengthRow
                                     width: parent.width
-                                    spacing: 3
+                                    height: parent.height
+                                    spacing: LayoutMetrics.unit * 0.55
 
                                     Repeater {
-                                        model: textAnalysisVM.topWords
+                                        model: textAnalysisVM.wordLengths
 
                                         delegate: Item {
-                                            width: parent.width
-                                            height: 20
-
-                                            Label {
-    bold: false
-                                                width: 92
-                                                text: modelData.word
-                                                textColor: Theme.textColor
-                                                pixelSize: Typography.h6
-                                                elide: Text.ElideRight
-                                            }
+                                            width: Math.max(0,
+                                                (lengthRow.width
+                                                 - lengthRow.spacing * Math.max(0,
+                                                       textAnalysisVM.wordLengths.length - 1))
+                                                / Math.max(1, textAnalysisVM.wordLengths.length))
+                                            height: parent.height
 
                                             Rectangle {
-                                                x: 100
-                                                anchors.verticalCenter: parent.verticalCenter
-                                                width: parent.width - 150
-                                                height: 10
-                                                radius: height / 2
-                                                color: Theme.dividerColor
-                                                opacity: 0.25
-                                            }
-
-                                            Rectangle {
-                                                x: 100
-                                                anchors.verticalCenter: parent.verticalCenter
-                                                width: Math.max(
-                                                    2,
-                                                    (parent.width - 150)
+                                                id: lengthBar
+                                                anchors.horizontalCenter: parent.horizontalCenter
+                                                anchors.bottom: lengthLabel.top
+                                                anchors.bottomMargin: LayoutMetrics.unit * 0.4
+                                                width: Math.max(2, parent.width * 0.64)
+                                                height: Math.max(2,
+                                                    (parent.height - LayoutMetrics.unit * 24.5)
                                                     * modelData.count
-                                                    / Math.max(1, textAnalysisVM.topWordMax)
-                                                )
-                                                height: 10
-                                                radius: height / 2
+                                                    / Math.max(1, textAnalysisVM.wordLengthMax))
+                                                radius: LayoutMetrics.radius.s
                                                 color: Theme.themeColor
                                             }
 
                                             Label {
-    bold: false
-                                                anchors.right: parent.right
-                                                anchors.verticalCenter: parent.verticalCenter
+                                                bold: false
+                                                width: parent.width
+                                                horizontalAlignment: Text.AlignHCenter
+                                                anchors.horizontalCenter: parent.horizontalCenter
+                                                anchors.bottom: lengthBar.top
+                                                anchors.bottomMargin: LayoutMetrics.unit * 0.4
                                                 text: modelData.count
+                                                visible: modelData.count > 0
                                                 textColor: Theme.dividerColor
                                                 pixelSize: Typography.caption
+                                                elide: Text.ElideRight
+                                            }
+
+                                            Label {
+                                                id: lengthLabel
+                                                bold: false
+                                                width: parent.width
+                                                horizontalAlignment: Text.AlignHCenter
+                                                anchors.horizontalCenter: parent.horizontalCenter
+                                                anchors.bottom: parent.bottom
+                                                text: modelData.length
+                                                textColor: Theme.dividerColor
+                                                pixelSize: Typography.caption
+                                                elide: Text.ElideRight
                                             }
                                         }
                                     }
@@ -277,114 +448,19 @@ Item {
                             }
                         }
 
-                        Rectangle {
-                            width: parent.width - topWordsCard.width - parent.spacing
-                            height: 340
-                            radius: LayoutMetrics.radius.m
-                            color: Theme.inputBackgroundColor
-                            border.color: Theme.borderColor
-                            border.width: LayoutMetrics.border.m
+                        Panel {
+                            width: cardsGrid.cardWidth
+                            height: LayoutMetrics.unit * 30
+                            heading: "Character composition"
+                            subtitle: "Letters, digits, whitespace, and punctuation."
 
                             Column {
-                                anchors.fill: parent
-                                anchors.margins: LayoutMetrics.spacing.md
+                                width: parent.width
                                 spacing: LayoutMetrics.spacing.sm
-
-                                Label {
-                                    text: "Word length distribution"
-                                    textColor: Theme.textColor
-                                    pixelSize: Typography.h4
-                                }
-
-                                Item {
-                                    width: parent.width
-                                    height: parent.height - 34
-
-                                    Row {
-                                        width: parent.width
-                                        height: parent.height
-                                        spacing: 4
-
-                                        Repeater {
-                                            model: textAnalysisVM.wordLengths
-
-                                            delegate: Item {
-                                                width: (parent.width
-                                                        - parent.spacing
-                                                          * (textAnalysisVM.wordLengths.length - 1))
-                                                       / Math.max(1, textAnalysisVM.wordLengths.length)
-                                                height: parent.height
-
-                                                Rectangle {
-                                                    id: lengthBar
-                                                    anchors.horizontalCenter: parent.horizontalCenter
-                                                    anchors.bottom: lengthLabel.top
-                                                    width: parent.width * 0.65
-                                                    height: Math.max(
-                                                        2,
-                                                        (parent.height - 38)
-                                                        * modelData.count
-                                                        / Math.max(1, textAnalysisVM.wordLengthMax)
-                                                    )
-                                                    radius: 2
-                                                    color: Theme.themeColor
-                                                }
-
-                                                Label {
-    bold: false
-                                                    anchors.horizontalCenter: parent.horizontalCenter
-                                                    anchors.bottom: lengthBar.top
-                                                    anchors.bottomMargin: 2
-                                                    text: modelData.count
-                                                    visible: modelData.count > 0
-                                                    textColor: Theme.dividerColor
-                                                    pixelSize: Typography.caption
-                                                }
-
-                                                Label {
-    bold: false
-                                                    id: lengthLabel
-                                                    anchors.horizontalCenter: parent.horizontalCenter
-                                                    anchors.bottom: parent.bottom
-                                                    text: modelData.length
-                                                    textColor: Theme.dividerColor
-                                                    pixelSize: Typography.caption
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Row {
-                        width: parent.width
-                        spacing: LayoutMetrics.spacing.md
-
-                        Rectangle {
-                            id: compositionCard
-                            width: (parent.width - parent.spacing) * 0.55
-                            height: 260
-                            radius: LayoutMetrics.radius.m
-                            color: Theme.inputBackgroundColor
-                            border.color: Theme.borderColor
-                            border.width: LayoutMetrics.border.m
-
-                            Column {
-                                anchors.fill: parent
-                                anchors.margins: LayoutMetrics.spacing.md
-                                spacing: LayoutMetrics.spacing.sm
-
-                                Label {
-                                    text: "Character composition"
-                                    textColor: Theme.textColor
-                                    pixelSize: Typography.h4
-                                }
 
                                 Row {
                                     width: parent.width
-                                    height: 24
+                                    height: LayoutMetrics.unit * 3
                                     spacing: 0
 
                                     Repeater {
@@ -402,57 +478,63 @@ Item {
 
                                 Column {
                                     width: parent.width
-                                    spacing: 3
+                                    spacing: LayoutMetrics.unit * 0.35
 
                                     Repeater {
                                         model: textAnalysisVM.characterComposition
 
-                                        delegate: Row {
+                                        delegate: Item {
                                             width: parent.width
-                                            height: 22
-                                            spacing: LayoutMetrics.spacing.sm
+                                            height: LayoutMetrics.unit * 2.8
 
                                             Rectangle {
+                                                id: legendSwatch
+                                                anchors.left: parent.left
                                                 anchors.verticalCenter: parent.verticalCenter
-                                                width: 10
-                                                height: 10
-                                                radius: 2
+                                                width: LayoutMetrics.unit * 1.4
+                                                height: width
+                                                radius: LayoutMetrics.radius.s
                                                 color: compositionColor(index)
                                             }
 
                                             Label {
-    bold: false
-                                                width: 80
+                                                bold: false
+                                                anchors.left: legendSwatch.right
+                                                anchors.leftMargin: LayoutMetrics.spacing.sm
                                                 anchors.verticalCenter: parent.verticalCenter
+                                                width: Math.max(0, parent.width * 0.36)
                                                 text: modelData.name
                                                 textColor: Theme.textColor
                                                 pixelSize: Typography.h6
-                                            }
-
-                                            Item {
-                                                width: parent.width - 80 - 90
-                                                      - LayoutMetrics.spacing.sm * 3
-                                                height: 1
+                                                elide: Text.ElideRight
                                             }
 
                                             Label {
-    bold: false
+                                                bold: false
+                                                anchors.right: legendPercent.left
+                                                anchors.rightMargin: LayoutMetrics.spacing.sm
                                                 anchors.verticalCenter: parent.verticalCenter
+                                                width: LayoutMetrics.unit * 24
+                                                horizontalAlignment: Text.AlignRight
                                                 text: modelData.value
                                                 textColor: Theme.dividerColor
                                                 pixelSize: Typography.caption
+                                                elide: Text.ElideRight
                                             }
 
                                             Label {
-    bold: false
-                                                width: 52
+                                                id: legendPercent
+                                                bold: false
+                                                anchors.right: parent.right
                                                 anchors.verticalCenter: parent.verticalCenter
+                                                width: LayoutMetrics.unit * 7
                                                 horizontalAlignment: Text.AlignRight
                                                 text: (modelData.value
                                                        / Math.max(1, textAnalysisVM.characterTotal)
                                                        * 100).toFixed(1) + "%"
                                                 textColor: Theme.dividerColor
                                                 pixelSize: Typography.caption
+                                                elide: Text.ElideRight
                                             }
                                         }
                                     }
@@ -460,62 +542,72 @@ Item {
                             }
                         }
 
-                        Rectangle {
-                            width: parent.width - compositionCard.width - parent.spacing
-                            height: 260
-                            radius: LayoutMetrics.radius.m
-                            color: Theme.inputBackgroundColor
-                            border.color: Theme.borderColor
-                            border.width: LayoutMetrics.border.m
+                        Panel {
+                            width: cardsGrid.cardWidth
+                            height: LayoutMetrics.unit * 30
+                            heading: "Longest words"
+                            subtitle: "Unique words, longest first."
 
                             Column {
-                                anchors.fill: parent
-                                anchors.margins: LayoutMetrics.spacing.md
-                                spacing: LayoutMetrics.spacing.sm
+                                width: parent.width
+                                spacing: LayoutMetrics.unit * 0.35
 
-                                Label {
-                                    text: "Longest words"
-                                    textColor: Theme.textColor
-                                    pixelSize: Typography.h4
-                                }
+                                Repeater {
+                                    model: textAnalysisVM.longestWords
 
-                                Label {
-    bold: false
-                                    text: "Unique words, longest first."
-                                    textColor: Theme.dividerColor
-                                    pixelSize: Typography.caption
-                                }
+                                    delegate: Item {
+                                        width: parent.width
+                                        height: LayoutMetrics.unit * 2.8
 
-                                Column {
-                                    width: parent.width
-                                    spacing: 3
+                                        Label {
+                                            bold: false
+                                            width: Math.max(0,
+                                                parent.width - LayoutMetrics.unit * 10
+                                                - LayoutMetrics.spacing.sm)
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: modelData.word
+                                            textColor: Theme.textColor
+                                            pixelSize: Typography.h6
+                                            elide: Text.ElideRight
+                                        }
 
-                                    Repeater {
-                                        model: textAnalysisVM.longestWords
-
-                                        delegate: Row {
-                                            width: parent.width
-                                            height: 22
-                                            spacing: LayoutMetrics.spacing.sm
-
-                                            Label {
-    bold: false
-                                                width: parent.width - 70
-                                                text: modelData.word
-                                                textColor: Theme.textColor
-                                                pixelSize: Typography.h6
-                                                elide: Text.ElideRight
-                                            }
-
-                                            Label {
-    bold: false
-                                                anchors.verticalCenter: parent.verticalCenter
-                                                text: modelData.length + " chars"
-                                                textColor: Theme.dividerColor
-                                                pixelSize: Typography.caption
-                                            }
+                                        Label {
+                                            bold: false
+                                            width: LayoutMetrics.unit * 9
+                                            anchors.right: parent.right
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            horizontalAlignment: Text.AlignRight
+                                            text: modelData.length + " chars"
+                                            textColor: Theme.dividerColor
+                                            pixelSize: Typography.caption
+                                            elide: Text.ElideRight
                                         }
                                     }
+                                }
+                            }
+                        }
+                    }
+
+                    Panel {
+                        width: parent.width
+                        height: contentHeight
+                        heading: "Insights"
+                        subtitle: "Automatic observations generated from the current text."
+
+                        Column {
+                            width: parent.width
+                            spacing: LayoutMetrics.spacing.xs
+
+                            Repeater {
+                                model: textAnalysisVM.insights
+
+                                delegate: Label {
+                                    bold: false
+                                    width: parent.width
+                                    text: "•  " + modelData
+                                    textColor: Theme.textColor
+                                    pixelSize: Typography.h6
+                                    wrapMode: Text.WordWrap
                                 }
                             }
                         }

@@ -14,8 +14,12 @@ Item {
         height: parent.height * 0.9
 
         Flickable {
-            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-            interactive: true
+            id: flick
+            ScrollBar.vertical: ScrollBar {
+                policy: ScrollBar.AsNeeded
+                implicitWidth: LayoutMetrics.unit * 1.2
+            }
+            interactive: false
 
             anchors.fill: parent
             anchors.margins: LayoutMetrics.spacing.lg
@@ -23,6 +27,19 @@ Item {
             clip: true
             flickableDirection: Flickable.VerticalFlick
             boundsBehavior: Flickable.StopAtBounds
+
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.NoButton
+                onWheel: function(wheel) {
+                    var delta = wheel.pixelDelta.y !== 0
+                        ? wheel.pixelDelta.y * 2
+                        : wheel.angleDelta.y / 120 * LayoutMetrics.unit * 24
+                    var maxY = Math.max(0, flick.contentHeight - flick.height)
+                    flick.contentY = Math.max(0, Math.min(maxY, flick.contentY - delta))
+                    wheel.accepted = true
+                }
+            }
 
             Column {
                 id: contentColumn
@@ -48,6 +65,7 @@ Item {
                     Button {
                         id: pasteBtn
                         buttonText: "Paste"
+                        iconPath: SVGLibrary.paste
                         onPressed: unifiedDownloadVM.pasteFromClipboard()
                     }
                 }
@@ -56,7 +74,7 @@ Item {
                     spacing: LayoutMetrics.spacing.sm
                     Button { buttonText: "Destination"; onPressed: unifFolderDialog.open() }
                     Label {
-    bold: false
+                        bold: false
                         text: unifiedDownloadVM.destination
                         textColor: Theme.textColor
                         pixelSize: Typography.h6
@@ -76,10 +94,10 @@ Item {
                     Row {
                         spacing: LayoutMetrics.spacing.md
                         Button { buttonText: "Load Formats"; onPressed: unifiedDownloadVM.fetchFormats() }
-                        CheckBox {
+                        Switch {
                             text: "Audio only (MP3)"
                             checked: unifiedDownloadVM.audioOnly
-                            onToggled: unifiedDownloadVM.audioOnly = checked
+                            onCheckedChanged: unifiedDownloadVM.audioOnly = checked
                         }
                     }
 
@@ -87,7 +105,7 @@ Item {
                         spacing: LayoutMetrics.spacing.md
                         visible: !unifiedDownloadVM.audioOnly
                         Label {
-    bold: false
+                            bold: false
                             text: "Format:"
                             textColor: Theme.textColor
                             pixelSize: Typography.h6
@@ -122,21 +140,21 @@ Item {
                     spacing: LayoutMetrics.spacing.lg
                     visible: unifiedDownloadVM.downloading || unifiedDownloadVM.size !== "" || unifiedDownloadVM.speed !== ""
                     Label {
-    bold: false
+                        bold: false
                         text: "Size: " + unifiedDownloadVM.size
                         textColor: Theme.textColor
                         pixelSize: Typography.h6
                         visible: unifiedDownloadVM.size !== ""
                     }
                     Label {
-    bold: false
+                        bold: false
                         text: "Speed: " + unifiedDownloadVM.speed
                         textColor: Theme.textColor
                         pixelSize: Typography.h6
                         visible: unifiedDownloadVM.speed !== ""
                     }
                     Label {
-    bold: false
+                        bold: false
                         text: "ETA: " + unifiedDownloadVM.eta
                         textColor: Theme.textColor
                         pixelSize: Typography.h6
@@ -145,7 +163,7 @@ Item {
                 }
 
                 Label {
-    bold: false
+                    bold: false
                     text: unifiedDownloadVM.status
                     textColor: Theme.textColor
                     pixelSize: Typography.h6
@@ -153,7 +171,7 @@ Item {
                     width: parent.width
                 }
                 Label {
-    bold: false
+                    bold: false
                     text: unifiedDownloadVM.error
                     textColor: "red"
                     pixelSize: Typography.h6

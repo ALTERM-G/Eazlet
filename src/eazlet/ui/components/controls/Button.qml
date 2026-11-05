@@ -20,7 +20,7 @@ Item {
     readonly property color faceColor: primary ? Theme.themeColor : (mouseArea.containsMouse ? Theme.hoverBackgroundColor : Theme.backgroundColor)
 
     width: Math.max(LayoutMetrics.size.buttonWidth, contentRow.implicitWidth + horizontalPadding * 2)
-    height: LayoutMetrics.size.controlHeight * heightMultiplier + depth
+    height: LayoutMetrics.size.controlHeight * 1.15 * heightMultiplier + depth
     implicitWidth: Math.max(LayoutMetrics.size.buttonWidth, contentRow.implicitWidth + horizontalPadding * 2)
 
     activeFocusOnTab: true
@@ -52,7 +52,7 @@ Item {
         y: root.pressOffset
         radius: LayoutMetrics.radius.m
         border.color: root.primary ? Theme.themeColor : Theme.borderColor
-        border.width: LayoutMetrics.border.l
+        border.width: LayoutMetrics.border.m
         color: mouseArea.pressed ? Qt.darker(root.faceColor, 1.15) : root.faceColor
 
         Behavior on color {
@@ -102,7 +102,7 @@ Item {
         radius: face.radius
         color: root.sideColor
         border.color: root.sideColor
-        border.width: LayoutMetrics.border.l
+        border.width: LayoutMetrics.border.m
         z: -1
     }
 

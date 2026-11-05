@@ -14,8 +14,12 @@ Item {
         height: parent.height * 0.9
 
         Flickable {
-            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-            interactive: true
+            id: flick
+            ScrollBar.vertical: ScrollBar {
+                policy: ScrollBar.AsNeeded
+                implicitWidth: LayoutMetrics.unit * 1.2
+            }
+            interactive: false
 
             anchors.fill: parent
             anchors.margins: LayoutMetrics.spacing.lg
@@ -23,6 +27,19 @@ Item {
             clip: true
             flickableDirection: Flickable.VerticalFlick
             boundsBehavior: Flickable.StopAtBounds
+
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.NoButton
+                onWheel: function(wheel) {
+                    var delta = wheel.pixelDelta.y !== 0
+                        ? wheel.pixelDelta.y * 2
+                        : wheel.angleDelta.y / 120 * LayoutMetrics.unit * 24
+                    var maxY = Math.max(0, flick.contentHeight - flick.height)
+                    flick.contentY = Math.max(0, Math.min(maxY, flick.contentY - delta))
+                    wheel.accepted = true
+                }
+            }
 
             Column {
                 id: orgColumn
@@ -71,13 +88,13 @@ Item {
                 }
 
                 Label {
-    bold: false
+                    bold: false
                     text: organizerVM.status
                     textColor: Theme.textColor
                     pixelSize: Typography.h6
                 }
                 Label {
-    bold: false
+                    bold: false
                     text: organizerVM.error
                     textColor: "red"
                     pixelSize: Typography.h6
@@ -108,7 +125,7 @@ Item {
                             Repeater {
                                 model: modelData.files
                                 delegate: Label {
-    bold: false
+                                    bold: false
                                     text: "  " + (modelData.path ? modelData.path : "")
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6

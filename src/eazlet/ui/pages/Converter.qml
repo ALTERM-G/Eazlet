@@ -14,8 +14,12 @@ Item {
         height: parent.height * 0.9
 
         Flickable {
-            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-            interactive: true
+            id: flick
+            ScrollBar.vertical: ScrollBar {
+                policy: ScrollBar.AsNeeded
+                implicitWidth: LayoutMetrics.unit * 1.2
+            }
+            interactive: false
 
             anchors.fill: parent
             anchors.margins: LayoutMetrics.spacing.lg
@@ -23,6 +27,19 @@ Item {
             clip: true
             flickableDirection: Flickable.VerticalFlick
             boundsBehavior: Flickable.StopAtBounds
+
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.NoButton
+                onWheel: function(wheel) {
+                    var delta = wheel.pixelDelta.y !== 0
+                        ? wheel.pixelDelta.y * 2
+                        : wheel.angleDelta.y / 120 * LayoutMetrics.unit * 24
+                    var maxY = Math.max(0, flick.contentHeight - flick.height)
+                    flick.contentY = Math.max(0, Math.min(maxY, flick.contentY - delta))
+                    wheel.accepted = true
+                }
+            }
 
             Column {
                 id: convColumn
@@ -51,7 +68,7 @@ Item {
                     spacing: LayoutMetrics.spacing.sm
                     Button { buttonText: "Clear"; onPressed: converterVM.clearFiles() }
                     Label {
-    bold: false
+                        bold: false
                         text: converterVM.files.length + " file(s)"
                         textColor: Theme.textColor
                         pixelSize: Typography.h6
@@ -72,7 +89,7 @@ Item {
                             anchors.margins: LayoutMetrics.spacing.sm
                             spacing: LayoutMetrics.spacing.sm
                             Label {
-    bold: false
+                                bold: false
                                 text: modelData.name
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
@@ -80,7 +97,7 @@ Item {
                                 elide: Text.ElideMiddle
                             }
                             Label {
-    bold: false
+                                bold: false
                                 text: modelData.ext.toUpperCase()
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
@@ -95,7 +112,7 @@ Item {
                     spacing: LayoutMetrics.spacing.md
                     visible: converterVM.files.length > 0 && converterVM.validTargetFormats.length > 0
                     Label {
-    bold: false
+                        bold: false
                         text: "Convert to:"
                         textColor: Theme.textColor
                         pixelSize: Typography.h6
@@ -119,7 +136,7 @@ Item {
                 Row {
                     spacing: LayoutMetrics.spacing.sm
                     Label {
-    bold: false
+                        bold: false
                         text: "Output: " + converterVM.outputDir
                         textColor: Theme.textColor
                         pixelSize: Typography.h6
@@ -142,13 +159,13 @@ Item {
                 }
 
                 Label {
-    bold: false
+                    bold: false
                     text: converterVM.status
                     textColor: Theme.textColor
                     pixelSize: Typography.h6
                 }
                 Label {
-    bold: false
+                    bold: false
                     text: converterVM.error
                     textColor: "red"
                     pixelSize: Typography.h6

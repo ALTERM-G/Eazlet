@@ -70,6 +70,8 @@ Column {
             id: themeComboBox
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.topMargin: LayoutMetrics.spacing.xxl
+            scrollablePopup: true
+            maxVisibleItems: 12
 
             model: Theme.themeNames
             property bool initialized: false
@@ -97,6 +99,8 @@ Column {
             id: fontComboBox
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.topMargin: LayoutMetrics.spacing.xxl
+            scrollablePopup: true
+            maxVisibleItems: 12
 
             model: typeof FontFamilies !== "undefined" ? FontFamilies : ["Roboto", "sans-serif"]
             property bool initialized: false

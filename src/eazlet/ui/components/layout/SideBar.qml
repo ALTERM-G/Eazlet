@@ -202,15 +202,6 @@ Rectangle {
         }
     }
 
-    SideBarToggle {
-        id: toggleButton
-        anchors.right: parent.right
-        anchors.rightMargin: LayoutMetrics.spacing.sm
-        anchors.verticalCenter: parent.verticalCenter
-        collapsed: sidebar.collapsed
-        onToggled: sidebar.collapsed = !sidebar.collapsed
-    }
-
     Shortcut {
         sequence: Shortcuts.primary("closeSidebar")
         enabled: sidebar.expanded && !Shortcuts.capturing

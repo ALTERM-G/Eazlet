@@ -15,8 +15,11 @@ Item {
         source: root.path
         fillMode: VectorImage.PreserveAspectFit
         preferredRendererType: VectorImage.CurveRenderer
+        antialiasing: true
         layer.enabled: true
         layer.smooth: true
+        layer.textureSize: Qt.size(Math.max(1, Math.round(width * 2)),
+                                   Math.max(1, Math.round(height * 2)))
         layer.effect: MultiEffect {
             brightness: 1.0
             colorization: 1.0

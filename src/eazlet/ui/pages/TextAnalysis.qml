@@ -99,6 +99,8 @@ Item {
                 Button {
                     buttonText: "Process"
                     primary: true
+                    isometric: true
+                    heightMultiplier: 1.3
                     onPressed: textAnalysisVM.process()
                 }
 

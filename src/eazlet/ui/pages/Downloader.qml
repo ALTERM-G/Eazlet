@@ -49,7 +49,7 @@ Item {
 
             Row {
                 spacing: LayoutMetrics.spacing.md
-                Button { buttonText: "Download"; primary: true; enabled: !downloadVM.downloading; onPressed: downloadVM.startDownload() }
+                Button { buttonText: "Download"; primary: true; isometric: true; heightMultiplier: 1.3; enabled: !downloadVM.downloading; onPressed: downloadVM.startDownload() }
                 Button { buttonText: "Add to Queue"; enabled: !downloadVM.downloading; onPressed: downloadVM.addToQueue() }
                 Button { buttonText: "Pause"; enabled: downloadVM.downloading; onPressed: downloadVM.pause() }
                 Button { buttonText: "Resume"; onPressed: downloadVM.resume() }

@@ -168,7 +168,7 @@ Item {
 
                 Row {
                     spacing: LayoutMetrics.spacing.sm
-                    Button { buttonText: "Compress"; primary: true; enabled: !archiveVM.compressing && !archiveVM.extracting && archiveVM.files.length > 0; onPressed: archiveVM.compress() }
+                    Button { buttonText: "Compress"; primary: true; isometric: true; heightMultiplier: 1.3; enabled: !archiveVM.compressing && !archiveVM.extracting && archiveVM.files.length > 0; onPressed: archiveVM.compress() }
                 }
 
                 Row {

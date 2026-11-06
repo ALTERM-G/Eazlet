@@ -162,7 +162,7 @@ Item {
 
                 Row {
                     spacing: LayoutMetrics.spacing.sm
-                    Button { buttonText: "Convert"; primary: true; enabled: !converterVM.converting && converterVM.files.length > 0 && converterVM.targetFormat !== ""; onPressed: converterVM.convert() }
+                    Button { buttonText: "Convert"; primary: true; isometric: true; heightMultiplier: 1.3; enabled: !converterVM.converting && converterVM.files.length > 0 && converterVM.targetFormat !== ""; onPressed: converterVM.convert() }
                     Button { buttonText: "Cancel"; enabled: converterVM.converting; onPressed: converterVM.cancel() }
                 }
 

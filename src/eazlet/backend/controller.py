@@ -6,10 +6,12 @@ from PySide6.QtCore import Property, QIODevice, QObject, QSaveFile, Signal, Slot
 
 from .viewmodels import (
     ArchiveVM,
+    AsciiArtVM,
     CipherVM,
     ConverterVM,
     DownloadVM,
     MainVM,
+    NumberToolsVM,
     OrganizerVM,
     SettingsVM,
     SocialMediaVM,
@@ -50,6 +52,8 @@ class Controller(QObject):
         self._organizer_vm = OrganizerVM(self)
         self._cipher_vm = CipherVM(self)
         self._text_analysis_vm = TextAnalysisVM(self)
+        self._ascii_art_vm = AsciiArtVM(self)
+        self._number_tools_vm = NumberToolsVM(self)
 
         self._language_files = ["en.json", "fr.json", "de.json", "es.json", "it.json"]
         self._languages_path = (
@@ -283,3 +287,11 @@ class Controller(QObject):
     @Property(QObject, constant=True)
     def textAnalysisVM(self) -> TextAnalysisVM:
         return self._text_analysis_vm
+
+    @Property(QObject, constant=True)
+    def asciiArtVM(self) -> AsciiArtVM:
+        return self._ascii_art_vm
+
+    @Property(QObject, constant=True)
+    def numberToolsVM(self) -> NumberToolsVM:
+        return self._number_tools_vm

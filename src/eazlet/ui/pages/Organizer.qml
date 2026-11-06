@@ -73,7 +73,7 @@ Item {
 
                 Row {
                     spacing: LayoutMetrics.spacing.sm
-                    Button { buttonText: "Scan for duplicates"; primary: true; enabled: !organizerVM.scanning; onPressed: organizerVM.scan() }
+                    Button { buttonText: "Scan for duplicates"; primary: true; isometric: true; heightMultiplier: 1.3; enabled: !organizerVM.scanning; onPressed: organizerVM.scan() }
                 }
 
                 Row {

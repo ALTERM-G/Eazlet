@@ -32,6 +32,8 @@ Rectangle {
             case "organizer": return SVGLibrary.organizer
             case "codeTools": return SVGLibrary.codeTools
             case "textAnalysis": return SVGLibrary.textAnalysis
+            case "asciiArt": return SVGLibrary.asciiArt
+            case "numberTools": return SVGLibrary.numberTools
             case "settings": return SVGLibrary.settings
             case "info": return SVGLibrary.info
             default: return ""
@@ -132,7 +134,9 @@ Rectangle {
                 { label: "Archive", icon: "archive" },
                 { label: "Organizer", icon: "organizer" },
                 { label: "Code Tools", icon: "codeTools" },
-                { label: "Text Analysis", icon: "textAnalysis" }
+                { label: "Text Analysis", icon: "textAnalysis" },
+                { label: "ASCII Art", icon: "asciiArt" },
+                { label: "Number Tools", icon: "numberTools" }
             ]
 
             delegate: SideBarItem {

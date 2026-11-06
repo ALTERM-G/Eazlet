@@ -157,6 +157,8 @@ def build_engine(src_path: Path | None = None) -> QQmlApplicationEngine:
     engine.rootContext().setContextProperty("organizerVM", controller.organizerVM)
     engine.rootContext().setContextProperty("cipherVM", controller.cipherVM)
     engine.rootContext().setContextProperty("textAnalysisVM", controller.textAnalysisVM)
+    engine.rootContext().setContextProperty("asciiArtVM", controller.asciiArtVM)
+    engine.rootContext().setContextProperty("numberToolsVM", controller.numberToolsVM)
 
     saved_family = controller.get_font_family()
     if saved_family and saved_family in all_families:

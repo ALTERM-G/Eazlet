@@ -83,7 +83,7 @@ Item {
 
             Row {
                 spacing: LayoutMetrics.spacing.md
-                Button { buttonText: "Download"; primary: true; enabled: !socialMediaVM.downloading; onPressed: socialMediaVM.startDownload() }
+                Button { buttonText: "Download"; primary: true; isometric: true; heightMultiplier: 1.3; enabled: !socialMediaVM.downloading; onPressed: socialMediaVM.startDownload() }
                 Button { buttonText: "Cancel"; enabled: socialMediaVM.downloading; onPressed: socialMediaVM.cancel() }
             }
 

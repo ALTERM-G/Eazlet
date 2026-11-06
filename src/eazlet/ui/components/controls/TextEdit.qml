@@ -10,6 +10,11 @@ Item {
     property string placeholderText: ""
     property alias text: area.text
     property alias readOnly: area.readOnly
+    property alias wrapMode: area.wrapMode
+    property alias fontFamily: area.font.family
+    property alias fontPixelSize: area.font.pixelSize
+    property bool horizontalScroll: false
+    property bool showCopyButton: false
 
     function paste() {
         area.forceActiveFocus()
@@ -31,7 +36,38 @@ Item {
         anchors.fill: parent
 
         clip: true
-        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+        ScrollBar.horizontal: ScrollBar {
+            id: hbar
+            readonly property real gap: LayoutMetrics.border.m * 2
+            parent: view
+            x: view.leftPadding + gap
+            y: view.height - height - gap
+            width: view.availableWidth - gap * 2
+            policy: control.horizontalScroll ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
+            visible: control.horizontalScroll && hbar.size < 1.0
+            padding: 0
+
+            contentItem: Rectangle {
+                implicitHeight: LayoutMetrics.unit * 1.2
+                implicitWidth: LayoutMetrics.spacing.sm
+                radius: height / 2
+                color: hbar.pressed ? Theme.themeColor
+                     : hbar.hovered ? Theme.borderColor
+                     : Theme.dividerColor
+                opacity: (hbar.active || hbar.hovered) ? 1.0 : 0.55
+
+                Behavior on color {
+                    enabled: LayoutMetrics.animationsEnabled
+                    ColorAnimation { duration: 120 }
+                }
+
+                Behavior on opacity {
+                    enabled: LayoutMetrics.animationsEnabled
+                    NumberAnimation { duration: 120 }
+                }
+            }
+        }
 
         Binding {
             target: view.contentItem
@@ -91,7 +127,9 @@ Item {
 
         TextArea {
             id: area
-            width: view.availableWidth
+            width: control.horizontalScroll
+                   ? Math.max(view.availableWidth, implicitWidth)
+                   : view.availableWidth
 
             font.pixelSize: Typography.h4
             font.family: Typography.fontRegular
@@ -140,7 +178,7 @@ Item {
                 text: control.placeholderText
                 color: Theme.dividerColor
                 font: area.font
-                wrapMode: Text.Wrap
+                wrapMode: area.wrapMode
                 visible: text.length > 0 && area.text.length === 0
                 enabled: false
                 z: 1
@@ -154,6 +192,22 @@ Item {
                 z: 5
             }
         }
+    }
+
+    IconButton {
+        id: copyOverlay
+        anchors.top: parent.top
+        anchors.right: parent.right
+        anchors.topMargin: LayoutMetrics.spacing.sm
+        anchors.rightMargin: LayoutMetrics.spacing.sm
+        z: 10
+        visible: control.showCopyButton
+        opacity: control.text.length > 0 ? 1.0 : 0.45
+        enabled: control.text.length > 0
+        buttonWidth: LayoutMetrics.size.iconM
+        buttonHeight: LayoutMetrics.size.iconM
+        iconPath: SVGLibrary.copy
+        onPressed: control.copy()
     }
 
     FocusRing {

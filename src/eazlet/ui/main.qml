@@ -124,6 +124,8 @@ Window {
             Organizer { id: organizerPage }
             Cipher { id: cipherPage }
             TextAnalysis { id: textAnalysisPage }
+            AsciiArt { id: asciiArtPage }
+            NumberTools { id: numberToolsPage }
         }
     }
 }

@@ -145,7 +145,7 @@ Item {
 
                         Row {
                             spacing: LayoutMetrics.spacing.sm
-                            Button { buttonText: "Process"; primary: true; onPressed: cipherVM.processEncoding() }
+                            Button { buttonText: "Process"; primary: true; isometric: true; heightMultiplier: 1.3; onPressed: cipherVM.processEncoding() }
                             Button { buttonText: "Detect"; onPressed: cipherVM.detect() }
                             Button { buttonText: "Swap"; onPressed: cipherVM.swap() }
                             Button { buttonText: "Clear"; iconPath: SVGLibrary.eraser; onPressed: cipherVM.clear() }
@@ -231,7 +231,7 @@ Item {
 
                         Row {
                             spacing: LayoutMetrics.spacing.sm
-                            Button { buttonText: "Process"; primary: true; onPressed: cipherVM.processCipher() }
+                            Button { buttonText: "Process"; primary: true; isometric: true; heightMultiplier: 1.3; onPressed: cipherVM.processCipher() }
                             Button { buttonText: "Swap"; onPressed: cipherVM.swap() }
                             Button { buttonText: "Clear"; iconPath: SVGLibrary.eraser; onPressed: cipherVM.clear() }
                         }
@@ -316,7 +316,7 @@ Item {
 
                         Row {
                             spacing: LayoutMetrics.spacing.sm
-                            Button { buttonText: "Encrypt"; primary: true; onPressed: cipherVM.encrypt() }
+                            Button { buttonText: "Encrypt"; primary: true; isometric: true; heightMultiplier: 1.3; onPressed: cipherVM.encrypt() }
                             Button { buttonText: "Decrypt"; onPressed: cipherVM.decrypt() }
                             Button { buttonText: "Clear"; iconPath: SVGLibrary.eraser; onPressed: cipherVM.clear() }
                         }
@@ -364,7 +364,7 @@ Item {
 
                         Row {
                             spacing: LayoutMetrics.spacing.sm
-                            Button { buttonText: "Hash"; primary: true; onPressed: cipherVM.hashInput() }
+                            Button { buttonText: "Hash"; primary: true; isometric: true; heightMultiplier: 1.3; onPressed: cipherVM.hashInput() }
                             Button { buttonText: "Clear"; iconPath: SVGLibrary.eraser; onPressed: cipherVM.clear() }
                         }
                     }
@@ -436,6 +436,7 @@ Item {
                         height: 150
                         text: cipherVM.output
                         readOnly: true
+                        showCopyButton: true
                     }
 
                     Row {

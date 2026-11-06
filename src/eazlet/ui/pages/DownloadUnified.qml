@@ -134,7 +134,7 @@ Item {
 
                 Row {
                     spacing: LayoutMetrics.spacing.sm
-                    Button { buttonText: "Download"; primary: true; enabled: !unifiedDownloadVM.downloading; onPressed: unifiedDownloadVM.startDownload() }
+                    Button { buttonText: "Download"; primary: true; isometric: true; heightMultiplier: 1.3; enabled: !unifiedDownloadVM.downloading; onPressed: unifiedDownloadVM.startDownload() }
                     Button { buttonText: "Cancel"; enabled: unifiedDownloadVM.downloading; onPressed: unifiedDownloadVM.cancel() }
                 }
 

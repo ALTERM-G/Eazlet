@@ -2,7 +2,6 @@ import ctypes
 import math
 import os
 import sys
-from functools import reduce
 
 from PySide6.QtCore import Property, QThread, Signal, Slot
 from PySide6.QtGui import QGuiApplication
@@ -65,8 +64,13 @@ def _bind(lib):
     lib.nt_factor_exp.restype = ctypes.c_int
     lib.nt_factor_destroy.argtypes = [ctypes.c_void_p]
     lib.nt_factor_destroy.restype = None
-    lib.nt_factor_divisors.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint64), ctypes.c_int]
-    lib.nt_factor_divisors.restype = ctypes.c_int
+    if hasattr(lib, "nt_factor_divisors"):
+        lib.nt_factor_divisors.argtypes = [
+            ctypes.c_void_p,
+            ctypes.POINTER(ctypes.c_uint64),
+            ctypes.c_int,
+        ]
+        lib.nt_factor_divisors.restype = ctypes.c_int
     lib.nt_divisors.argtypes = [ctypes.c_int64, ctypes.POINTER(ctypes.c_uint64), ctypes.c_int]
     lib.nt_divisors.restype = ctypes.c_int
 
@@ -111,7 +115,9 @@ def _parse_int(text: str, base: int | None = None) -> int:
     if base <= 36:
         return sign * int(s, base)
     if base > len(_DIGITS):
-        raise ValueError(f"Input parsing supports bases up to {len(_DIGITS)} (use 0-9A-Za-z digits)")
+        raise ValueError(
+            f"Input parsing supports bases up to {len(_DIGITS)} (use 0-9A-Za-z digits)"
+        )
     n = 0
     for ch in s:
         v = _DIGIT_MAP.get(ch)
@@ -169,11 +175,6 @@ def _lcm(a: int, b: int) -> int:
     a, b = abs(a), abs(b)
     if a == 0 or b == 0:
         return 0
-    if _NATIVE is not None and _fits_i64(a) and _fits_i64(b):
-        try:
-            return int(_NATIVE.nt_lcm(ctypes.c_int64(a), ctypes.c_int64(b)))
-        except Exception:
-            pass
     return abs(a // math.gcd(a, b) * b)
 
 
@@ -182,7 +183,11 @@ def _bezout(a: int, b: int):
         try:
             x = ctypes.c_int64()
             y = ctypes.c_int64()
-            g = int(_NATIVE.nt_bezout(ctypes.c_int64(a), ctypes.c_int64(b), ctypes.byref(x), ctypes.byref(y)))
+            g = int(
+                _NATIVE.nt_bezout(
+                    ctypes.c_int64(a), ctypes.c_int64(b), ctypes.byref(x), ctypes.byref(y)
+                )
+            )
             return g, int(x.value), int(y.value)
         except Exception:
             pass
@@ -199,38 +204,130 @@ def _bezout(a: int, b: int):
     return old_r, old_s, old_t
 
 
+def _is_prime_py(n: int) -> bool:
+    if n < 2:
+        return False
+    small = (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37)
+    for p in small:
+        if n == p:
+            return True
+        if n % p == 0:
+            return False
+    d = n - 1
+    s = 0
+    while d % 2 == 0:
+        d //= 2
+        s += 1
+    # deterministic for < 2^64; a few extra bases give high confidence beyond
+    bases = (2, 325, 9375, 28178, 450775, 9780504, 1795265022)
+    for a in bases:
+        if a % n == 0:
+            continue
+        x = pow(a, d, n)
+        if x == 1 or x == n - 1:
+            continue
+        for _ in range(s - 1):
+            x = (x * x) % n
+            if x == n - 1:
+                break
+        else:
+            return False
+    return True
+
+
+def _pollard_rho_py(n: int, seed: int = 2) -> int:
+    if n % 2 == 0:
+        return 2
+    if n % 3 == 0:
+        return 3
+    c = seed
+    x = 2
+    y = 2
+    d = 1
+    while d == 1:
+        x = (x * x + c) % n
+        y = (y * y + c) % n
+        y = (y * y + c) % n
+        d = math.gcd(abs(x - y), n)
+        if d == n:
+            c += 1
+            x = y = 2
+            d = 1
+    return d
+
+
+def _factor_rec_py(n: int, out: list[int]) -> None:
+    if n == 1:
+        return
+    if _is_prime_py(n):
+        out.append(n)
+        return
+    d = _pollard_rho_py(n)
+    if d == n:
+        for seed in range(3, 64):
+            d = _pollard_rho_py(n, seed)
+            if d != n and d != 1:
+                break
+    if d == n or d == 1:
+        f = 2
+        while f * f <= n and n % f:
+            f = 3 if f == 2 else f + 2
+        if f * f > n:
+            out.append(n)
+            return
+        d = f
+    _factor_rec_py(d, out)
+    _factor_rec_py(n // d, out)
+
+
 def _prime_factors_py(n: int) -> list[tuple[int, int]]:
     n = abs(n)
-    factors: list[tuple[int, int]] = []
     if n < 2:
-        return factors
-    d = 2
-    while d * d <= n:
-        if n % d == 0:
+        return []
+    out: list[tuple[int, int]] = []
+    # Strip small primes first: avoids deep recursion for things like 2**1000
+    # and makes ordinary inputs with small factors very fast.
+    for p in (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37):
+        if n % p == 0:
             c = 0
-            while n % d == 0:
-                n //= d
+            while n % p == 0:
+                n //= p
                 c += 1
-            factors.append((d, c))
-        d = 3 if d == 2 else d + 2
-    if n > 1:
-        factors.append((n, 1))
-    return factors
+            out.append((p, c))
+    if n == 1:
+        return out
+    raw: list[int] = []
+    _factor_rec_py(n, raw)
+    raw.sort()
+    for p in raw:
+        if out and out[-1][0] == p:
+            out[-1] = (p, out[-1][1] + 1)
+        else:
+            out.append((p, 1))
+    return out
+
+
+def _divisors_from_factors_py(pf: list[tuple[int, int]], limit: int = 200000) -> list[int]:
+    divs = [1]
+    for p, e in pf:
+        base = len(divs)
+        pe = 1
+        for _ in range(e):
+            pe *= p
+            for i in range(base):
+                if len(divs) >= limit:
+                    divs.sort()
+                    return divs
+                divs.append(divs[i] * pe)
+    divs.sort()
+    return divs
 
 
 def _divisors_py(n: int) -> list[int]:
     n = abs(n)
     if n == 0:
         return []
-    small, large = [], []
-    d = 1
-    while d * d <= n:
-        if n % d == 0:
-            small.append(d)
-            if d * d != n:
-                large.append(n // d)
-        d += 1
-    return small + list(reversed(large))
+    return _divisors_from_factors_py(_prime_factors_py(n))
 
 
 class _FactorWorker(QThread):
@@ -259,7 +356,11 @@ class _FactorWorker(QThread):
                     done = ctypes.c_int(0)
                     budget = 500000
                     while not done.value:
-                        prog = float(_NATIVE.nt_factor_step(st, ctypes.c_int64(budget), ctypes.byref(done)))
+                        prog = float(
+                            _NATIVE.nt_factor_step(
+                                st, ctypes.c_int64(budget), ctypes.byref(done)
+                            )
+                        )
                         self.progressed.emit(prog)
                     count = int(_NATIVE.nt_factor_count(st))
                     pf = []
@@ -277,14 +378,9 @@ class _FactorWorker(QThread):
                         else:
                             divs = []
                     else:
-                        total = int(_NATIVE.nt_divisors(ctypes.c_int64(an), None, 0))
-                        cap = min(total, 200000)
-                        if cap > 0:
-                            arr = (ctypes.c_uint64 * cap)()
-                            _NATIVE.nt_divisors(ctypes.c_int64(an), arr, cap)
-                            divs = [int(arr[i]) for i in range(min(total, cap))]
-                        else:
-                            divs = []
+                        # Older native lib: generate divisors from factors instead of
+                        # trial-dividing n (which is extremely slow for large n).
+                        divs = _divisors_from_factors_py(pf)
                 finally:
                     _NATIVE.nt_factor_destroy(st)
                 self.progressed.emit(1.0)
@@ -292,7 +388,7 @@ class _FactorWorker(QThread):
                 return
             pf = _prime_factors_py(an)
             self.progressed.emit(0.7)
-            divs = _divisors_py(an)
+            divs = _divisors_from_factors_py(pf)
             self.progressed.emit(1.0)
             self.finishedResult.emit(pf, divs, "")
         except Exception as e:
@@ -608,18 +704,20 @@ class NumberToolsVM(BaseVM):
         if len(nums) < 2 and self._input_b.strip():
             nums.append(self._parse_b())
         if len(nums) < 2:
-            raise ValueError("Enter at least two integers (space/comma separated, or use both fields)")
+            raise ValueError(
+                "Enter at least two integers (space/comma separated, or use both fields)"
+            )
         g = nums[0]
         for x in nums[1:]:
             g = _gcd(g, x)
         g = abs(g)
-        l = abs(nums[0])
+        lcm = abs(nums[0])
         for x in nums[1:]:
-            l = _lcm(l, x)
+            lcm = _lcm(lcm, x)
         lines = [
             f"Numbers: {', '.join(str(x) for x in nums)}",
             f"GCD (PGCD): {g}",
-            f"LCM (PPCM): {l}",
+            f"LCM (PPCM): {lcm}",
         ]
         if len(nums) == 2 and g != 0:
             a, b = nums[0], nums[1]
@@ -673,12 +771,17 @@ class NumberToolsVM(BaseVM):
             pf_s = " × ".join(f"{p}^{e}" if e > 1 else str(p) for p, e in pf)
             is_prime = False
         divs_list = list(divs) if divs else []
+        div_count = 1
+        for _, e in pf:
+            div_count *= e + 1
         lines = [
             f"n: {n}",
             f"Prime: {'yes' if is_prime else 'no'}" if an > 1 else "Prime: n/a (|n| < 2)",
             f"Prime factorization (|n|): {pf_s}",
-            f"Number of divisors (|n|): {len(divs_list)}",
-            f"Divisors (|n|): {', '.join(str(d) for d in divs_list[:60])}{'…' if len(divs_list) > 60 else ''}",
+            f"Number of divisors (|n|): {div_count}",
+            "Divisors (|n|): "
+            + ", ".join(str(d) for d in divs_list[:60])
+            + ("…" if div_count > 60 else ""),
         ]
         self._set_output("\n".join(lines))
         self._set_status("Done")
@@ -713,10 +816,19 @@ class NumberToolsVM(BaseVM):
         try:
             if op == "÷":
                 primary = divmod(a, b)[0]
-                lines = [res, f"Quotient bin: {_fmt_base(primary, 2)}", f"Quotient hex: {_fmt_base(primary, 16)}"]
+                lines = [
+                    res,
+                    f"Quotient bin: {_fmt_base(primary, 2)}",
+                    f"Quotient hex: {_fmt_base(primary, 16)}",
+                ]
             else:
                 primary = r
-                lines = [res, f"Binary: {_fmt_base(primary, 2)}", f"Octal:  {_fmt_base(primary, 8)}", f"Hex:    {_fmt_base(primary, 16)}"]
+                lines = [
+                    res,
+                    f"Binary: {_fmt_base(primary, 2)}",
+                    f"Octal:  {_fmt_base(primary, 8)}",
+                    f"Hex:    {_fmt_base(primary, 16)}",
+                ]
         except Exception:
             lines = [res]
         self._set_output("\n".join(lines))

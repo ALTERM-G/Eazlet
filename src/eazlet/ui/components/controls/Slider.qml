@@ -71,7 +71,7 @@ Slider {
         anchors.fill: parent
         hoverEnabled: true
         acceptedButtons: Qt.NoButton
-        cursorShape: Qt.PointingHandCursor
+        cursorShape: control.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
     }
 
     Keys.onUpPressed: stepBy(1)

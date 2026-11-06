@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Dialogs
 import components
 
 Item {
@@ -61,11 +62,21 @@ Item {
                     width: parent.width
                     title: "Drop files or folders here"
                     description: "Add files to compress, or an archive to extract"
-                    hint: "Drag and drop files or folders"
-                    clickable: false
+                    hint: "Drag and drop files or folders, or click to browse files"
+                    onClicked: fileDialog.open()
                     onFilesDropped: function(urls) {
                         for (var i = 0; i < urls.length; i++)
                             archiveVM.addFile(urls[i])
+                    }
+                }
+
+                FileDialog {
+                    id: fileDialog
+                    title: "Select files to add"
+                    fileMode: FileDialog.OpenFiles
+                    onAccepted: {
+                        for (var i = 0; i < selectedFiles.length; i++)
+                            archiveVM.addFile(selectedFiles[i].toString())
                     }
                 }
 

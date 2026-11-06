@@ -21,7 +21,7 @@ Rectangle {
         id: mouseArea
         anchors.fill: parent
         hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
+        cursorShape: iconButton.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
         onClicked: iconButton.doPress()
     }
 
@@ -31,7 +31,7 @@ Rectangle {
         path: iconPath
         width: buttonWidth
         height: buttonHeight
-        color: mouseArea.containsMouse ? Theme.themeColor : Theme.textColor
+        color: (mouseArea.containsMouse && iconButton.enabled) ? Theme.themeColor : Theme.textColor
 
         Behavior on color {
             enabled: LayoutMetrics.animationsEnabled

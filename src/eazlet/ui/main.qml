@@ -43,8 +43,8 @@ Window {
 
         Settings {
             id: settings
-            width: LayoutMetrics.size.iconM
-            height: LayoutMetrics.size.iconM
+            width: LayoutMetrics.size.iconButton
+            height: LayoutMetrics.size.iconButton
             anchors.right: parent.right
             anchors.rightMargin: Math.max(0, (LayoutMetrics.size.topBarHeight - height) / 2)
             anchors.verticalCenter: parent.verticalCenter

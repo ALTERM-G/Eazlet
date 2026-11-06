@@ -40,6 +40,11 @@ where = ["src"]
     "resources/**/*.ico",
     "ui/**/*.qml",
     "ui/components/**/*.qml",
+    "backend/native/*.so",
+    "backend/native/*.dylib",
+    "backend/native/*.dll",
+    "backend/native/*.cpp",
+    "backend/native/*.md",
 ]
 
 [tool.ruff]

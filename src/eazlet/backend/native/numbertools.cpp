@@ -288,13 +288,8 @@ int nt_factor_divisors(FactorState* st, u64* out, int max_out) {
         u64 pe = 1;
         for (int k = 1; k <= e; ++k) {
             pe *= p;
-            for (size_t i = 0; i < base; ++i) {
-                u64 v = divs[i] * pe;
-                divs.push_back(v);
-                if ((int)divs.size() > max_out && max_out > 0 && (int)divs.size() > 200000) break;
-            }
+            for (size_t i = 0; i < base; ++i) divs.push_back(divs[i] * pe);
         }
-        if ((int)divs.size() > 200000 && max_out > 0) {}
     }
     std::sort(divs.begin(), divs.end());
     int total = (int)divs.size();

@@ -62,7 +62,7 @@ ComboBox {
             id: mouseArea
             anchors.fill: parent
             hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
+            cursorShape: control.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
             onClicked: {
                 if (control.count <= 1) {
                     if (control.count === 1 && control.currentIndex < 0)
@@ -242,7 +242,7 @@ ComboBox {
                                 MouseArea {
                                     anchors.fill: parent
                                     hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
+                                    cursorShape: control.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                                     onEntered: dropdownPopup.highlightedIndex = index
                                     onClicked: {
                                         control.currentIndex = index

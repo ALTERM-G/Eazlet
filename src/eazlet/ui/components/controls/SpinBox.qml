@@ -62,7 +62,7 @@ SpinBox {
         MouseArea {
             anchors.fill: parent
             hoverEnabled: true
-            cursorShape: Qt.IBeamCursor
+            cursorShape: spinBox.enabled ? Qt.IBeamCursor : Qt.ArrowCursor
             acceptedButtons: Qt.NoButton
             enabled: true
         }
@@ -98,7 +98,7 @@ SpinBox {
             id: upMouseArea
             anchors.fill: parent
             hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
+            cursorShape: spinBox.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
             onClicked: spinBox.value = Math.min(spinBox.to, spinBox.value + spinBox.stepSize)
         }
     }
@@ -124,7 +124,7 @@ SpinBox {
             id: downMouseArea
             anchors.fill: parent
             hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
+            cursorShape: spinBox.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
             onClicked: spinBox.value = Math.max(spinBox.from, spinBox.value - spinBox.stepSize)
         }
     }

@@ -10,8 +10,34 @@ Item {
     Layout.fillHeight: true
 
     function processAction() {
-        if (!converterVM.converting && converterVM.files.length > 0 && converterVM.targetFormat !== "")
+        if (!converterVM.converting && converterVM.files.length === 1 && converterVM.targetFormat !== "")
             converterVM.convert()
+    }
+
+    function categoryName(category) {
+        switch (category) {
+        case "video": return "Video"
+        case "audio": return "Audio"
+        case "image": return "Image"
+        case "document": return "Document"
+        default: return "Unsupported"
+        }
+    }
+
+    function sourceSummary() {
+        if (converterVM.files.length === 0)
+            return ""
+        if (converterVM.sourceCategory === "unsupported")
+            return "Unsupported file type" + (converterVM.sourceFormat !== "" ? " · ." + converterVM.sourceFormat.toUpperCase() : "")
+        return categoryName(converterVM.sourceCategory) + " · ." + converterVM.sourceFormat.toUpperCase()
+    }
+
+    function noTargetMessage() {
+        if (converterVM.sourceCategory === "unsupported")
+            return "This file type is not supported."
+        if (converterVM.sourceCategory === "document")
+            return "No document conversion is available for this file."
+        return "No conversion targets are available for this file."
     }
 
     Surface {
@@ -60,62 +86,91 @@ Item {
 
                 DropZone {
                     width: parent.width
-                    title: "Drop files here"
-                    description: "Drag and drop files, or click to browse"
-                    hint: "Files are added to the conversion queue"
-                    onClicked: converterVM.addFiles()
+                    enabled: !converterVM.converting
+                    title: "Drop a file here"
+                    description: "Drag and drop a file, or click to browse"
+                    hint: "One file at a time — adding another replaces the current file"
+                    onClicked: fileDialog.open()
                     onFilesDropped: function(urls) {
-                        for (var i = 0; i < urls.length; i++)
-                            converterVM.addFile(urls[i])
+                        if (urls.length > 0)
+                            converterVM.addFile(urls[0])
                     }
                 }
 
-                Row {
-                    spacing: LayoutMetrics.spacing.sm
-                    Button { buttonText: "Clear"; iconPath: SVGLibrary.eraser; onPressed: converterVM.clearFiles() }
-                    Label {
-                        bold: false
-                        text: converterVM.files.length + " file(s)"
-                        textColor: Theme.textColor
-                        pixelSize: Typography.h6
-                    }
+                FileDialog {
+                    id: fileDialog
+                    title: "Select a file to convert"
+                    fileMode: FileDialog.OpenFile
+                    onAccepted: converterVM.addFile(selectedFile.toString())
                 }
 
-                ListView {
+                Rectangle {
                     width: parent.width
-                    height: 150
-                    model: converterVM.files
-                    clip: true
-                    delegate: Rectangle {
-                        width: parent.width
-                        height: 30
-                        color: index % 2 === 0 ? Theme.backgroundColor : Theme.inputBackgroundColor
-                        Row {
-                            anchors.fill: parent
-                            anchors.margins: LayoutMetrics.spacing.sm
-                            spacing: LayoutMetrics.spacing.sm
+                    visible: converterVM.files.length > 0
+                    height: visible ? fileRow.implicitHeight + LayoutMetrics.spacing.md * 2 : 0
+                    radius: LayoutMetrics.radius.m
+                    color: Theme.inputBackgroundColor
+                    border.color: Theme.borderColor
+                    border.width: LayoutMetrics.border.l
+
+                    RowLayout {
+                        id: fileRow
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.leftMargin: LayoutMetrics.spacing.md
+                        anchors.rightMargin: LayoutMetrics.spacing.md
+                        spacing: LayoutMetrics.spacing.md
+
+                        Rectangle {
+                            Layout.alignment: Qt.AlignVCenter
+                            Layout.preferredWidth: formatBadge.implicitWidth + LayoutMetrics.spacing.md
+                            Layout.preferredHeight: formatBadge.implicitHeight + LayoutMetrics.spacing.sm
+                            radius: LayoutMetrics.radius.s
+                            color: Theme.backgroundColor
+                            border.color: Theme.borderColor
+                            border.width: LayoutMetrics.border.l
+
                             Label {
+                                id: formatBadge
+                                anchors.centerIn: parent
                                 bold: false
-                                text: modelData.name
+                                text: converterVM.sourceFormat !== "" ? converterVM.sourceFormat.toUpperCase() : "?"
+                                textColor: converterVM.sourceCategory === "unsupported" ? "red" : Theme.themeColor
+                                pixelSize: Typography.caption
+                            }
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: LayoutMetrics.spacing.xxs
+
+                            Label {
+                                Layout.fillWidth: true
+                                bold: false
+                                text: converterVM.files.length > 0 ? converterVM.files[0].name : ""
                                 textColor: Theme.textColor
-                                pixelSize: Typography.h6
-                                width: parent.width * 0.7
+                                pixelSize: Typography.h5
                                 elide: Text.ElideMiddle
                             }
+
                             Label {
+                                Layout.fillWidth: true
                                 bold: false
-                                text: modelData.ext.toUpperCase()
-                                textColor: Theme.textColor
-                                pixelSize: Typography.h6
-                                width: 40
+                                text: page.sourceSummary()
+                                textColor: converterVM.sourceCategory === "unsupported" ? "red" : Theme.dividerColor
+                                pixelSize: Typography.caption
+                                elide: Text.ElideRight
                             }
-                            IconButton {
-                                anchors.verticalCenter: parent.verticalCenter
-                                buttonWidth: LayoutMetrics.size.iconS
-                                buttonHeight: LayoutMetrics.size.iconS
-                                iconPath: SVGLibrary.cross
-                                onPressed: converterVM.removeFile(index)
-                            }
+                        }
+
+                        IconButton {
+                            Layout.alignment: Qt.AlignVCenter
+                            buttonWidth: LayoutMetrics.size.iconS
+                            buttonHeight: LayoutMetrics.size.iconS
+                            enabled: !converterVM.converting
+                            iconPath: SVGLibrary.cross
+                            onPressed: converterVM.clearFiles()
                         }
                     }
                 }
@@ -149,6 +204,25 @@ Item {
 
                 Row {
                     spacing: LayoutMetrics.spacing.sm
+                    visible: converterVM.files.length > 0 && converterVM.validTargetFormats.length === 0
+                    SVGObject {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: LayoutMetrics.size.iconS
+                        height: LayoutMetrics.size.iconS
+                        path: SVGLibrary.info
+                        color: converterVM.sourceCategory === "unsupported" ? "red" : Theme.textColor
+                    }
+                    Label {
+                        bold: false
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: page.noTargetMessage()
+                        textColor: converterVM.sourceCategory === "unsupported" ? "red" : Theme.textColor
+                        pixelSize: Typography.h6
+                    }
+                }
+
+                Row {
+                    spacing: LayoutMetrics.spacing.sm
                     Label {
                         bold: false
                         text: "Output: " + converterVM.outputDir
@@ -162,7 +236,14 @@ Item {
 
                 Row {
                     spacing: LayoutMetrics.spacing.sm
-                    Button { buttonText: "Convert"; primary: true; isometric: true; heightMultiplier: 1.3; enabled: !converterVM.converting && converterVM.files.length > 0 && converterVM.targetFormat !== ""; onPressed: converterVM.convert() }
+                    Button {
+                        buttonText: "Convert"
+                        primary: true
+                        isometric: true
+                        heightMultiplier: 1.3
+                        enabled: !converterVM.converting && converterVM.files.length === 1 && converterVM.targetFormat !== ""
+                        onPressed: converterVM.convert()
+                    }
                     Button { buttonText: "Cancel"; enabled: converterVM.converting; onPressed: converterVM.cancel() }
                 }
 
@@ -174,7 +255,7 @@ Item {
 
                 Row {
                     spacing: LayoutMetrics.spacing.sm
-                    visible: converterVM.status !== ""
+                    visible: converterVM.status !== "" && converterVM.status !== "Idle"
                     SVGObject {
                         anchors.verticalCenter: parent.verticalCenter
                         width: LayoutMetrics.size.iconS

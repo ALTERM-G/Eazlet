@@ -174,8 +174,8 @@ Item {
         id: mouseArea
         anchors.fill: parent
         hoverEnabled: true
-        cursorShape: root.clickable ? Qt.PointingHandCursor : Qt.ArrowCursor
-        acceptedButtons: root.clickable ? Qt.LeftButton : Qt.NoButton
+        cursorShape: (root.clickable && root.enabled) ? Qt.PointingHandCursor : Qt.ArrowCursor
+        acceptedButtons: (root.clickable && root.enabled) ? Qt.LeftButton : Qt.NoButton
         onClicked: if (root.clickable) root.triggerClick()
     }
 
@@ -183,9 +183,12 @@ Item {
         id: dropArea
         anchors.fill: parent
 
-        onEntered: (drag) => drag.acceptProposedAction()
+        onEntered: (drag) => {
+            if (root.enabled)
+                drag.acceptProposedAction()
+        }
         onDropped: (drop) => {
-            if (!drop.hasUrls)
+            if (!root.enabled || !drop.hasUrls)
                 return
 
             var urls = []

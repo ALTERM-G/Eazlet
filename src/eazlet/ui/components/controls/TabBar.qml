@@ -115,7 +115,7 @@ Rectangle {
                 anchors.fill: parent
                 hoverEnabled: true
                 onClicked: listView.currentIndex = index
-                cursorShape: Qt.PointingHandCursor
+                cursorShape: root.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
             }
         }
 

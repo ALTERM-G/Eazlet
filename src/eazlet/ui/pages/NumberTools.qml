@@ -26,12 +26,14 @@ Item {
             spacing: LayoutMetrics.spacing.md
 
             Title {
+                id: pageTitle
                 text: "Number Tools"
                 textColor: Theme.textColor
                 pixelSize: Typography.h2
             }
 
             Label {
+                id: pageSubtitle
                 bold: false
                 width: parent.width
                 text: "Base conversion, GCD/LCM, factors, and integer operations."
@@ -76,9 +78,9 @@ Item {
             Flickable {
                 id: pageFlickable
                 width: parent.width
-                height: Math.max(0, parent.height - pageColumn.spacing * 6
+                height: Math.max(0, parent.height - pageTitle.height - pageSubtitle.height
                                  - modeTabs.height - divider.height
-                                 - LayoutMetrics.unit * 6)
+                                 - pageColumn.spacing * 4)
                 contentWidth: width
                 contentHeight: contentColumn.implicitHeight
                 clip: true

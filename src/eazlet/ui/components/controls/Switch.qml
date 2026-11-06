@@ -19,7 +19,7 @@ Switch {
         MouseArea {
             anchors.fill: parent
             hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
+            cursorShape: control.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
             acceptedButtons: Qt.NoButton
         }
 
@@ -52,6 +52,13 @@ Switch {
         color: Theme.textColor
         verticalAlignment: Text.AlignVCenter
         leftPadding: control.indicator.width + LayoutMetrics.spacing.sm
+
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            acceptedButtons: Qt.NoButton
+            cursorShape: control.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+        }
     }
 
     FocusRing {

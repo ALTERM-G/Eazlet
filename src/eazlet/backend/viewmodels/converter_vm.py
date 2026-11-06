@@ -1,10 +1,11 @@
+import html
 import os
 import re
 import shutil
 import subprocess
 from pathlib import Path
 
-from PySide6.QtCore import Property, QObject, QProcess, Signal, Slot
+from PySide6.QtCore import Property, QObject, QProcess, QUrl, Signal, Slot
 from PySide6.QtGui import QDesktopServices
 
 from .base_vm import BaseVM
@@ -19,13 +20,79 @@ class ConverterVM(BaseVM):
     errorChanged = Signal()
     targetFormatChanged = Signal()
     validTargetFormatsChanged = Signal()
+    sourceChanged = Signal()
 
     VIDEO_FORMATS = ["mp4", "webm", "mkv", "avi", "mov", "flv", "gif"]
     AUDIO_FORMATS = ["mp3", "aac", "flac", "wav", "ogg", "m4a", "opus"]
-    IMAGE_FORMATS = ["jpg", "jpeg", "png", "webp", "bmp", "tiff", "avif", "ico"]
-    DOC_FORMATS = ["pdf", "txt", "md", "html"]
-
+    IMAGE_FORMATS = ["jpg", "png", "webp", "bmp", "tiff", "avif", "ico"]
+    DOC_FORMATS = ["txt", "md", "html", "pdf"]
     ALL_FORMATS = VIDEO_FORMATS + AUDIO_FORMATS + IMAGE_FORMATS + DOC_FORMATS
+
+    # Input extensions are grouped separately from output formats: we can read
+    # more container types than we offer as targets.
+    FORMAT_ALIASES = {
+        "jpeg": "jpg",
+        "jpe": "jpg",
+        "jfif": "jpg",
+        "tif": "tiff",
+        "htm": "html",
+        "markdown": "md",
+        "m4v": "mp4",
+        "aif": "aiff",
+    }
+    VIDEO_INPUTS = {
+        "mp4", "webm", "mkv", "avi", "mov", "flv", "wmv", "mpg", "mpeg",
+        "3gp", "ogv", "ts", "mts", "m2ts", "vob",
+    }
+    AUDIO_INPUTS = {
+        "mp3", "aac", "flac", "wav", "ogg", "m4a", "opus", "wma", "aiff",
+        "alac", "amr",
+    }
+    IMAGE_INPUTS = {
+        "jpg", "png", "webp", "bmp", "tiff", "avif", "ico", "gif", "heic", "heif",
+    }
+    DOC_INPUTS = {"txt", "md", "html", "pdf"}
+
+    # Only conversions the document pipeline actually implements.
+    DOC_TARGETS = {
+        "txt": ["md", "html"],
+        "md": ["txt", "html"],
+        "html": ["txt"],
+        "pdf": ["txt"] if shutil.which("pdftotext") else [],
+    }
+
+    # Each target needs at least one encoder from every group to be offered.
+    ENCODER_CANDIDATES = {
+        "mp3": (("libmp3lame", "mp3"),),
+        "aac": (("aac",),),
+        "m4a": (("aac",),),
+        "ogg": (("libvorbis", "vorbis"),),
+        "opus": (("libopus", "opus"),),
+        "avif": (("libaom-av1", "libaom"),),
+        "webp": (("libwebp", "webp"),),
+        "mp4": (("libx264", "h264"), ("aac",)),
+        "mov": (("libx264", "h264"), ("aac",)),
+        "flv": (("libx264", "h264"), ("aac",)),
+        "webm": (("libvpx-vp9", "vp9"), ("libopus", "opus")),
+    }
+
+    @classmethod
+    def canonical_format(cls, ext: str) -> str:
+        ext = (ext or "").lower().lstrip(".")
+        return cls.FORMAT_ALIASES.get(ext, ext)
+
+    @classmethod
+    def category_for(cls, ext: str) -> str:
+        fmt = cls.canonical_format(ext)
+        if fmt in cls.VIDEO_INPUTS:
+            return "video"
+        if fmt in cls.AUDIO_INPUTS:
+            return "audio"
+        if fmt in cls.IMAGE_INPUTS:
+            return "image"
+        if fmt in cls.DOC_INPUTS:
+            return "document"
+        return "unsupported"
 
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -35,7 +102,7 @@ class ConverterVM(BaseVM):
         self._progress = 0.0
         self._status = "Idle"
         self._error = ""
-        self._target_format = "mp4"
+        self._target_format = ""
         self._valid_target_formats = []
         self._available_encoders = set()
         self._available_decoders = set()
@@ -51,8 +118,14 @@ class ConverterVM(BaseVM):
         try:
             if shutil.which("ffmpeg") is None:
                 return
-            result = subprocess.run(["ffmpeg", "-hide_banner", "-encoders"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5)
-            out = result.stdout.decode("utf-8", "replace") + result.stderr.decode("utf-8", "replace")
+            result = subprocess.run(
+                ["ffmpeg", "-hide_banner", "-encoders"],
+                capture_output=True,
+                timeout=5,
+            )
+            out = result.stdout.decode("utf-8", "replace") + result.stderr.decode(
+                "utf-8", "replace"
+            )
             for line in out.splitlines():
                 line = line.strip()
                 if not line or line.startswith("Encoders:") or line.startswith("------"):
@@ -116,96 +189,124 @@ class ConverterVM(BaseVM):
     def validTargetFormats(self):
         return self._valid_target_formats
 
-    def _update_valid_formats(self):
+    @Property(str, notify=sourceChanged)
+    def sourceFormat(self):
         if not self._files:
-            self._valid_target_formats = []
-            self.validTargetFormatsChanged.emit()
-            if self._target_format != "":
-                self._target_format = ""
-                self.targetFormatChanged.emit()
-            return
-        exts = [f.get("ext", "").lower() for f in self._files]
-        def cat(ext):
-            if ext == "gif":
-                return "image"
-            if ext in self.VIDEO_FORMATS or ext in ["webm", "mkv", "avi", "mov", "flv", "mp4"]:
-                return "video"
-            if ext in self.AUDIO_FORMATS:
-                return "audio"
-            if ext in self.IMAGE_FORMATS:
-                return "image"
-            if ext in self.DOC_FORMATS:
-                return "doc"
-            return "other"
-        cats = set(cat(e) for e in exts if e)
-        valid = []
-        if len(cats) == 1:
-            c = list(cats)[0]
-            if c == "video":
-                valid = list(dict.fromkeys(self.VIDEO_FORMATS))
-            elif c == "audio":
-                valid = list(dict.fromkeys(self.AUDIO_FORMATS))
-            elif c == "image":
-                valid = list(dict.fromkeys(self.IMAGE_FORMATS))
-            elif c == "doc":
-                valid = list(dict.fromkeys(self.DOC_FORMATS))
-            else:
-                valid = list(dict.fromkeys(self.ALL_FORMATS))
+            return ""
+        return self.canonical_format(self._files[0].get("ext", ""))
+
+    @Property(str, notify=sourceChanged)
+    def sourceCategory(self):
+        if not self._files:
+            return ""
+        return self.category_for(self._files[0].get("ext", ""))
+
+    def _format_available(self, fmt):
+        fmt = self.canonical_format(fmt)
+        if fmt in self.DOC_FORMATS:
+            return True
+        if shutil.which("ffmpeg") is None:
+            return False
+        groups = self.ENCODER_CANDIDATES.get(fmt)
+        if not groups:
+            return True
+        return all(any(self._has_encoder(name) for name in group) for group in groups)
+
+    def _targets_for(self, category, source):
+        if category == "video":
+            candidates = self.VIDEO_FORMATS + self.AUDIO_FORMATS
+        elif category == "audio":
+            candidates = self.AUDIO_FORMATS
+        elif category == "image":
+            candidates = self.IMAGE_FORMATS
+        elif category == "document":
+            candidates = self.DOC_TARGETS.get(source, [])
         else:
-            valid = list(dict.fromkeys(self.ALL_FORMATS))
-        filtered = []
-        for fmt in valid:
-            if fmt == "mp3" and not self._has_encoder("libmp3lame"):
+            return []
+
+        targets = []
+        for fmt in candidates:
+            target = self.canonical_format(fmt)
+            if target == source or target in targets:
                 continue
-            if fmt == "ogg" and not self._has_encoder("libvorbis"):
-                continue
-            if fmt == "opus" and not self._has_encoder("libopus"):
-                continue
-            if fmt == "webm" and (not self._has_encoder("libvpx-vp9") or not self._has_encoder("libopus")):
-                pass
-            if fmt == "avif" and not self._has_encoder("libaom-av1"):
-                continue
-            if fmt == "aac" and not self._has_encoder("aac"):
-                continue
-            filtered.append(fmt)
-        if not filtered:
-            filtered = list(dict.fromkeys(self.ALL_FORMATS))
-        self._valid_target_formats = filtered
+            if self._format_available(target):
+                targets.append(target)
+        return targets
+
+    def _refresh_targets(self):
+        if self._files:
+            source = self.canonical_format(self._files[0].get("ext", ""))
+            category = self.category_for(source)
+        else:
+            source, category = "", ""
+        self._valid_target_formats = self._targets_for(category, source)
         self.validTargetFormatsChanged.emit()
-        if not self._target_format or self._target_format not in self._valid_target_formats:
-            if self._valid_target_formats:
-                self._target_format = self._valid_target_formats[0]
-                self.targetFormatChanged.emit()
+
+        target = self._target_format
+        if target not in self._valid_target_formats:
+            target = self._valid_target_formats[0] if self._valid_target_formats else ""
+        if target != self._target_format:
+            self._target_format = target
+            self.targetFormatChanged.emit()
+
+    def _after_file_change(self):
+        self._failed_files = []
+        self._error = ""
+        self._progress = 0.0
+        self.filesChanged.emit()
+        self.sourceChanged.emit()
+        self.errorChanged.emit()
+        self.progressChanged.emit()
+        self._refresh_targets()
+
+        if not self._files:
+            self._status = "Idle"
+        elif self.sourceCategory == "unsupported":
+            self._status = "Unsupported file type"
+        elif self._valid_target_formats:
+            self._status = "Ready"
+        else:
+            self._status = "No conversion available"
+        self.statusChanged.emit()
 
     @Slot(str)
     def addFile(self, path):
-        if not path:
+        if not path or self._converting:
             return
-        p = path.replace("file://", "").strip()
+        p = path.strip()
+        if p.startswith("file:"):
+            local = QUrl(p).toLocalFile()
+            if local:
+                p = local
         if not p:
             return
-        if p not in [f["path"] for f in self._files]:
-            ext = Path(p).suffix.lower().lstrip(".")
-            self._files.append({"path": p, "name": Path(p).name, "ext": ext})
-            self.filesChanged.emit()
-            self._update_valid_formats()
 
-    @Slot()
-    def addFiles(self):
-        pass
+        ext = Path(p).suffix.lower().lstrip(".")
+        self._files = [
+            {
+                "path": p,
+                "name": Path(p).name,
+                "ext": ext,
+                "format": self.canonical_format(ext),
+                "category": self.category_for(ext),
+            }
+        ]
+        self._after_file_change()
 
     @Slot(int)
     def removeFile(self, index):
+        if self._converting:
+            return
         if 0 <= index < len(self._files):
             self._files.pop(index)
-            self.filesChanged.emit()
-            self._update_valid_formats()
+            self._after_file_change()
 
     @Slot()
     def clearFiles(self):
+        if self._converting:
+            return
         self._files = []
-        self.filesChanged.emit()
-        self._update_valid_formats()
+        self._after_file_change()
 
     @Slot()
     def chooseOutputDir(self):
@@ -214,8 +315,6 @@ class ConverterVM(BaseVM):
     @Slot()
     def openOutputDir(self):
         try:
-            from PySide6.QtCore import QUrl
-
             QDesktopServices.openUrl(QUrl.fromLocalFile(os.path.abspath(self._output_dir)))
         except Exception:
             pass
@@ -233,8 +332,7 @@ class ConverterVM(BaseVM):
                     "default=noprint_wrappers=1:nokey=1",
                     filepath,
                 ],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 timeout=10,
             )
             s = result.stdout.strip()
@@ -246,15 +344,27 @@ class ConverterVM(BaseVM):
 
     @Slot()
     def convert(self):
-        if self._converting or not self._files:
-            self._error = "No files to convert"
+        if self._converting:
+            return
+        if not self._files:
+            self._error = "Select a file to convert"
             self.errorChanged.emit()
             return
-        if not self._target_format:
-            self._error = "No target format"
+        if self._target_format not in self._valid_target_formats:
+            self._error = "Choose a valid output format"
             self.errorChanged.emit()
             return
-        if shutil.which("ffmpeg") is None:
+        category = self.category_for(self._files[0].get("ext", ""))
+        if category == "unsupported":
+            self._error = "Unsupported file type"
+            self.errorChanged.emit()
+            return
+        if category == "document":
+            if self.sourceFormat == "pdf" and shutil.which("pdftotext") is None:
+                self._error = "pdftotext not found in PATH"
+                self.errorChanged.emit()
+                return
+        elif shutil.which("ffmpeg") is None:
             self._error = "ffmpeg not found in PATH"
             self.errorChanged.emit()
             return
@@ -275,7 +385,10 @@ class ConverterVM(BaseVM):
             if self._failed_files:
                 self._status = f"Done with errors ({len(self._failed_files)} failed)"
                 if not self._error:
-                    self._error = f"Failed: {', '.join(Path(x).name for x in self._failed_files[:3])}" + ("..." if len(self._failed_files) > 3 else "")
+                    failed = ", ".join(Path(x).name for x in self._failed_files[:3])
+                    self._error = f"Failed: {failed}" + (
+                        "..." if len(self._failed_files) > 3 else ""
+                    )
                     self.errorChanged.emit()
             else:
                 self._status = "Done"
@@ -288,8 +401,8 @@ class ConverterVM(BaseVM):
         f = self._files[self._current_index]
         self._status = f"Converting {f['name']}..."
         self.statusChanged.emit()
-        src_ext = f.get("ext", "").lower()
-        base = Path(f["name"]).stem
+        src_ext = self.canonical_format(f.get("ext", ""))
+        base = Path(f["path"]).stem
         out_path = os.path.join(self._output_dir, base + "." + self._target_format)
         if out_path == f["path"]:
             self._current_index += 1
@@ -305,7 +418,7 @@ class ConverterVM(BaseVM):
                 i += 1
                 if i > 1000:
                     break
-        if self._target_format in self.DOC_FORMATS and src_ext in self.DOC_FORMATS and src_ext != self._target_format:
+        if self.category_for(src_ext) == "document":
             self._convert_doc(f["path"], out_path)
             return
         self._duration = self._get_duration(f["path"]) if shutil.which("ffprobe") else 0
@@ -374,64 +487,62 @@ class ConverterVM(BaseVM):
         self._process = proc
         proc.start()
 
+    @staticmethod
+    def _html_to_text(content):
+        content = re.sub(r"(?is)<(script|style)\b.*?>.*?</\1>", "", content)
+        content = re.sub(r"(?i)<br\s*/?>", "\n", content)
+        content = re.sub(r"(?i)</(p|div|h[1-6]|li|tr)>", "\n", content)
+        content = re.sub(r"<[^>]+>", "", content)
+        content = html.unescape(content)
+        lines = [line.strip() for line in content.splitlines()]
+        return "\n".join(line for line in lines if line)
+
     def _convert_doc(self, src, dst):
         try:
-            src_ext = Path(src).suffix.lower()
-            dst_ext = Path(dst).suffix.lower()
-            if dst_ext != Path(dst).suffix.lower():  # dummy
-                pass
-            base = Path(dst).stem
-            ddir = Path(dst).parent
-            cand = dst
-            if os.path.exists(cand):
-                i = 1
-                while True:
-                    cand = str(ddir / f"{base} ({i}){Path(dst).suffix}")
-                    if not os.path.exists(cand):
-                        dst = cand
-                        break
-                    i += 1
-                    if i > 1000:
-                        break
-            if src_ext == ".txt" and dst_ext in [".md", ".html"]:
+            src_fmt = self.canonical_format(Path(src).suffix)
+            dst_fmt = self.canonical_format(Path(dst).suffix)
+            if dst_fmt not in self.DOC_TARGETS.get(src_fmt, []):
+                raise ValueError(f"Unsupported document conversion: {src_fmt} -> {dst_fmt}")
+
+            if src_fmt == "pdf":
+                if shutil.which("pdftotext") is None:
+                    raise RuntimeError("pdftotext not found in PATH")
+                result = subprocess.run(
+                    ["pdftotext", "-layout", "-enc", "UTF-8", src, dst],
+                    capture_output=True,
+                    timeout=120,
+                )
+                if result.returncode != 0:
+                    message = result.stderr.decode("utf-8", "replace").strip()
+                    raise RuntimeError(message[:200] or "pdftotext failed")
+            else:
                 with open(src, encoding="utf-8", errors="ignore") as f:
                     content = f.read()
-                if dst_ext == ".html":
-                    html = "<html><body><pre>" + content.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") + "</pre></body></html>"
-                    with open(dst, "w", encoding="utf-8") as f:
-                        f.write(html)
+                if dst_fmt == "html":
+                    output = (
+                        "<!DOCTYPE html>\n<html>\n<head>\n"
+                        '<meta charset="utf-8">\n'
+                        f"<title>{html.escape(Path(src).stem)}</title>\n"
+                        "</head>\n<body>\n<pre>"
+                        + html.escape(content)
+                        + "</pre>\n</body>\n</html>\n"
+                    )
+                elif dst_fmt == "txt" and src_fmt == "html":
+                    output = self._html_to_text(content)
                 else:
-                    with open(dst, "w", encoding="utf-8") as f:
-                        f.write(content)
-                self._current_index += 1
-                self._convert_next()
-                return
-            if src_ext == ".md" and dst_ext == ".html":
-                with open(src, encoding="utf-8", errors="ignore") as f:
-                    content = f.read()
-                html = "<html><body><pre>" + content.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") + "</pre></body></html>"
+                    output = content
                 with open(dst, "w", encoding="utf-8") as f:
-                    f.write(html)
-                self._current_index += 1
-                self._convert_next()
-                return
-            if src_ext == ".html" and dst_ext == ".txt":
-                with open(src, encoding="utf-8", errors="ignore") as f:
-                    content = f.read()
-                import re as _re
-                text = _re.sub(r"<[^>]+>", "", content)
-                with open(dst, "w", encoding="utf-8") as f:
-                    f.write(text)
-                self._current_index += 1
-                self._convert_next()
-                return
+                    f.write(output)
+
+            self._current_index += 1
+            self._convert_next()
+            return
         except Exception as e:
-            self._error = str(e)[:200]
+            self._error = str(e)[:240]
             self.errorChanged.emit()
         self._failed_files.append(src)
         self._current_index += 1
         self._convert_next()
-        return
 
     def _on_stderr(self):
         if self._process is None:
@@ -450,14 +561,23 @@ class ConverterVM(BaseVM):
                     self.progressChanged.emit()
                 except Exception:
                     pass
-            l = line.lower()
-            if not self._error and ("error" in l or "unknown encoder" in l or "does not support" in l or "no such filter" in l or "invalid" in l):
+            lowered = line.lower()
+            if not self._error and (
+                "error" in lowered
+                or "unknown encoder" in lowered
+                or "does not support" in lowered
+                or "no such filter" in lowered
+                or "invalid" in lowered
+            ):
                 err = line.strip()
-                if "unknown encoder" in l:
-                    err = "Unsupported encoder for this format. Try a different format or install missing codecs."
-                elif "does not support" in l:
+                if "unknown encoder" in lowered:
+                    err = (
+                        "Unsupported encoder for this format. "
+                        "Try a different format or install missing codecs."
+                    )
+                elif "does not support" in lowered:
                     err = "Format/codec not supported by this ffmpeg build."
-                elif "no such filter" in l:
+                elif "no such filter" in lowered:
                     err = "Unsupported filter/operation for this conversion."
                 if len(err) > 240:
                     err = err[:240] + "..."
@@ -465,7 +585,12 @@ class ConverterVM(BaseVM):
                 self.errorChanged.emit()
 
     def _on_finished(self, code, status):
+        if not self._converting:
+            return
         if code == 0:
+            if self._error:
+                self._error = ""
+                self.errorChanged.emit()
             self._current_index += 1
             self._convert_next()
             return
@@ -475,7 +600,10 @@ class ConverterVM(BaseVM):
         except Exception:
             pass
         if not self._error:
-            self._error = f"Conversion failed for {Path(self._files[self._current_index].get('name','file')).name if self._current_index < len(self._files) else 'file'}"
+            name = "file"
+            if self._current_index < len(self._files):
+                name = Path(self._files[self._current_index].get("name", "file")).name
+            self._error = f"Conversion failed for {name}"
             self.errorChanged.emit()
         self._current_index += 1
         self._convert_next()
@@ -483,14 +611,19 @@ class ConverterVM(BaseVM):
 
     @Slot()
     def cancel(self):
-        if self._process is not None:
+        self._converting = False
+        process = self._process
+        self._process = None
+        if process is not None:
             try:
-                self._process.kill()
-                self._process.waitForFinished(1000)
+                process.kill()
+                process.waitForFinished(1000)
             except Exception:
                 pass
-        self._converting = False
         self._status = "Cancelled"
+        self._error = ""
+        self._progress = 0.0
         self.convertingChanged.emit()
         self.statusChanged.emit()
-        self._process = None
+        self.errorChanged.emit()
+        self.progressChanged.emit()

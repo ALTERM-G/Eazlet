@@ -183,8 +183,8 @@ import "tabs"
     IconButton {
         id: settingsButton
         anchors.centerIn: parent
-        buttonWidth: LayoutMetrics.size.iconM
-        buttonHeight: LayoutMetrics.size.iconM
+        buttonWidth: LayoutMetrics.size.iconButton
+        buttonHeight: LayoutMetrics.size.iconButton
         iconPath: SVGLibrary.settings
 
         ToolTip {
@@ -291,8 +291,8 @@ import "tabs"
                 anchors.topMargin: LayoutMetrics.spacing.xl
                 anchors.left: parent.left
                 anchors.leftMargin: LayoutMetrics.spacing.xl
-                buttonWidth: LayoutMetrics.size.iconM
-                buttonHeight: LayoutMetrics.size.iconM
+                buttonWidth: LayoutMetrics.size.iconButton
+                buttonHeight: LayoutMetrics.size.iconButton
                 iconPath: SVGLibrary.back
                 onPressed: {
                     cancelAppearanceChanges()

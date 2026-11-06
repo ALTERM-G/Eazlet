@@ -16,6 +16,9 @@ Item {
     property bool horizontalScroll: false
     property bool showCopyButton: false
 
+    // Briefly swapped to a check mark after the copy overlay is pressed.
+    property bool copyConfirmed: false
+
     function paste() {
         area.forceActiveFocus()
         area.paste()
@@ -23,7 +26,15 @@ Item {
 
     function copy() {
         area.forceActiveFocus()
-        area.copy()
+        // The corner button is meant to copy the whole output when nothing is
+        // selected, which is the common case for a read-only result box.
+        if (area.selectedText.length === 0 && area.text.length > 0) {
+            area.selectAll()
+            area.copy()
+            area.deselect()
+        } else {
+            area.copy()
+        }
     }
 
     function selectAll() {
@@ -199,15 +210,28 @@ Item {
         anchors.top: parent.top
         anchors.right: parent.right
         anchors.topMargin: LayoutMetrics.spacing.sm
-        anchors.rightMargin: LayoutMetrics.spacing.sm
+        // Keep clear of the vertical scrollbar.
+        anchors.rightMargin: vbar.visible
+                            ? vbar.width + vbar.gap + LayoutMetrics.spacing.xs
+                            : LayoutMetrics.spacing.sm
         z: 10
         visible: control.showCopyButton
         opacity: control.text.length > 0 ? 1.0 : 0.45
         enabled: control.text.length > 0
         buttonWidth: LayoutMetrics.size.iconM
         buttonHeight: LayoutMetrics.size.iconM
-        iconPath: SVGLibrary.copy
-        onPressed: control.copy()
+        iconPath: control.copyConfirmed ? SVGLibrary.checkMark : SVGLibrary.copy
+        onPressed: {
+            control.copy()
+            control.copyConfirmed = true
+            copyFeedbackTimer.restart()
+        }
+    }
+
+    Timer {
+        id: copyFeedbackTimer
+        interval: 1000
+        onTriggered: control.copyConfirmed = false
     }
 
     FocusRing {

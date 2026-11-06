@@ -73,6 +73,8 @@ Item {
                 model: socialMediaVM.formats.length > 0 ? socialMediaVM.formats : []
                 textRole: "label"
                 displayText: socialMediaVM.formats.length > 0 ? currentText : "Select format (optional)"
+                scrollablePopup: true
+                maxVisibleItems: 10
                 onCurrentIndexChanged: {
                     if (currentIndex >= 0 && socialMediaVM.formats.length > 0 && socialMediaVM.formats[currentIndex])
                         socialMediaVM.selectedFormat = socialMediaVM.formats[currentIndex].id
@@ -91,20 +93,48 @@ Item {
                 visible: socialMediaVM.downloading || socialMediaVM.progress >= 1.0
             }
 
-            Label {
-                bold: false
-                text: socialMediaVM.status
-                textColor: Theme.textColor
-                pixelSize: Typography.h6
-                elide: Text.ElideRight
+            Row {
                 width: parent.width
+                spacing: LayoutMetrics.spacing.sm
+                visible: socialMediaVM.status !== ""
+                SVGObject {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: LayoutMetrics.size.iconS
+                    height: LayoutMetrics.size.iconS
+                    path: SVGLibrary.checkMark
+                    color: Theme.textColor
+                    visible: socialMediaVM.status === "Done"
+                }
+                Label {
+                    bold: false
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: Math.max(0, parent.width - (socialMediaVM.status === "Done" ? LayoutMetrics.size.iconS + parent.spacing : 0))
+                    text: socialMediaVM.status
+                    textColor: Theme.textColor
+                    pixelSize: Typography.h6
+                    elide: Text.ElideRight
+                }
             }
-            Label {
-                bold: false
-                text: socialMediaVM.error
-                textColor: "red"
-                pixelSize: Typography.h6
+            Row {
+                width: parent.width
+                spacing: LayoutMetrics.spacing.sm
                 visible: socialMediaVM.error !== ""
+                SVGObject {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: LayoutMetrics.size.iconS
+                    height: LayoutMetrics.size.iconS
+                    path: SVGLibrary.cross
+                    color: "red"
+                }
+                Label {
+                    bold: false
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: Math.max(0, parent.width - LayoutMetrics.size.iconS - parent.spacing)
+                    text: socialMediaVM.error
+                    textColor: "red"
+                    pixelSize: Typography.h6
+                    wrapMode: Text.WordWrap
+                }
             }
         }
     }

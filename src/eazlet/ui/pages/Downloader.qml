@@ -84,20 +84,48 @@ Item {
                 }
             }
 
-            Label {
-                bold: false
-                text: downloadVM.status
-                textColor: Theme.textColor
-                pixelSize: Typography.h6
-                elide: Text.ElideRight
+            Row {
                 width: parent.width
+                spacing: LayoutMetrics.spacing.sm
+                visible: downloadVM.status !== ""
+                SVGObject {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: LayoutMetrics.size.iconS
+                    height: LayoutMetrics.size.iconS
+                    path: SVGLibrary.checkMark
+                    color: Theme.textColor
+                    visible: downloadVM.status === "Done"
+                }
+                Label {
+                    bold: false
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: Math.max(0, parent.width - (downloadVM.status === "Done" ? LayoutMetrics.size.iconS + parent.spacing : 0))
+                    text: downloadVM.status
+                    textColor: Theme.textColor
+                    pixelSize: Typography.h6
+                    elide: Text.ElideRight
+                }
             }
-            Label {
-                bold: false
-                text: downloadVM.error
-                textColor: "red"
-                pixelSize: Typography.h6
+            Row {
+                width: parent.width
+                spacing: LayoutMetrics.spacing.sm
                 visible: downloadVM.error !== ""
+                SVGObject {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: LayoutMetrics.size.iconS
+                    height: LayoutMetrics.size.iconS
+                    path: SVGLibrary.cross
+                    color: "red"
+                }
+                Label {
+                    bold: false
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: Math.max(0, parent.width - LayoutMetrics.size.iconS - parent.spacing)
+                    text: downloadVM.error
+                    textColor: "red"
+                    pixelSize: Typography.h6
+                    wrapMode: Text.WordWrap
+                }
             }
 
             Label {

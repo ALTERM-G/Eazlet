@@ -4,8 +4,14 @@ import QtQuick.Layouts
 import components
 
 Item {
+    id: page
     Layout.fillWidth: true
     Layout.fillHeight: true
+
+    function processAction() {
+        if (!archiveVM.compressing && !archiveVM.extracting && archiveVM.files.length > 0)
+            archiveVM.compress()
+    }
 
     Surface {
         anchors.centerIn: parent
@@ -65,7 +71,7 @@ Item {
 
                 Row {
                     spacing: LayoutMetrics.spacing.sm
-                    Button { buttonText: "Clear"; onPressed: archiveVM.clearFiles() }
+                    Button { buttonText: "Clear"; iconPath: SVGLibrary.eraser; onPressed: archiveVM.clearFiles() }
                     Label {
                         bold: false
                         text: archiveVM.files.length + " item(s)"
@@ -95,7 +101,13 @@ Item {
                                 width: parent.width * 0.8
                                 elide: Text.ElideMiddle
                             }
-                            Button { buttonText: "X"; width: 30; onPressed: archiveVM.removeFile(index) }
+                            IconButton {
+                                anchors.verticalCenter: parent.verticalCenter
+                                buttonWidth: LayoutMetrics.size.iconS
+                                buttonHeight: LayoutMetrics.size.iconS
+                                iconPath: SVGLibrary.cross
+                                onPressed: archiveVM.removeFile(index)
+                            }
                         }
                     }
                 }
@@ -112,6 +124,8 @@ Item {
                     ComboBox {
                         width: 150
                         model: ["zip", "tar.gz", "tar.xz", "tar.bz2"]
+                        scrollablePopup: true
+                        maxVisibleItems: 10
                         currentIndex: {
                             var idx = model.indexOf(archiveVM.format)
                             return idx >= 0 ? idx : 0
@@ -175,18 +189,42 @@ Item {
                     visible: archiveVM.compressing || archiveVM.extracting || archiveVM.progress >= 1.0
                 }
 
-                Label {
-                    bold: false
-                    text: archiveVM.status
-                    textColor: Theme.textColor
-                    pixelSize: Typography.h6
+                Row {
+                    spacing: LayoutMetrics.spacing.sm
+                    visible: archiveVM.status !== ""
+                    SVGObject {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: LayoutMetrics.size.iconS
+                        height: LayoutMetrics.size.iconS
+                        path: SVGLibrary.checkMark
+                        color: Theme.textColor
+                        visible: archiveVM.status === "Done"
+                    }
+                    Label {
+                        bold: false
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: archiveVM.status
+                        textColor: Theme.textColor
+                        pixelSize: Typography.h6
+                    }
                 }
-                Label {
-                    bold: false
-                    text: archiveVM.error
-                    textColor: "red"
-                    pixelSize: Typography.h6
+                Row {
+                    spacing: LayoutMetrics.spacing.sm
                     visible: archiveVM.error !== ""
+                    SVGObject {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: LayoutMetrics.size.iconS
+                        height: LayoutMetrics.size.iconS
+                        path: SVGLibrary.cross
+                        color: "red"
+                    }
+                    Label {
+                        bold: false
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: archiveVM.error
+                        textColor: "red"
+                        pixelSize: Typography.h6
+                    }
                 }
                 Item { width: 1; height: LayoutMetrics.spacing.xl }
             }

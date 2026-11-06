@@ -107,10 +107,24 @@ Item {
                 editor: area
             }
 
-            Keys.onPressed: (event) => {
+            Keys.onShortcutOverride: function(event) {
+                if (typeof Shortcuts !== "undefined" && !Shortcuts.capturing
+                        && Shortcuts.matchesAction("processAction", event))
+                    event.accepted = false
+            }
+
+            Keys.onPressed: function(event) {
                 if (event.key === Qt.Key_Insert) {
                     area.overwriteMode = !area.overwriteMode
                     event.accepted = true
+                    return
+                }
+                if (typeof Shortcuts !== "undefined" && !Shortcuts.capturing
+                        && Shortcuts.matchesAction("processAction", event)) {
+                    event.accepted = true
+                    var win = control.Window.window
+                    if (win && typeof win.triggerProcessAction === "function")
+                        win.triggerProcessAction()
                 }
             }
 

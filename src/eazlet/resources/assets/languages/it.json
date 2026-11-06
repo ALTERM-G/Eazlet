@@ -34,7 +34,8 @@
         "nextTab": "Scheda successiva",
         "prevTab": "Scheda precedente",
         "applyChanges": "Applica modifiche",
-        "closeSidebar": "Chiudi barra laterale"
+        "closeSidebar": "Chiudi barra laterale",
+        "processAction": "Elabora / Esegui"
     },
     "languages": [
         "Inglese",

@@ -265,37 +265,66 @@ class UnifiedDownloadVM(BaseVM):
                 acodec = f.get("acodec") or "none"
                 if vcodec == "none" and acodec == "none":
                     continue
-                res = f.get("resolution") or f.get("format_note") or ""
-                if isinstance(res, int):
-                    res = f"{res}p"
-                elif isinstance(res, str) and res.isdigit():
-                    res = f"{res}p"
-                height = f.get("height")
-                if height and isinstance(height, int):
-                    res = f"{height}p"
-                fps = f.get("fps")
-                if vcodec != "none" and acodec != "none":
-                    label = f"{fid} | {ext} | {res} | {fps if fps else ''}fps | A+V".strip().replace("  ", " ")
-                elif vcodec != "none":
-                    label = f"{fid} | {ext} | {res} | {fps if fps else ''}fps | V".strip().replace("  ", " ")
-                else:
+                if vcodec == "none":
+                    # audio-only: keep out of the video format picker (audio handled separately)
                     continue
-                fmts.append({"id": fid, "label": label, "height": height or 0})
+                height = f.get("height")
+                try:
+                    height_i = int(height) if height is not None else 0
+                except Exception:
+                    height_i = 0
+                res = f.get("resolution") or f.get("format_note") or ""
+                if height_i:
+                    res = f"{height_i}p"
+                elif isinstance(res, (int, float)):
+                    res = f"{int(res)}p"
+                elif isinstance(res, str) and res.strip().isdigit():
+                    res = f"{res.strip()}p"
+                if not res or str(res).lower() == "audio only":
+                    res = "?"
+                fps_raw = f.get("fps")
+                fps_i = 0
+                try:
+                    if fps_raw is not None:
+                        fps_i = int(round(float(fps_raw)))
+                except Exception:
+                    fps_i = 0
+                if not fps_i:
+                    note = str(f.get("format_note") or f.get("format") or "")
+                    m_fps = re.search(r"(\d{2,3})\s*fps", note, re.IGNORECASE)
+                    if m_fps:
+                        try:
+                            fps_i = int(m_fps.group(1))
+                        except Exception:
+                            fps_i = 0
+                fps_s = f" | {fps_i}fps" if fps_i else ""
+                kind = "A+V" if acodec != "none" else "V"
+                label = f"{fid} | {ext} | {res}{fps_s} | {kind}"
+                fmts.append({"id": fid, "label": label, "height": height_i, "fps": fps_i, "ext": ext})
+
             def sort_key(x):
-                l = x["label"].lower()
-                score = 0
-                if "mp4" in l:
-                    score -= 10
-                h = x.get("height") or 0
-                score -= h
-                if "60" in l or "50" in l:
-                    score -= 1
-                return score
+                ext = str(x.get("ext") or "").lower()
+                mp4_pref = 0 if ext == "mp4" else 1
+                return (-int(x.get("height") or 0), -int(x.get("fps") or 0), mp4_pref, str(x.get("id") or ""))
+
             fmts = sorted(fmts, key=sort_key)
-            fmts = fmts[:30]
-            self._formats = fmts
+            # dedupe by (height, fps, kind/ext-ish label shape) keeping best id order? keep all ids but avoid exact dup labels
+            seen = set()
+            uniq = []
+            for x in fmts:
+                k = (x.get("height"), x.get("fps"), x.get("ext"), "A+V" in x["label"])
+                # allow different containers/ids when meaningfully different; cap duplicates of same bucket
+                bucket = f"{k}"
+                # keep a few per bucket
+                count = sum(1 for s in seen if s == bucket)
+                if count >= 2:
+                    continue
+                seen.add(bucket)
+                uniq.append(x)
+            fmts = uniq[:60]
+            self._formats = [{"id": x["id"], "label": x["label"]} for x in fmts]
             self.formatsChanged.emit()
-            self._status = "Formats loaded"
+            self._status = "Formats loaded" if fmts else "No formats found"
             self.statusChanged.emit()
         except Exception as e:
             self._error = str(e)[:240]

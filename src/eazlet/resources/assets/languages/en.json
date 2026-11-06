@@ -34,7 +34,8 @@
         "nextTab": "Next tab",
         "prevTab": "Previous tab",
         "applyChanges": "Apply changes",
-        "closeSidebar": "Close sidebar"
+        "closeSidebar": "Close sidebar",
+        "processAction": "Process / Run"
     },
     "languages": [
         "English",

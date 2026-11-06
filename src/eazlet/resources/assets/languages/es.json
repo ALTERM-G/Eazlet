@@ -34,7 +34,8 @@
         "nextTab": "Pestaña siguiente",
         "prevTab": "Pestaña anterior",
         "applyChanges": "Aplicar cambios",
-        "closeSidebar": "Cerrar barra lateral"
+        "closeSidebar": "Cerrar barra lateral",
+        "processAction": "Procesar / Ejecutar"
     },
     "languages": [
         "Inglés",

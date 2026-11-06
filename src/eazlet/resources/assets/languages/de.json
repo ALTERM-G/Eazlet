@@ -34,7 +34,8 @@
         "nextTab": "Nächster Tab",
         "prevTab": "Vorheriger Tab",
         "applyChanges": "Änderungen übernehmen",
-        "closeSidebar": "Seitenleiste schließen"
+        "closeSidebar": "Seitenleiste schließen",
+        "processAction": "Ausführen"
     },
     "languages": [
         "Englisch",

@@ -5,9 +5,9 @@
    fill="#000000"
    version="1.1"
    id="Capa_1"
-   width="263.81284"
-   height="223.8412"
-   viewBox="0 0 8.1617096 6.9250871"
+   width="178.39722"
+   height="151.36734"
+   viewBox="0 0 5.5191639 4.682927"
    xml:space="preserve"
    sodipodi:docname="left_sidebar.svg"
    inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
@@ -25,8 +25,8 @@
    inkscape:pagecheckerboard="0"
    inkscape:deskcolor="#d1d1d1"
    inkscape:zoom="0.35875"
-   inkscape:cx="132.40418"
-   inkscape:cy="105.92334"
+   inkscape:cx="89.198606"
+   inkscape:cy="69.686411"
    inkscape:window-width="1920"
    inkscape:window-height="1080"
    inkscape:window-x="0"
@@ -35,7 +35,7 @@
    inkscape:current-layer="Capa_1" />
 <g
    id="g1"
-   transform="matrix(0.32976606,0,0,0.32976606,0,-0.61831136)">
+   transform="matrix(0.22299652,0,0,0.22299652,0,-0.41811848)">
 	<path
    d="m 0,3.875 c 0,-1.104 0.896,-2 2,-2 h 20.75 c 1.104,0 2,0.896 2,2 0,1.104 -0.896,2 -2,2 H 2 c -1.104,0 -2,-0.896 -2,-2 z m 22.75,6.5 H 2 c -1.104,0 -2,0.896 -2,2 0,1.104 0.896,2 2,2 h 20.75 c 1.104,0 2,-0.896 2,-2 0,-1.104 -0.895,-2 -2,-2 z m 0,8.5 H 2 c -1.104,0 -2,0.896 -2,2 0,1.104 0.896,2 2,2 h 20.75 c 1.104,0 2,-0.896 2,-2 0,-1.104 -0.895,-2 -2,-2 z"
    id="path1" />

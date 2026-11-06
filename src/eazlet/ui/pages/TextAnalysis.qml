@@ -9,6 +9,10 @@ Item {
     Layout.fillWidth: true
     Layout.fillHeight: true
 
+    function processAction() {
+        textAnalysisVM.process()
+    }
+
     function compositionColor(index) {
         switch (index) {
         case 0: return Theme.themeColor
@@ -82,6 +86,16 @@ Item {
                     elide: Text.ElideRight
                 }
 
+                Switch {
+                    text: "Code / unusual"
+                    checked: textAnalysisVM.mode === "code"
+                    onCheckedChanged: {
+                        var nextMode = checked ? "code" : "text"
+                        if (nextMode !== textAnalysisVM.mode)
+                            textAnalysisVM.setMode(nextMode)
+                    }
+                }
+
                 Button {
                     buttonText: "Process"
                     primary: true
@@ -90,6 +104,7 @@ Item {
 
                 Button {
                     buttonText: "Clear"
+                    iconPath: SVGLibrary.eraser
                     onPressed: textAnalysisVM.clear()
                 }
             }
@@ -99,20 +114,10 @@ Item {
                 Layout.fillWidth: true
                 Layout.preferredHeight: LayoutMetrics.unit * 13
                 text: textAnalysisVM.input
-                placeholderText: "Paste or type text here, then press Process..."
+                placeholderText: textAnalysisVM.mode === "code"
+                    ? "Paste code, a random string, or other unusual text, then press Process..."
+                    : "Paste or type text here, then press Process..."
                 onTextChanged: textAnalysisVM.input = text
-                Keys.onShortcutOverride: function(event) {
-                    if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter)
-                            && (event.modifiers & Qt.ControlModifier))
-                        event.accepted = true
-                }
-                Keys.onPressed: function(event) {
-                    if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter)
-                            && (event.modifiers & Qt.ControlModifier)) {
-                        textAnalysisVM.process()
-                        event.accepted = true
-                    }
-                }
             }
 
             RowLayout {
@@ -132,7 +137,9 @@ Item {
                 Label {
                     bold: false
                     visible: textAnalysisVM.hasResults
-                    text: "Readability: " + textAnalysisVM.readabilityLabel
+                    text: textAnalysisVM.mode === "code"
+                        ? textAnalysisVM.readabilityLabel
+                        : "Readability: " + textAnalysisVM.readabilityLabel
                     textColor: Theme.dividerColor
                     pixelSize: Typography.body
                     elide: Text.ElideRight
@@ -146,14 +153,27 @@ Item {
                 }
             }
 
-            Label {
-                bold: false
+            RowLayout {
                 Layout.fillWidth: true
-                text: textAnalysisVM.error
-                textColor: "red"
-                pixelSize: Typography.body
+                spacing: LayoutMetrics.spacing.sm
                 visible: textAnalysisVM.error !== ""
-                wrapMode: Text.WordWrap
+
+                SVGObject {
+                    Layout.preferredWidth: LayoutMetrics.size.iconS
+                    Layout.preferredHeight: LayoutMetrics.size.iconS
+                    Layout.alignment: Qt.AlignVCenter
+                    path: SVGLibrary.cross
+                    color: "red"
+                }
+
+                Label {
+                    bold: false
+                    Layout.fillWidth: true
+                    text: textAnalysisVM.error
+                    textColor: "red"
+                    pixelSize: Typography.body
+                    wrapMode: Text.WordWrap
+                }
             }
 
             Rectangle {
@@ -292,12 +312,25 @@ Item {
                         readonly property real cardWidth: columns > 0
                             ? (width - spacing * (columns - 1)) / columns
                             : width
+                        readonly property real firstRowHeight: Math.max(
+                            topWordsPanel.contentHeight,
+                            tokenLengthPanel.contentHeight,
+                            LayoutMetrics.unit * 20)
 
                         Panel {
+                            id: topWordsPanel
                             width: cardsGrid.cardWidth
-                            height: Math.max(LayoutMetrics.unit * 20, contentHeight)
-                            heading: "Top words"
-                            subtitle: "Common stop words are skipped."
+                            height: cardsGrid.columns > 1
+                                    ? cardsGrid.firstRowHeight
+                                    : Math.max(LayoutMetrics.unit * 20, contentHeight)
+                            heading: textAnalysisVM.mode === "code" ? "Top tokens" : "Top words"
+                            subtitle: textAnalysisVM.topWords.length === 0
+                                      ? (textAnalysisVM.mode === "code"
+                                         ? "Run an analysis to see frequent tokens."
+                                         : "Run an analysis to see frequent words.")
+                                      : (textAnalysisVM.mode === "code"
+                                         ? "Most frequent tokens in the input."
+                                         : "Common stop words are skipped.")
 
                             Column {
                                 width: parent.width
@@ -365,16 +398,21 @@ Item {
                         }
 
                         Panel {
+                            id: tokenLengthPanel
                             width: cardsGrid.cardWidth
-                            height: Math.max(LayoutMetrics.unit * 20, contentHeight)
-                            heading: "Word length distribution"
-                            subtitle: "Number of words by character count."
+                            height: cardsGrid.columns > 1
+                                    ? cardsGrid.firstRowHeight
+                                    : Math.max(LayoutMetrics.unit * 20, contentHeight)
+                            heading: textAnalysisVM.mode === "code" ? "Token length distribution" : "Word length distribution"
+                            subtitle: textAnalysisVM.mode === "code"
+                                      ? "Number of tokens by character count."
+                                      : "Number of words by character count."
 
                             Label {
                                 bold: false
                                 width: parent.width
                                 visible: textAnalysisVM.wordLengths.length === 0
-                                text: "No word length data yet."
+                                text: textAnalysisVM.mode === "code" ? "No token length data yet." : "No word length data yet."
                                 textColor: Theme.dividerColor
                                 pixelSize: Typography.h6
                                 wrapMode: Text.WordWrap
@@ -450,7 +488,7 @@ Item {
 
                         Panel {
                             width: cardsGrid.cardWidth
-                            height: LayoutMetrics.unit * 30
+                            height: Math.max(LayoutMetrics.unit * 20, contentHeight)
                             heading: "Character composition"
                             subtitle: "Letters, digits, whitespace, and punctuation."
 
@@ -458,20 +496,28 @@ Item {
                                 width: parent.width
                                 spacing: LayoutMetrics.spacing.sm
 
-                                Row {
+                                Rectangle {
+                                    id: compositionBar
                                     width: parent.width
                                     height: LayoutMetrics.unit * 3
-                                    spacing: 0
+                                    radius: LayoutMetrics.radius.s
+                                    color: "transparent"
+                                    clip: true
 
-                                    Repeater {
-                                        model: textAnalysisVM.characterComposition
+                                    Row {
+                                        anchors.fill: parent
+                                        spacing: 0
 
-                                        delegate: Rectangle {
-                                            width: parent.width
-                                                   * modelData.value
-                                                   / Math.max(1, textAnalysisVM.characterTotal)
-                                            height: parent.height
-                                            color: compositionColor(index)
+                                        Repeater {
+                                            model: textAnalysisVM.characterComposition
+
+                                            delegate: Rectangle {
+                                                width: compositionBar.width
+                                                       * modelData.value
+                                                       / Math.max(1, textAnalysisVM.characterTotal)
+                                                height: parent.height
+                                                color: compositionColor(index)
+                                            }
                                         }
                                     }
                                 }
@@ -544,78 +590,55 @@ Item {
 
                         Panel {
                             width: cardsGrid.cardWidth
-                            height: LayoutMetrics.unit * 30
-                            heading: "Longest words"
-                            subtitle: "Unique words, longest first."
+                            height: Math.max(LayoutMetrics.unit * 20, contentHeight)
+                            heading: textAnalysisVM.mode === "code" ? "Longest tokens" : "Longest words"
+                            subtitle: textAnalysisVM.mode === "code"
+                                      ? "Distinct tokens, sorted by length."
+                                      : "Distinct words, sorted by length."
+
+                            Label {
+                                bold: false
+                                width: parent.width
+                                visible: textAnalysisVM.longestWords.length === 0
+                                text: textAnalysisVM.mode === "code" ? "No token data yet." : "No word data yet."
+                                textColor: Theme.dividerColor
+                                pixelSize: Typography.h6
+                                wrapMode: Text.WordWrap
+                            }
 
                             Column {
                                 width: parent.width
                                 spacing: LayoutMetrics.unit * 0.35
+                                visible: textAnalysisVM.longestWords.length > 0
 
                                 Repeater {
                                     model: textAnalysisVM.longestWords
 
-                                    delegate: Item {
+                                    delegate: Row {
                                         width: parent.width
-                                        height: LayoutMetrics.unit * 2.8
+                                        spacing: LayoutMetrics.spacing.sm
 
                                         Label {
                                             bold: false
-                                            width: Math.max(0,
-                                                parent.width - LayoutMetrics.unit * 10
-                                                - LayoutMetrics.spacing.sm)
-                                            anchors.verticalCenter: parent.verticalCenter
+                                            width: parent.width - lengthLabel.implicitWidth - parent.spacing
                                             text: modelData.word
                                             textColor: Theme.textColor
                                             pixelSize: Typography.h6
-                                            elide: Text.ElideRight
+                                            elide: Text.ElideMiddle
+                                            wrapMode: Text.NoWrap
                                         }
 
                                         Label {
+                                            id: lengthLabel
                                             bold: false
-                                            width: LayoutMetrics.unit * 9
-                                            anchors.right: parent.right
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            horizontalAlignment: Text.AlignRight
-                                            text: modelData.length + " chars"
+                                            text: modelData.length
                                             textColor: Theme.dividerColor
                                             pixelSize: Typography.caption
-                                            elide: Text.ElideRight
                                         }
                                     }
                                 }
                             }
                         }
-                    }
-
-                    Panel {
-                        width: parent.width
-                        height: contentHeight
-                        heading: "Insights"
-                        subtitle: "Automatic observations generated from the current text."
-
-                        Column {
-                            width: parent.width
-                            spacing: LayoutMetrics.spacing.xs
-
-                            Repeater {
-                                model: textAnalysisVM.insights
-
-                                delegate: Label {
-                                    bold: false
-                                    width: parent.width
-                                    text: "•  " + modelData
-                                    textColor: Theme.textColor
-                                    pixelSize: Typography.h6
-                                    wrapMode: Text.WordWrap
-                                }
-                            }
-                        }
-                    }
-
-                    Item {
-                        width: 1
-                        height: LayoutMetrics.spacing.xl
                     }
                 }
             }

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+
+<svg
+   width="800px"
+   height="800px"
+   viewBox="0 0 24 24"
+   fill="none"
+   version="1.1"
+   id="svg2"
+   sodipodi:docname="Archive.svg"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     id="namedview2"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="0.18"
+     inkscape:cx="397.22222"
+     inkscape:cy="400"
+     inkscape:window-width="1920"
+     inkscape:window-height="1080"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg2" />
+  <path
+     d="M8 10C7.44772 10 7 10.4477 7 11C7 11.5523 7.44772 12 8 12H16C16.5523 12 17 11.5523 17 11C17 10.4477 16.5523 10 16 10H8Z"
+     fill="#0F0F0F"
+     id="path1" />
+  <path
+     fill-rule="evenodd"
+     clip-rule="evenodd"
+     d="M 21.5,5.0909091 C 21.5,3.6599932 20.34005,2.5 18.909091,2.5 H 5.0909091 C 3.6599932,2.5 2.5,3.6599932 2.5,5.0909091 v 0.8636363 c 0,1.1280992 0.7209723,2.0878064 1.7272727,2.4434778 V 18.909091 C 4.2272727,20.34005 5.3872659,21.5 6.8181818,21.5 H 17.181818 c 1.430959,0 2.590909,-1.15995 2.590909,-2.590909 V 8.3980232 C 20.779036,8.0423518 21.5,7.0826446 21.5,5.9545454 Z M 18.909091,6.8181818 H 5.0909091 c -0.4769691,0 -0.8636364,-0.3866672 -0.8636364,-0.8636364 V 5.0909091 c 0,-0.4769691 0.3866673,-0.8636364 0.8636364,-0.8636364 H 18.909091 c 0.476986,0 0.863636,0.3866673 0.863636,0.8636364 v 0.8636363 c 0,0.4769692 -0.38665,0.8636364 -0.863636,0.8636364 z M 5.9545454,18.909091 V 8.5454546 H 18.045454 V 18.909091 c 0,0.476986 -0.38665,0.863636 -0.863636,0.863636 H 6.8181818 c -0.4769691,0 -0.8636364,-0.38665 -0.8636364,-0.863636 z"
+     fill="#0f0f0f"
+     id="path2"
+     style="stroke-width:0.863636" />
+</svg>

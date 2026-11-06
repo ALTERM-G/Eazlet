@@ -18,9 +18,9 @@ Item {
 
     readonly property bool hovered: mouseArea.containsMouse
     readonly property bool dragActive: dropArea.containsDrag
-    readonly property color primaryTextColor: dragActive ? Theme.hoverTextColor : Theme.textColor
-    readonly property color secondaryTextColor: dragActive ? Theme.hoverTextColor : Theme.dividerColor
-    readonly property color borderColor: dragActive || hovered ? Theme.themeColor : Theme.borderColor
+    readonly property color primaryTextColor: Theme.textColor
+    readonly property color secondaryTextColor: Theme.dividerColor
+    readonly property color borderColor: dragActive ? Theme.themeColor : (hovered ? Theme.themeColor : Theme.borderColor)
     readonly property real pathInset: borderWidth / 2
     readonly property real pathRadius: cornerRadius
 
@@ -63,7 +63,9 @@ Item {
         id: background
         anchors.fill: parent
         radius: root.cornerRadius
-        color: root.dragActive ? Theme.hoverBackgroundColor : Theme.inputBackgroundColor
+        color: root.dragActive
+               ? Qt.rgba(Theme.themeColor.r, Theme.themeColor.g, Theme.themeColor.b, 0.10)
+               : Theme.inputBackgroundColor
 
         Behavior on color {
             enabled: LayoutMetrics.animationsEnabled
@@ -173,8 +175,8 @@ Item {
         anchors.fill: parent
         hoverEnabled: true
         cursorShape: root.clickable ? Qt.PointingHandCursor : Qt.ArrowCursor
-        enabled: root.clickable
-        onClicked: root.triggerClick()
+        acceptedButtons: root.clickable ? Qt.LeftButton : Qt.NoButton
+        onClicked: if (root.clickable) root.triggerClick()
     }
 
     DropArea {

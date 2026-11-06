@@ -9,6 +9,17 @@ Item {
     Layout.fillWidth: true
     Layout.fillHeight: true
 
+    function processAction() {
+        if (toolTabs.currentIndex === 0)
+            cipherVM.processEncoding()
+        else if (toolTabs.currentIndex === 1)
+            cipherVM.processCipher()
+        else if (toolTabs.currentIndex === 2)
+            cipherVM.encrypt()
+        else
+            cipherVM.hashInput()
+    }
+
     Surface {
         anchors.centerIn: parent
         width: parent.width * 0.9
@@ -114,7 +125,7 @@ Item {
                                 width: 260
                                 model: cipherVM.encodings
                                 scrollablePopup: true
-                                maxVisibleItems: 12
+                                maxVisibleItems: 10
                                 currentIndex: {
                                     var idx = model.indexOf(cipherVM.encodingAlgorithm)
                                     return idx >= 0 ? idx : 0
@@ -137,7 +148,7 @@ Item {
                             Button { buttonText: "Process"; primary: true; onPressed: cipherVM.processEncoding() }
                             Button { buttonText: "Detect"; onPressed: cipherVM.detect() }
                             Button { buttonText: "Swap"; onPressed: cipherVM.swap() }
-                            Button { buttonText: "Clear"; onPressed: cipherVM.clear() }
+                            Button { buttonText: "Clear"; iconPath: SVGLibrary.eraser; onPressed: cipherVM.clear() }
                         }
                     }
 
@@ -171,7 +182,7 @@ Item {
                                 width: 260
                                 model: cipherVM.classicalCiphers
                                 scrollablePopup: true
-                                maxVisibleItems: 12
+                                maxVisibleItems: 10
                                 currentIndex: {
                                     var idx = model.indexOf(cipherVM.cipherAlgorithm)
                                     return idx >= 0 ? idx : 0
@@ -222,7 +233,7 @@ Item {
                             spacing: LayoutMetrics.spacing.sm
                             Button { buttonText: "Process"; primary: true; onPressed: cipherVM.processCipher() }
                             Button { buttonText: "Swap"; onPressed: cipherVM.swap() }
-                            Button { buttonText: "Clear"; onPressed: cipherVM.clear() }
+                            Button { buttonText: "Clear"; iconPath: SVGLibrary.eraser; onPressed: cipherVM.clear() }
                         }
                     }
 
@@ -307,7 +318,7 @@ Item {
                             spacing: LayoutMetrics.spacing.sm
                             Button { buttonText: "Encrypt"; primary: true; onPressed: cipherVM.encrypt() }
                             Button { buttonText: "Decrypt"; onPressed: cipherVM.decrypt() }
-                            Button { buttonText: "Clear"; onPressed: cipherVM.clear() }
+                            Button { buttonText: "Clear"; iconPath: SVGLibrary.eraser; onPressed: cipherVM.clear() }
                         }
                     }
 
@@ -354,7 +365,7 @@ Item {
                         Row {
                             spacing: LayoutMetrics.spacing.sm
                             Button { buttonText: "Hash"; primary: true; onPressed: cipherVM.hashInput() }
-                            Button { buttonText: "Clear"; onPressed: cipherVM.clear() }
+                            Button { buttonText: "Clear"; iconPath: SVGLibrary.eraser; onPressed: cipherVM.clear() }
                         }
                     }
 
@@ -378,7 +389,7 @@ Item {
 
                         Button {
                             buttonText: "Clear"
-                            iconPath: ""
+                            iconPath: SVGLibrary.eraser
                             onPressed: cipherVM.clear()
                         }
                     }
@@ -396,14 +407,7 @@ Item {
                         }
                         Keys.onPressed: function(event) {
                             if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && (event.modifiers & Qt.ShiftModifier)) {
-                                if (toolTabs.currentIndex === 0)
-                                    cipherVM.processEncoding()
-                                else if (toolTabs.currentIndex === 1)
-                                    cipherVM.processCipher()
-                                else if (toolTabs.currentIndex === 2)
-                                    cipherVM.encrypt()
-                                else
-                                    cipherVM.hashInput()
+                                page.processAction()
                                 event.accepted = true
                             }
                         }
@@ -431,24 +435,49 @@ Item {
                         width: parent.width
                         height: 150
                         text: cipherVM.output
-                        enabled: false
+                        readOnly: true
                     }
 
-                    Label {
-                        bold: false
-                        text: cipherVM.status
-                        textColor: Theme.textColor
-                        pixelSize: Typography.h6
+                    Row {
+                        spacing: LayoutMetrics.spacing.sm
+                        visible: cipherVM.status !== ""
+                        SVGObject {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: LayoutMetrics.size.iconS
+                            height: LayoutMetrics.size.iconS
+                            path: SVGLibrary.checkMark
+                            color: Theme.textColor
+                            visible: cipherVM.status === "Done"
+                        }
+                        Label {
+                            bold: false
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: cipherVM.status
+                            textColor: Theme.textColor
+                            pixelSize: Typography.h6
+                        }
                     }
 
-                    Label {
-                        bold: false
+                    Row {
                         width: parent.width
-                        text: cipherVM.error
-                        textColor: "red"
-                        pixelSize: Typography.h6
+                        spacing: LayoutMetrics.spacing.sm
                         visible: cipherVM.error !== ""
-                        wrapMode: Text.WordWrap
+                        SVGObject {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: LayoutMetrics.size.iconS
+                            height: LayoutMetrics.size.iconS
+                            path: SVGLibrary.cross
+                            color: "red"
+                        }
+                        Label {
+                            bold: false
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: Math.max(0, parent.width - LayoutMetrics.size.iconS - parent.spacing)
+                            text: cipherVM.error
+                            textColor: "red"
+                            pixelSize: Typography.h6
+                            wrapMode: Text.WordWrap
+                        }
                     }
 
                     Item {

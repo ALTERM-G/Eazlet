@@ -5,8 +5,14 @@ import QtQuick.Dialogs
 import components
 
 Item {
+    id: page
     Layout.fillWidth: true
     Layout.fillHeight: true
+
+    function processAction() {
+        if (!organizerVM.scanning)
+            organizerVM.scan()
+    }
 
     Surface {
         anchors.centerIn: parent
@@ -87,18 +93,42 @@ Item {
                     visible: organizerVM.scanning
                 }
 
-                Label {
-                    bold: false
-                    text: organizerVM.status
-                    textColor: Theme.textColor
-                    pixelSize: Typography.h6
+                Row {
+                    spacing: LayoutMetrics.spacing.sm
+                    visible: organizerVM.status !== ""
+                    SVGObject {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: LayoutMetrics.size.iconS
+                        height: LayoutMetrics.size.iconS
+                        path: SVGLibrary.checkMark
+                        color: Theme.textColor
+                        visible: organizerVM.status === "Done"
+                    }
+                    Label {
+                        bold: false
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: organizerVM.status
+                        textColor: Theme.textColor
+                        pixelSize: Typography.h6
+                    }
                 }
-                Label {
-                    bold: false
-                    text: organizerVM.error
-                    textColor: "red"
-                    pixelSize: Typography.h6
+                Row {
+                    spacing: LayoutMetrics.spacing.sm
                     visible: organizerVM.error !== ""
+                    SVGObject {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: LayoutMetrics.size.iconS
+                        height: LayoutMetrics.size.iconS
+                        path: SVGLibrary.cross
+                        color: "red"
+                    }
+                    Label {
+                        bold: false
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: organizerVM.error
+                        textColor: "red"
+                        pixelSize: Typography.h6
+                    }
                 }
 
                 Label {

@@ -5,8 +5,14 @@ import QtQuick.Dialogs
 import components
 
 Item {
+    id: page
     Layout.fillWidth: true
     Layout.fillHeight: true
+
+    function processAction() {
+        if (!converterVM.converting && converterVM.files.length > 0 && converterVM.targetFormat !== "")
+            converterVM.convert()
+    }
 
     Surface {
         anchors.centerIn: parent
@@ -66,7 +72,7 @@ Item {
 
                 Row {
                     spacing: LayoutMetrics.spacing.sm
-                    Button { buttonText: "Clear"; onPressed: converterVM.clearFiles() }
+                    Button { buttonText: "Clear"; iconPath: SVGLibrary.eraser; onPressed: converterVM.clearFiles() }
                     Label {
                         bold: false
                         text: converterVM.files.length + " file(s)"
@@ -103,7 +109,13 @@ Item {
                                 pixelSize: Typography.h6
                                 width: 40
                             }
-                            Button { buttonText: "X"; width: 30; onPressed: converterVM.removeFile(index) }
+                            IconButton {
+                                anchors.verticalCenter: parent.verticalCenter
+                                buttonWidth: LayoutMetrics.size.iconS
+                                buttonHeight: LayoutMetrics.size.iconS
+                                iconPath: SVGLibrary.cross
+                                onPressed: converterVM.removeFile(index)
+                            }
                         }
                     }
                 }
@@ -121,6 +133,8 @@ Item {
                     ComboBox {
                         width: 200
                         model: converterVM.validTargetFormats
+                        scrollablePopup: true
+                        maxVisibleItems: 10
                         currentIndex: {
                             var idx = model.indexOf(converterVM.targetFormat)
                             return idx >= 0 ? idx : 0
@@ -158,18 +172,42 @@ Item {
                     visible: converterVM.converting || converterVM.progress >= 1.0
                 }
 
-                Label {
-                    bold: false
-                    text: converterVM.status
-                    textColor: Theme.textColor
-                    pixelSize: Typography.h6
+                Row {
+                    spacing: LayoutMetrics.spacing.sm
+                    visible: converterVM.status !== ""
+                    SVGObject {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: LayoutMetrics.size.iconS
+                        height: LayoutMetrics.size.iconS
+                        path: SVGLibrary.checkMark
+                        color: Theme.textColor
+                        visible: converterVM.status === "Done"
+                    }
+                    Label {
+                        bold: false
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: converterVM.status
+                        textColor: Theme.textColor
+                        pixelSize: Typography.h6
+                    }
                 }
-                Label {
-                    bold: false
-                    text: converterVM.error
-                    textColor: "red"
-                    pixelSize: Typography.h6
+                Row {
+                    spacing: LayoutMetrics.spacing.sm
                     visible: converterVM.error !== ""
+                    SVGObject {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: LayoutMetrics.size.iconS
+                        height: LayoutMetrics.size.iconS
+                        path: SVGLibrary.cross
+                        color: "red"
+                    }
+                    Label {
+                        bold: false
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: converterVM.error
+                        textColor: "red"
+                        pixelSize: Typography.h6
+                    }
                 }
                 Item { width: 1; height: LayoutMetrics.spacing.xl }
             }

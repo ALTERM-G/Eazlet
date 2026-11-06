@@ -21,6 +21,15 @@ Window {
         Theme.animationsEnabled = animationsEnabled
     }
 
+    function triggerProcessAction() {
+        if (stackLayout && stackLayout.currentIndex >= 0
+                && stackLayout.currentIndex < stackLayout.count) {
+            var page = stackLayout.itemAt(stackLayout.currentIndex)
+            if (page && typeof page.processAction === "function")
+                page.processAction()
+        }
+    }
+
     FontCrossfade {
         id: fontCrossfade
     }
@@ -64,6 +73,17 @@ Window {
         }
     }
 
+    Shortcut {
+        id: processShortcut
+        context: Qt.ApplicationShortcut
+        sequence: {
+            var _dep = Shortcuts.overrides
+            return Shortcuts.primary("processAction")
+        }
+        enabled: !Shortcuts.capturing
+        onActivated: window.triggerProcessAction()
+    }
+
     Rectangle {
         id: contentArea
         color: Theme.backgroundColor
@@ -71,6 +91,15 @@ Window {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
+        focus: true
+
+        Keys.onPressed: function(event) {
+            if (typeof Shortcuts !== "undefined" && !Shortcuts.capturing
+                    && Shortcuts.matchesAction("processAction", event)) {
+                window.triggerProcessAction()
+                event.accepted = true
+            }
+        }
 
         MouseArea {
             anchors.fill: parent
@@ -88,13 +117,13 @@ Window {
             anchors.fill: parent
             currentIndex: sidebar.currentIndex >= 0 ? sidebar.currentIndex : 0
 
-            Home {}
-            DownloadUnified {}
-            Converter {}
-            Archive {}
-            Organizer {}
-            Cipher {}
-            TextAnalysis {}
+            Home { id: homePage }
+            DownloadUnified { id: downloadPage }
+            Converter { id: converterPage }
+            Archive { id: archivePage }
+            Organizer { id: organizerPage }
+            Cipher { id: cipherPage }
+            TextAnalysis { id: textAnalysisPage }
         }
     }
 }

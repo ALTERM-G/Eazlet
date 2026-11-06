@@ -5,8 +5,14 @@ import QtQuick.Layouts
 import components
 
 Item {
+    id: page
     Layout.fillWidth: true
     Layout.fillHeight: true
+
+    function processAction() {
+        if (!unifiedDownloadVM.downloading)
+            unifiedDownloadVM.startDownload()
+    }
 
     Surface {
         anchors.centerIn: parent
@@ -116,6 +122,8 @@ Item {
                             model: unifiedDownloadVM.formats.length > 0 ? unifiedDownloadVM.formats : []
                             textRole: "label"
                             displayText: unifiedDownloadVM.formats.length > 0 ? currentText : "Best available"
+                            scrollablePopup: true
+                            maxVisibleItems: 10
                             onCurrentIndexChanged: {
                                 if (currentIndex >= 0 && unifiedDownloadVM.formats.length > 0 && unifiedDownloadVM.formats[currentIndex])
                                     unifiedDownloadVM.selectedFormat = unifiedDownloadVM.formats[currentIndex].id
@@ -162,20 +170,48 @@ Item {
                     }
                 }
 
-                Label {
-                    bold: false
-                    text: unifiedDownloadVM.status
-                    textColor: Theme.textColor
-                    pixelSize: Typography.h6
-                    elide: Text.ElideRight
+                Row {
                     width: parent.width
+                    spacing: LayoutMetrics.spacing.sm
+                    visible: unifiedDownloadVM.status !== ""
+                    SVGObject {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: LayoutMetrics.size.iconS
+                        height: LayoutMetrics.size.iconS
+                        path: SVGLibrary.checkMark
+                        color: Theme.textColor
+                        visible: unifiedDownloadVM.status === "Done"
+                    }
+                    Label {
+                        bold: false
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: Math.max(0, parent.width - (unifiedDownloadVM.status === "Done" ? LayoutMetrics.size.iconS + parent.spacing : 0))
+                        text: unifiedDownloadVM.status
+                        textColor: Theme.textColor
+                        pixelSize: Typography.h6
+                        elide: Text.ElideRight
+                    }
                 }
-                Label {
-                    bold: false
-                    text: unifiedDownloadVM.error
-                    textColor: "red"
-                    pixelSize: Typography.h6
+                Row {
+                    width: parent.width
+                    spacing: LayoutMetrics.spacing.sm
                     visible: unifiedDownloadVM.error !== ""
+                    SVGObject {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: LayoutMetrics.size.iconS
+                        height: LayoutMetrics.size.iconS
+                        path: SVGLibrary.cross
+                        color: "red"
+                    }
+                    Label {
+                        bold: false
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: Math.max(0, parent.width - LayoutMetrics.size.iconS - parent.spacing)
+                        text: unifiedDownloadVM.error
+                        textColor: "red"
+                        pixelSize: Typography.h6
+                        wrapMode: Text.WordWrap
+                    }
                 }
                 Item { width: 1; height: LayoutMetrics.spacing.xl }
             }

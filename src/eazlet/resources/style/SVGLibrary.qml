@@ -14,4 +14,15 @@ QtObject {
     readonly property url chevronDown: Qt.resolvedUrl("../assets/icons/navigation/chevron_down.svg")
     readonly property url copy: Qt.resolvedUrl("../assets/icons/actions/copy.svg")
     readonly property url paste: Qt.resolvedUrl("../assets/icons/actions/clipboard-paste.svg")
+    readonly property url eraser: Qt.resolvedUrl("../assets/icons/actions/eraser.svg")
+
+    readonly property url downloader: Qt.resolvedUrl("../assets/icons/labels/Downloader.svg")
+    readonly property url converter: Qt.resolvedUrl("../assets/icons/labels/Convertor.svg")
+    readonly property url archive: Qt.resolvedUrl("../assets/icons/labels/Archive.svg")
+    readonly property url organizer: Qt.resolvedUrl("../assets/icons/labels/Organizer.svg")
+    readonly property url codeTools: Qt.resolvedUrl("../assets/icons/labels/Code_tools.svg")
+    readonly property url textAnalysis: Qt.resolvedUrl("../assets/icons/labels/Text_analyzer.svg")
+
+    readonly property url checkMark: Qt.resolvedUrl("../assets/icons/labels/check_mark.svg")
+    readonly property url cross: Qt.resolvedUrl("../assets/icons/labels/cross.svg")
 }

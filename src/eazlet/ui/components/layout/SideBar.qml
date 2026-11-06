@@ -26,6 +26,12 @@ Rectangle {
     function getIconUrl(iconName) {
         switch(iconName) {
             case "home": return SVGLibrary.home
+            case "downloader": return SVGLibrary.downloader
+            case "converter": return SVGLibrary.converter
+            case "archive": return SVGLibrary.archive
+            case "organizer": return SVGLibrary.organizer
+            case "codeTools": return SVGLibrary.codeTools
+            case "textAnalysis": return SVGLibrary.textAnalysis
             case "settings": return SVGLibrary.settings
             case "info": return SVGLibrary.info
             default: return ""
@@ -121,12 +127,12 @@ Rectangle {
             id: navRepeater
             model: [
                 { label: "Home", icon: "home" },
-                { label: "Downloader", icon: "home" },
-                { label: "Converter", icon: "home" },
-                { label: "Archive", icon: "home" },
-                { label: "Organizer", icon: "home" },
-                { label: "Code Tools", icon: "home" },
-                { label: "Text Analysis", icon: "home" }
+                { label: "Downloader", icon: "downloader" },
+                { label: "Converter", icon: "converter" },
+                { label: "Archive", icon: "archive" },
+                { label: "Organizer", icon: "organizer" },
+                { label: "Code Tools", icon: "codeTools" },
+                { label: "Text Analysis", icon: "textAnalysis" }
             ]
 
             delegate: SideBarItem {

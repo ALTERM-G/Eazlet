@@ -218,7 +218,7 @@ Item {
 
             FolderDialog {
                 id: unifFolderDialog
-                onAccepted: unifiedDownloadVM.destination = selectedFolder.toString().replace("file://", "")
+                onAccepted: controller.save_download_dir(selectedFolder.toString())
             }
         }
     }

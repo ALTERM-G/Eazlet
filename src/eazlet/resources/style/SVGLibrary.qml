@@ -12,9 +12,11 @@ QtObject {
     readonly property url chevronRight: Qt.resolvedUrl("../assets/icons/navigation/chevron_right.svg")
     readonly property url chevronUp: Qt.resolvedUrl("../assets/icons/navigation/chevron_up.svg")
     readonly property url chevronDown: Qt.resolvedUrl("../assets/icons/navigation/chevron_down.svg")
+    readonly property url browse: Qt.resolvedUrl("../assets/icons/actions/browse.svg")
     readonly property url copy: Qt.resolvedUrl("../assets/icons/actions/copy.svg")
     readonly property url paste: Qt.resolvedUrl("../assets/icons/actions/clipboard-paste.svg")
     readonly property url eraser: Qt.resolvedUrl("../assets/icons/actions/eraser.svg")
+    readonly property url star: Qt.resolvedUrl("../assets/icons/actions/star.svg")
 
     readonly property url downloader: Qt.resolvedUrl("../assets/icons/labels/Downloader.svg")
     readonly property url converter: Qt.resolvedUrl("../assets/icons/labels/Convertor.svg")

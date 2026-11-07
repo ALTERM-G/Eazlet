@@ -218,7 +218,6 @@ def _is_prime_py(n: int) -> bool:
     while d % 2 == 0:
         d //= 2
         s += 1
-    # deterministic for < 2^64; a few extra bases give high confidence beyond
     bases = (2, 325, 9375, 28178, 450775, 9780504, 1795265022)
     for a in bases:
         if a % n == 0:
@@ -285,8 +284,6 @@ def _prime_factors_py(n: int) -> list[tuple[int, int]]:
     if n < 2:
         return []
     out: list[tuple[int, int]] = []
-    # Strip small primes first: avoids deep recursion for things like 2**1000
-    # and makes ordinary inputs with small factors very fast.
     for p in (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37):
         if n % p == 0:
             c = 0
@@ -378,8 +375,6 @@ class _FactorWorker(QThread):
                         else:
                             divs = []
                     else:
-                        # Older native lib: generate divisors from factors instead of
-                        # trial-dividing n (which is extremely slow for large n).
                         divs = _divisors_from_factors_py(pf)
                 finally:
                     _NATIVE.nt_factor_destroy(st)

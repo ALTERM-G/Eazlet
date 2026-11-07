@@ -31,10 +31,18 @@ Item {
             anchors.margins: LayoutMetrics.spacing.lg
             spacing: LayoutMetrics.spacing.md
 
+            Title {
+                id: pageTitle
+                text: "Code Tools"
+                textColor: Theme.textColor
+                pixelSize: Typography.h2
+            }
+
             TabBar {
                 id: toolTabs
                 anchors.horizontalCenter: parent.horizontalCenter
                 tabData: ["Encoding", "Ciphers", "Encryption", "Hashing"]
+                active: page.visible
             }
 
             Rectangle {
@@ -47,8 +55,8 @@ Item {
             Flickable {
                 id: toolScroll
                 width: parent.width
-                height: parent.height - toolTabs.height - divider.height
-                        - pageColumn.spacing * 2
+                height: parent.height - pageTitle.height - toolTabs.height - divider.height
+                        - pageColumn.spacing * 3
                 contentHeight: toolContent.implicitHeight
                 clip: true
                 flickableDirection: Flickable.VerticalFlick
@@ -70,24 +78,6 @@ Item {
                         toolScroll.contentY = Math.max(0, Math.min(maxY, toolScroll.contentY - delta))
                         wheel.accepted = true
                     }
-                }
-
-                Shortcut {
-                    sequence: "Ctrl+Tab"
-                    enabled: page.visible
-                    onActivated: toolTabs.currentIndex = (toolTabs.currentIndex + 1) % toolTabs.tabData.length
-                }
-
-                Shortcut {
-                    sequence: "Ctrl+Shift+Tab"
-                    enabled: page.visible
-                    onActivated: toolTabs.currentIndex = (toolTabs.currentIndex - 1 + toolTabs.tabData.length) % toolTabs.tabData.length
-                }
-
-                Shortcut {
-                    sequence: "Ctrl+Backtab"
-                    enabled: page.visible
-                    onActivated: toolTabs.currentIndex = (toolTabs.currentIndex - 1 + toolTabs.tabData.length) % toolTabs.tabData.length
                 }
 
                 Column {

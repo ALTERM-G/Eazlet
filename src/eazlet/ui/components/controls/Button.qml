@@ -60,6 +60,20 @@ Item {
             ColorAnimation { duration: 150 }
         }
 
+        // Add a subtle hover wash to solid (primary) buttons so they respond
+        // like the outline buttons do.
+        Rectangle {
+            anchors.fill: parent
+            radius: parent.radius
+            color: Theme.hoverTextColor
+            opacity: root.primary && mouseArea.containsMouse ? 0.1 : 0.0
+
+            Behavior on opacity {
+                enabled: LayoutMetrics.animationsEnabled
+                NumberAnimation { duration: 150 }
+            }
+        }
+
         Row {
             id: contentRow
             anchors.centerIn: parent

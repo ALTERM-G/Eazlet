@@ -44,7 +44,9 @@ Item {
 
             TabBar {
                 id: modeTabs
+                anchors.horizontalCenter: parent.horizontalCenter
                 tabData: numberToolsVM.modes
+                active: page.visible
                 currentIndex: 0
                 Component.onCompleted: {
                     var idx = numberToolsVM.modes.indexOf(numberToolsVM.mode)

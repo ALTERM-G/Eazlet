@@ -124,49 +124,56 @@ Item {
         }
     }
 
-    Column {
-        anchors.centerIn: parent
-        width: Math.min(parent.width - LayoutMetrics.spacing.xl * 2, LayoutMetrics.unit * 50)
-        spacing: LayoutMetrics.spacing.xs
+    Item {
+        id: textContainer
+        anchors.fill: parent
+        anchors.margins: LayoutMetrics.spacing.md
+        clip: true
 
-        SVGObject {
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: LayoutMetrics.size.iconL
-            height: LayoutMetrics.size.iconL
-            path: root.iconPath
-            color: root.primaryTextColor
-            visible: root.iconPath !== ""
-        }
+        Column {
+            anchors.centerIn: parent
+            width: Math.max(0, Math.min(parent.width, LayoutMetrics.unit * 50))
+            spacing: LayoutMetrics.spacing.xs
 
-        Label {
-            width: parent.width
-            text: root.title
-            textColor: root.primaryTextColor
-            pixelSize: Typography.h3
-            horizontalAlignment: Text.AlignHCenter
-            wrapMode: Text.WordWrap
-        }
+            SVGObject {
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: LayoutMetrics.size.iconL
+                height: LayoutMetrics.size.iconL
+                path: root.iconPath
+                color: root.primaryTextColor
+                visible: root.iconPath !== ""
+            }
 
-        Label {
-            bold: false
-            width: parent.width
-            text: root.description
-            textColor: root.secondaryTextColor
-            pixelSize: Typography.h6
-            horizontalAlignment: Text.AlignHCenter
-            wrapMode: Text.WordWrap
-            visible: text !== ""
-        }
+            Label {
+                width: parent.width
+                text: root.title
+                textColor: root.primaryTextColor
+                pixelSize: Typography.h3
+                horizontalAlignment: Text.AlignHCenter
+                wrapMode: Text.WordWrap
+            }
 
-        Label {
-            bold: false
-            width: parent.width
-            text: root.hint
-            textColor: root.secondaryTextColor
-            pixelSize: Typography.caption
-            horizontalAlignment: Text.AlignHCenter
-            wrapMode: Text.WordWrap
-            visible: text !== ""
+            Label {
+                bold: false
+                width: parent.width
+                text: root.description
+                textColor: root.secondaryTextColor
+                pixelSize: Typography.h6
+                horizontalAlignment: Text.AlignHCenter
+                wrapMode: Text.WordWrap
+                visible: text !== ""
+            }
+
+            Label {
+                bold: false
+                width: parent.width
+                text: root.hint
+                textColor: root.secondaryTextColor
+                pixelSize: Typography.caption
+                horizontalAlignment: Text.AlignHCenter
+                wrapMode: Text.WordWrap
+                visible: text !== ""
+            }
         }
     }
 

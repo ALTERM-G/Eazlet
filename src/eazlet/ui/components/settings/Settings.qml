@@ -208,9 +208,14 @@ import "tabs"
         modal: true
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
         onOpened: {
+            Shortcuts.overlayOpen = true
             settingsPopup.forceActiveFocus()
         }
-        onClosed: Shortcuts.capturing = false
+        onClosed: {
+            generalTab.commitDownloadDir()
+            Shortcuts.capturing = false
+            Shortcuts.overlayOpen = false
+        }
 
         enter: LayoutMetrics.animationsEnabled ? settingsPopupFadeEnter : settingsPopupInstantEnter
         exit: LayoutMetrics.animationsEnabled ? settingsPopupFadeExit : settingsPopupInstantExit
@@ -271,18 +276,6 @@ import "tabs"
             }
         }
 
-        Shortcut {
-            sequence: Shortcuts.primary("nextTab")
-            enabled: settingsPopup.opened && !Shortcuts.capturing
-            onActivated: tabBar.currentIndex = (tabBar.currentIndex + 1) % tabBar.tabData.length
-        }
-
-        Shortcut {
-            sequence: Shortcuts.primary("prevTab")
-            enabled: settingsPopup.opened && !Shortcuts.capturing
-            onActivated: tabBar.currentIndex = (tabBar.currentIndex - 1 + tabBar.tabData.length) % tabBar.tabData.length
-        }
-
         Surface {
             anchors.fill: parent
 
@@ -314,6 +307,8 @@ import "tabs"
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.topMargin: LayoutMetrics.spacing.lg
                 tabData: [Lang.tabs.general, Lang.tabs.appearance, Lang.tabs.shortcuts]
+                overlay: true
+                active: settingsPopup.opened
             }
 
             Rectangle {

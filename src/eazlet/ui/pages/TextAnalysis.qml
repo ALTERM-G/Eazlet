@@ -318,6 +318,10 @@ Item {
                             topWordsPanel.contentHeight,
                             tokenLengthPanel.contentHeight,
                             LayoutMetrics.unit * 20)
+                        readonly property real secondRowHeight: Math.max(
+                            characterPanel.contentHeight,
+                            longestWordsPanel.contentHeight,
+                            LayoutMetrics.unit * 20)
 
                         Panel {
                             id: topWordsPanel
@@ -489,8 +493,11 @@ Item {
                         }
 
                         Panel {
+                            id: characterPanel
                             width: cardsGrid.cardWidth
-                            height: Math.max(LayoutMetrics.unit * 20, contentHeight)
+                            height: cardsGrid.columns > 1
+                                    ? cardsGrid.secondRowHeight
+                                    : Math.max(LayoutMetrics.unit * 20, contentHeight)
                             heading: "Character composition"
                             subtitle: "Letters, digits, whitespace, and punctuation."
 
@@ -591,8 +598,11 @@ Item {
                         }
 
                         Panel {
+                            id: longestWordsPanel
                             width: cardsGrid.cardWidth
-                            height: Math.max(LayoutMetrics.unit * 20, contentHeight)
+                            height: cardsGrid.columns > 1
+                                    ? cardsGrid.secondRowHeight
+                                    : Math.max(LayoutMetrics.unit * 20, contentHeight)
                             heading: textAnalysisVM.mode === "code" ? "Longest tokens" : "Longest words"
                             subtitle: textAnalysisVM.mode === "code"
                                       ? "Distinct tokens, sorted by length."

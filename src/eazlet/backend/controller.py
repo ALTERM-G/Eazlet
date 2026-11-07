@@ -248,6 +248,68 @@ class Controller(QObject):
     def save_shortcuts(self, shortcuts: dict) -> None:
         self._update_settings(shortcuts=dict(shortcuts))
 
+    def _load_string_list(self, key: str) -> list[str]:
+        data = self._load_settings().get(key, [])
+        if not isinstance(data, list):
+            return []
+        return [item for item in data if isinstance(item, str)]
+
+    @Slot(result=list)
+    def get_ascii_favorites(self) -> list[str]:
+        return self._load_string_list("asciiArtFavorites")
+
+    @Slot(list)
+    def save_ascii_favorites(self, fonts: list[str]) -> None:
+        self._update_settings(
+            asciiArtFavorites=[font for font in fonts if isinstance(font, str)]
+        )
+
+    @Slot(result=list)
+    def get_ascii_recents(self) -> list[str]:
+        return self._load_string_list("asciiArtRecents")
+
+    @Slot(list)
+    def save_ascii_recents(self, fonts: list[str]) -> None:
+        self._update_settings(
+            asciiArtRecents=[font for font in fonts if isinstance(font, str)]
+        )
+
+    def _default_download_dir(self) -> str:
+        return str(Path.home() / "Downloads")
+
+    def _normalise_dir(self, value: object) -> str:
+        path = str(value or "").strip()
+        if path.startswith("file://"):
+            path = path[len("file://") :]
+        if not path:
+            return self._default_download_dir()
+        return str(Path(path).expanduser())
+
+    def _apply_download_dir(self, directory: str | None = None) -> None:
+        target = directory if directory is not None else self.get_download_dir()
+        self._download_vm.destination = target
+        self._unified_download_vm.destination = target
+        self._converter_vm.outputDir = target
+        self._archive_vm.outputDir = target
+
+    @Slot()
+    def apply_saved_settings(self) -> None:
+        self._apply_download_dir()
+
+    @Slot(result=str)
+    def get_default_download_dir(self) -> str:
+        return self._default_download_dir()
+
+    @Slot(result=str)
+    def get_download_dir(self) -> str:
+        return self._normalise_dir(self._load_settings().get("downloadDir", ""))
+
+    @Slot(str)
+    def save_download_dir(self, path: str) -> None:
+        directory = self._normalise_dir(path)
+        self._update_settings(downloadDir=directory)
+        self._apply_download_dir(directory)
+
     @Property(QObject, constant=True)
     def mainVM(self) -> MainVM:
         return self._main_vm

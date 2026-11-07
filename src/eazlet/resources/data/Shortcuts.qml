@@ -4,6 +4,7 @@ import QtQuick
 QtObject {
     id: root
     property bool capturing: false
+    property bool overlayOpen: false
 
     readonly property var definitions: [
         { id: "openSettings",  def: ["Ctrl+,"],            label: "Open settings",  scope: "app" },
@@ -11,8 +12,8 @@ QtObject {
         { id: "zoomIn",        def: ["Ctrl+=", "Ctrl++"],  label: "Zoom in",        scope: "app" },
         { id: "zoomOut",       def: ["Ctrl+-"],            label: "Zoom out",       scope: "app" },
         { id: "processAction", def: ["Ctrl+Return"],       label: "Process / Run",  scope: "app" },
-        { id: "nextTab",       def: ["Ctrl+Tab"],          label: "Next tab",       scope: "settings" },
-        { id: "prevTab",       def: ["Ctrl+Shift+Tab"],    label: "Previous tab",   scope: "settings" },
+        { id: "nextTab",       def: ["Ctrl+Tab"],          label: "Next tab",       scope: "app" },
+        { id: "prevTab",       def: ["Ctrl+Shift+Tab"],    label: "Previous tab",   scope: "app" },
         { id: "applyChanges",  def: ["Return"],            label: "Apply changes",  scope: "settings", editable: false },
         { id: "closeSidebar",  def: ["Escape"],            label: "Close sidebar",  scope: "panel",     editable: false }
     ]

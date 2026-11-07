@@ -3,7 +3,6 @@ import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Layouts
 import components
-import "pages"
 
 Window {
     id: window
@@ -19,15 +18,23 @@ Window {
         LayoutMetrics.bindToWindow(window)
         Typography.setWindow(window)
         Theme.animationsEnabled = animationsEnabled
+        controller.apply_saved_settings()
+    }
+
+    function currentPage() {
+        if (!stackLayout || stackLayout.currentIndex < 0
+                || stackLayout.currentIndex >= stackLayout.count)
+            return null
+
+        var item = stackLayout.itemAt(stackLayout.currentIndex)
+        // Pages are wrapped in lazy Loaders, so unwrap the created item.
+        return item && item.item !== undefined ? item.item : item
     }
 
     function triggerProcessAction() {
-        if (stackLayout && stackLayout.currentIndex >= 0
-                && stackLayout.currentIndex < stackLayout.count) {
-            var page = stackLayout.itemAt(stackLayout.currentIndex)
-            if (page && typeof page.processAction === "function")
-                page.processAction()
-        }
+        var page = currentPage()
+        if (page && typeof page.processAction === "function")
+            page.processAction()
     }
 
     FontCrossfade {
@@ -117,15 +124,44 @@ Window {
             anchors.fill: parent
             currentIndex: sidebar.currentIndex >= 0 ? sidebar.currentIndex : 0
 
-            Home { id: homePage }
-            DownloadUnified { id: downloadPage }
-            Converter { id: converterPage }
-            Archive { id: archivePage }
-            Organizer { id: organizerPage }
-            Cipher { id: cipherPage }
-            TextAnalysis { id: textAnalysisPage }
-            AsciiArt { id: asciiArtPage }
-            NumberTools { id: numberToolsPage }
+            // Pages are created on first visit and then kept alive so their
+            // state (including text inputs) survives switching workspaces.
+            // Loading them lazily keeps startup and page switches responsive.
+            property var loaded: ({})
+            function markLoaded(index) {
+                if (index < 0 || loaded[index] === true)
+                    return
+                var next = Object.assign({}, loaded)
+                next[index] = true
+                loaded = next
+            }
+            Component.onCompleted: markLoaded(currentIndex)
+            onCurrentIndexChanged: markLoaded(currentIndex)
+
+            Repeater {
+                model: [
+                    { source: "pages/Home.qml" },
+                    { source: "pages/DownloadUnified.qml" },
+                    { source: "pages/Converter.qml" },
+                    { source: "pages/Archive.qml" },
+                    { source: "pages/Organizer.qml" },
+                    { source: "pages/Cipher.qml" },
+                    { source: "pages/TextAnalysis.qml" },
+                    { source: "pages/AsciiArt.qml" },
+                    { source: "pages/NumberTools.qml" }
+                ]
+
+                delegate: Loader {
+                    required property var modelData
+                    required property int index
+
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    active: stackLayout.loaded[index] === true
+                    asynchronous: false
+                    source: modelData.source
+                }
+            }
         }
     }
 }

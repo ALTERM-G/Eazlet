@@ -13,19 +13,80 @@ Rectangle {
 
     property bool resizing: false
 
-    readonly property real tabPadding: LayoutMetrics.spacing.xl
-    readonly property real listMargin: LayoutMetrics.spacing.xs
-    readonly property real widestLabel: {
-        var widest = 0
-        for (var i = 0; i < measureRow.children.length; i++) {
-            var w = measureRow.children[i].implicitWidth
-            if (w > widest)
-                widest = w
+    // Tab switching shortcuts are handled here so every tab bar behaves the
+    // same way. Page tab bars set `active` to their page's visibility, while
+    // the settings tab bar runs inside an overlay.
+    property bool active: true
+    property bool overlay: false
+    readonly property bool shortcutsActive: active && enabled && !Shortcuts.capturing
+                                              && (overlay ? Shortcuts.overlayOpen
+                                                          : !Shortcuts.overlayOpen)
+    readonly property var nextSequences: Shortcuts.chords("nextTab")
+    readonly property var previousSequences: {
+        var sequences = Shortcuts.chords("prevTab").slice()
+
+        // On X11/Wayland, Shift+Tab is delivered as Key_Backtab while Shift
+        // remains in the modifiers. Add the equivalent Backtab spelling so
+        // the shortcut still fires on those platforms.
+        for (var i = 0; i < sequences.length; i++) {
+            var sequence = sequences[i]
+            if (sequence.indexOf("Backtab") !== -1)
+                continue
+            var backtab = sequence.replace("Tab", "Backtab")
+            if (backtab !== sequence && sequences.indexOf(backtab) === -1)
+                sequences.push(backtab)
         }
-        return widest
+        return sequences
     }
-    readonly property real tabWidth: tabData.length > 0 ? widestLabel + tabPadding : 0
-    readonly property real totalWidth: tabWidth * tabData.length + listMargin * 2
+
+    function nextTab() {
+        if (tabData.length > 0)
+            currentIndex = (currentIndex + 1) % tabData.length
+    }
+
+    function previousTab() {
+        if (tabData.length > 0)
+            currentIndex = (currentIndex - 1 + tabData.length) % tabData.length
+    }
+
+    Shortcut {
+        sequences: root.nextSequences
+        enabled: root.shortcutsActive
+        onActivated: root.nextTab()
+    }
+
+    Shortcut {
+        sequences: root.previousSequences
+        enabled: root.shortcutsActive
+        onActivated: root.previousTab()
+    }
+
+    readonly property real tabPadding: LayoutMetrics.spacing.sm
+    readonly property real listMargin: LayoutMetrics.spacing.xs
+    property var labelWidths: []
+
+    function labelWidthAt(index) {
+        return root.labelWidths[index] || 0
+    }
+
+    function tabWidthAt(index) {
+        return root.labelWidthAt(index) + root.tabPadding * 2
+    }
+
+    function updateLabelWidth(index, width) {
+        if (root.labelWidths[index] === width)
+            return
+        var widths = root.labelWidths.slice()
+        widths[index] = width
+        root.labelWidths = widths
+    }
+
+    readonly property real totalWidth: {
+        var total = root.listMargin * 2
+        for (var i = 0; i < root.tabData.length; i++)
+            total += root.tabWidthAt(i)
+        return total
+    }
 
     width: totalWidth
     height: LayoutMetrics.size.controlHeightHuge
@@ -57,8 +118,12 @@ Rectangle {
 
             Label {
                 required property var modelData
+                required property int index
                 text: root.tabLabel(modelData)
                 pixelSize: Typography.h6
+
+                onImplicitWidthChanged: root.updateLabelWidth(index, implicitWidth)
+                Component.onCompleted: root.updateLabelWidth(index, implicitWidth)
             }
         }
     }
@@ -77,7 +142,7 @@ Rectangle {
 
         delegate: Item {
             id: listDelegate
-            width: root.tabWidth
+            width: root.tabWidthAt(index)
             height: listView.height
 
             Rectangle {

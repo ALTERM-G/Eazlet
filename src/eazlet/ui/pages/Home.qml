@@ -11,5 +11,14 @@ Item {
         anchors.centerIn: parent
         width: parent.width * 0.8
         height: parent.height * 0.8
+
+        Title {
+            text: "Home"
+            textColor: Theme.textColor
+            pixelSize: Typography.h2
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.margins: LayoutMetrics.spacing.lg
+        }
     }
 }

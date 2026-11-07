@@ -10,6 +10,31 @@ Item {
         asciiArtVM.process()
     }
 
+    PreviewBrowser {
+        id: fontBrowser
+        title: "Choose a font"
+        searchPlaceholderText: "Search fonts…"
+        items: asciiArtVM.fonts
+        currentItem: asciiArtVM.font
+        favorites: asciiArtVM.favorites
+        recents: asciiArtVM.recents
+        sampleText: asciiArtVM.input
+        itemNameSingular: "font"
+        itemNamePlural: "fonts"
+        noRecentsLabel: "No recent fonts yet"
+        nothingSelectedLabel: "No font selected"
+        previewPlaceholderText: "Select a font from the list"
+        previewProvider: function(item, text) {
+            return asciiArtVM.preview(item, text)
+        }
+        onApplied: function(item) {
+            asciiArtVM.setFont(item)
+        }
+        onFavoriteToggled: function(item) {
+            asciiArtVM.toggleFavorite(item)
+        }
+    }
+
     Rectangle {
         anchors.fill: parent
         color: "transparent"
@@ -91,27 +116,11 @@ Item {
                         pixelSize: Typography.h6
                     }
 
-                    ComboBox {
-                        id: fontCombo
-                        width: Math.min(LayoutMetrics.unit * 36, parent.width * 0.55)
-                        model: asciiArtVM.fonts
-                        scrollablePopup: true
-                        maxVisibleItems: 10
-                        currentIndex: {
-                            var idx = asciiArtVM.fonts.indexOf(asciiArtVM.font)
-                            return idx >= 0 ? idx : 0
-                        }
-                        onActivated: function(index) {
-                            if (index >= 0 && index < asciiArtVM.fonts.length)
-                                asciiArtVM.setFont(asciiArtVM.fonts[index])
-                        }
-                        onCurrentIndexChanged: {
-                            if (currentIndex >= 0 && currentIndex < asciiArtVM.fonts.length) {
-                                var f = asciiArtVM.fonts[currentIndex]
-                                if (f && f !== asciiArtVM.font)
-                                    asciiArtVM.setFont(f)
-                            }
-                        }
+                    Button {
+                        id: fontButton
+                        buttonText: asciiArtVM.font
+                        iconPath: SVGLibrary.dropDown
+                        onPressed: fontBrowser.open()
                     }
                 }
 

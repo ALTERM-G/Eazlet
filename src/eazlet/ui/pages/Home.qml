@@ -16,9 +16,7 @@ Item {
             text: "Home"
             textColor: Theme.textColor
             pixelSize: Typography.h2
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.margins: LayoutMetrics.spacing.lg
+            anchors.centerIn: parent
         }
     }
 }

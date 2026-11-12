@@ -17,7 +17,7 @@ Item {
         else if (toolTabs.currentIndex === 2)
             cipherVM.encrypt()
         else
-            cipherVM.hashInput()
+            cipherVM.processHash()
     }
 
     Surface {
@@ -27,15 +27,29 @@ Item {
 
         Column {
             id: pageColumn
-            anchors.fill: parent
-            anchors.margins: LayoutMetrics.spacing.lg
+            width: Math.max(0, parent.width - LayoutMetrics.spacing.lg * 2)
+            height: parent.height - LayoutMetrics.spacing.lg * 2
+            x: (parent.width - width) / 2
+            y: LayoutMetrics.spacing.lg
             spacing: LayoutMetrics.spacing.md
 
             Title {
                 id: pageTitle
+                anchors.horizontalCenter: parent.horizontalCenter
                 text: "Code Tools"
                 textColor: Theme.textColor
                 pixelSize: Typography.h2
+            }
+
+            Label {
+                id: pageSubtitle
+                width: parent.width
+                horizontalAlignment: Text.AlignHCenter
+                bold: false
+                text: "Encode, cipher, encrypt, and hash text in one place."
+                textColor: Theme.dividerColor
+                pixelSize: Typography.h6
+                wrapMode: Text.WordWrap
             }
 
             TabBar {
@@ -55,16 +69,13 @@ Item {
             Flickable {
                 id: toolScroll
                 width: parent.width
-                height: parent.height - pageTitle.height - toolTabs.height - divider.height
-                        - pageColumn.spacing * 3
+                height: parent.height - pageTitle.height - pageSubtitle.height
+                        - toolTabs.height - divider.height - pageColumn.spacing * 4
                 contentHeight: toolContent.implicitHeight
                 clip: true
                 flickableDirection: Flickable.VerticalFlick
                 boundsBehavior: Flickable.StopAtBounds
-                ScrollBar.vertical: ScrollBar {
-                policy: ScrollBar.AsNeeded
-                implicitWidth: LayoutMetrics.unit * 1.2
-            }
+                ScrollBar.vertical: AppScrollBar {}
                 interactive: false
 
                 MouseArea {
@@ -80,12 +91,18 @@ Item {
                     }
                 }
 
+                TabSlide {
+                    id: tabSlide
+                    tabBar: toolTabs
+                    target: toolContent
+                }
+
                 Column {
                     id: toolContent
-                    width: toolScroll.width
+                    width: Math.max(0, parent.width - LayoutMetrics.unit * 1.6)
                     spacing: LayoutMetrics.spacing.lg
 
-                    // Encoding -------------------------------------------------
+                    // Encoding -----------------------------------------
                     Column {
                         id: encodingControls
                         width: parent.width
@@ -93,6 +110,8 @@ Item {
                         visible: toolTabs.currentIndex === 0
 
                         Label {
+                            width: parent.width
+                            horizontalAlignment: Text.AlignHCenter
                             bold: false
                             text: "Convert text to and from reversible encodings."
                             textColor: Theme.dividerColor
@@ -134,15 +153,24 @@ Item {
                         }
 
                         Row {
-                            spacing: LayoutMetrics.spacing.sm
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            spacing: LayoutMetrics.spacing.xs
                             Button { buttonText: "Process"; primary: true; isometric: true; heightMultiplier: 1.3; onPressed: cipherVM.processEncoding() }
                             Button { buttonText: "Detect"; onPressed: cipherVM.detect() }
-                            Button { buttonText: "Swap"; onPressed: cipherVM.swap() }
-                            Button { buttonText: "Clear"; iconPath: SVGLibrary.eraser; onPressed: cipherVM.clear() }
+                            Button { buttonText: "Swap"; onPressed: cipherVM.swapEncoding() }
+                            Button { buttonText: "Clear"; iconPath: SVGLibrary.eraser; onPressed: cipherVM.clearEncoding() }
+                        }
+
+                        CipherIO {
+                            viewModel: cipherVM
+                            inputProperty: "encodingInput"
+                            outputProperty: "encodingOutput"
+                            placeholderText: "Enter text or an encoded payload here"
+                            onClearRequested: cipherVM.clearEncoding()
                         }
                     }
 
-                    // Ciphers --------------------------------------------------
+                    // Ciphers ------------------------------------------
                     Column {
                         id: cipherControls
                         width: parent.width
@@ -150,6 +178,8 @@ Item {
                         visible: toolTabs.currentIndex === 1
 
                         Label {
+                            width: parent.width
+                            horizontalAlignment: Text.AlignHCenter
                             bold: false
                             text: "Apply classical substitution and transposition ciphers."
                             textColor: Theme.dividerColor
@@ -192,6 +222,7 @@ Item {
 
                         Row {
                             spacing: LayoutMetrics.spacing.md
+                            visible: cipherVM.usesKey
 
                             Label {
                                 bold: false
@@ -205,29 +236,123 @@ Item {
                                 id: keyInput
                                 width: 260
                                 text: cipherVM.key
-                                placeholderText: "e.g. KEY or 5,8"
+                                placeholderText: cipherVM.keyHint || "e.g. KEY"
                                 onTextChanged: cipherVM.key = text
+                            }
+                        }
+
+                        Row {
+                            spacing: LayoutMetrics.spacing.md
+                            visible: cipherVM.usesShift
+
+                            Label {
+                                bold: false
+                                text: "Shift:"
+                                textColor: Theme.textColor
+                                pixelSize: Typography.h6
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            SpinBox {
+                                from: 1
+                                to: 25
+                                stepSize: 1
+                                value: cipherVM.shift
+                                onValueChanged: cipherVM.shift = value
+                            }
+                        }
+
+                        Row {
+                            spacing: LayoutMetrics.spacing.md
+                            visible: cipherVM.usesRails
+
+                            Label {
+                                bold: false
+                                text: "Rails:"
+                                textColor: Theme.textColor
+                                pixelSize: Typography.h6
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            SpinBox {
+                                from: 2
+                                to: 15
+                                stepSize: 1
+                                value: cipherVM.rails
+                                onValueChanged: cipherVM.rails = value
+                            }
+                        }
+
+                        Row {
+                            spacing: LayoutMetrics.spacing.md
+                            visible: cipherVM.usesTurns
+
+                            Label {
+                                bold: false
+                                text: "Turns:"
+                                textColor: Theme.textColor
+                                pixelSize: Typography.h6
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            SpinBox {
+                                from: 2
+                                to: 20
+                                stepSize: 1
+                                value: cipherVM.turns
+                                onValueChanged: cipherVM.turns = value
+                            }
+                        }
+
+                        Row {
+                            spacing: LayoutMetrics.spacing.md
+                            visible: cipherVM.usesPeriod
+
+                            Label {
+                                bold: false
+                                text: "Period:"
+                                textColor: Theme.textColor
+                                pixelSize: Typography.h6
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            SpinBox {
+                                from: 1
+                                to: 20
+                                stepSize: 1
+                                value: cipherVM.period
+                                onValueChanged: cipherVM.period = value
                             }
                         }
 
                         Label {
                             bold: false
                             width: parent.width
-                            text: "Used by Affine (a,b), Vigenere, Beaufort, Autokey, and XOR."
+                            visible: text !== ""
+                            text: cipherVM.cipherHint
                             textColor: Theme.dividerColor
                             pixelSize: Typography.h6
                             wrapMode: Text.WordWrap
                         }
 
                         Row {
+                            anchors.horizontalCenter: parent.horizontalCenter
                             spacing: LayoutMetrics.spacing.sm
                             Button { buttonText: "Process"; primary: true; isometric: true; heightMultiplier: 1.3; onPressed: cipherVM.processCipher() }
-                            Button { buttonText: "Swap"; onPressed: cipherVM.swap() }
-                            Button { buttonText: "Clear"; iconPath: SVGLibrary.eraser; onPressed: cipherVM.clear() }
+                            Button { buttonText: "Swap"; onPressed: cipherVM.swapCipher() }
+                            Button { buttonText: "Clear"; iconPath: SVGLibrary.eraser; onPressed: cipherVM.clearCipher() }
+                        }
+
+                        CipherIO {
+                            viewModel: cipherVM
+                            inputProperty: "cipherInput"
+                            outputProperty: "cipherOutput"
+                            placeholderText: "Enter text to encrypt or decrypt with a classical cipher"
+                            onClearRequested: cipherVM.clearCipher()
                         }
                     }
 
-                    // Encryption -----------------------------------------------
+                    // Encryption ----------------------------------------
                     Column {
                         id: encryptionControls
                         width: parent.width
@@ -236,6 +361,7 @@ Item {
 
                         Label {
                             bold: false
+                            horizontalAlignment: Text.AlignHCenter
                             text: "Authenticated encryption. The passphrase is used to derive the key."
                             textColor: Theme.dividerColor
                             pixelSize: Typography.h6
@@ -298,6 +424,7 @@ Item {
                         Label {
                             bold: false
                             width: parent.width
+                            horizontalAlignment: Text.AlignHCenter
                             text: "Anyone with the passphrase can decrypt the payload. There is no recovery if it is lost."
                             textColor: Theme.dividerColor
                             pixelSize: Typography.h6
@@ -305,14 +432,23 @@ Item {
                         }
 
                         Row {
+                            anchors.horizontalCenter: parent.horizontalCenter
                             spacing: LayoutMetrics.spacing.sm
                             Button { buttonText: "Encrypt"; primary: true; isometric: true; heightMultiplier: 1.3; onPressed: cipherVM.encrypt() }
                             Button { buttonText: "Decrypt"; onPressed: cipherVM.decrypt() }
-                            Button { buttonText: "Clear"; iconPath: SVGLibrary.eraser; onPressed: cipherVM.clear() }
+                            Button { buttonText: "Clear"; iconPath: SVGLibrary.eraser; onPressed: cipherVM.clearEncryption() }
+                        }
+
+                        CipherIO {
+                            viewModel: cipherVM
+                            inputProperty: "encryptionInput"
+                            outputProperty: "encryptionOutput"
+                            placeholderText: "Enter text to encrypt or an Eazlet payload to decrypt"
+                            onClearRequested: cipherVM.clearEncryption()
                         }
                     }
 
-                    // Hashing --------------------------------------------------
+                    // Hashing ------------------------------------------
                     Column {
                         id: hashingControls
                         width: parent.width
@@ -320,6 +456,8 @@ Item {
                         visible: toolTabs.currentIndex === 3
 
                         Label {
+                            width: parent.width
+                            horizontalAlignment: Text.AlignHCenter
                             bold: false
                             text: "Create a one-way digest. Hashing cannot be reversed."
                             textColor: Theme.dividerColor
@@ -353,121 +491,18 @@ Item {
                         }
 
                         Row {
+                            anchors.horizontalCenter: parent.horizontalCenter
                             spacing: LayoutMetrics.spacing.sm
-                            Button { buttonText: "Hash"; primary: true; isometric: true; heightMultiplier: 1.3; onPressed: cipherVM.hashInput() }
-                            Button { buttonText: "Clear"; iconPath: SVGLibrary.eraser; onPressed: cipherVM.clear() }
-                        }
-                    }
-
-                    // Shared input / output ------------------------------------
-                    Row {
-                        spacing: LayoutMetrics.spacing.sm
-                        width: parent.width
-
-                        Label {
-                            text: "Input"
-                            textColor: Theme.textColor
-                            pixelSize: Typography.h4
-                            anchors.verticalCenter: parent.verticalCenter
+                            Button { buttonText: "Hash"; primary: true; isometric: true; heightMultiplier: 1.3; onPressed: cipherVM.processHash() }
+                            Button { buttonText: "Clear"; iconPath: SVGLibrary.eraser; onPressed: cipherVM.clearHash() }
                         }
 
-                        Button {
-                            buttonText: "Paste"
-                            iconPath: SVGLibrary.paste
-                            onPressed: toolInput.paste()
-                        }
-
-                        Button {
-                            buttonText: "Clear"
-                            iconPath: SVGLibrary.eraser
-                            onPressed: cipherVM.clear()
-                        }
-                    }
-
-                    TextEdit {
-                        id: toolInput
-                        width: parent.width
-                        height: 150
-                        text: cipherVM.input
-                        placeholderText: "Enter text or a payload here"
-                        onTextChanged: cipherVM.input = text
-                        Keys.onShortcutOverride: function(event) {
-                            if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && (event.modifiers & Qt.ShiftModifier))
-                                event.accepted = true
-                        }
-                        Keys.onPressed: function(event) {
-                            if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && (event.modifiers & Qt.ShiftModifier)) {
-                                page.processAction()
-                                event.accepted = true
-                            }
-                        }
-                    }
-
-                    Row {
-                        spacing: LayoutMetrics.spacing.sm
-
-                        Label {
-                            text: "Output"
-                            textColor: Theme.textColor
-                            pixelSize: Typography.h4
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-
-                        Button {
-                            buttonText: "Copy"
-                            iconPath: SVGLibrary.copy
-                            onPressed: cipherVM.copyOutput()
-                        }
-                    }
-
-                    TextEdit {
-                        id: toolOutput
-                        width: parent.width
-                        height: 150
-                        text: cipherVM.output
-                        readOnly: true
-                        showCopyButton: true
-                    }
-
-                    Row {
-                        spacing: LayoutMetrics.spacing.sm
-                        visible: cipherVM.status !== ""
-                        SVGObject {
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: LayoutMetrics.size.iconS
-                            height: LayoutMetrics.size.iconS
-                            path: SVGLibrary.checkMark
-                            color: Theme.textColor
-                            visible: cipherVM.status === "Done"
-                        }
-                        Label {
-                            bold: false
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: cipherVM.status
-                            textColor: Theme.textColor
-                            pixelSize: Typography.h6
-                        }
-                    }
-
-                    Row {
-                        width: parent.width
-                        spacing: LayoutMetrics.spacing.sm
-                        visible: cipherVM.error !== ""
-                        SVGObject {
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: LayoutMetrics.size.iconS
-                            height: LayoutMetrics.size.iconS
-                            path: SVGLibrary.cross
-                            color: "red"
-                        }
-                        Label {
-                            bold: false
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: Math.max(0, parent.width - LayoutMetrics.size.iconS - parent.spacing)
-                            text: cipherVM.error
-                            textColor: "red"
-                            pixelSize: Typography.h6
-                            wrapMode: Text.WordWrap
+                        CipherIO {
+                            viewModel: cipherVM
+                            inputProperty: "hashTextInput"
+                            outputProperty: "hashTextOutput"
+                            placeholderText: "Enter text to hash"
+                            onClearRequested: cipherVM.clearHash()
                         }
                     }
 

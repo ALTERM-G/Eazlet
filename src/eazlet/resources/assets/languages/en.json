@@ -17,7 +17,7 @@
         "scale": "Scale",
         "language": "Language",
         "downloadFolder": "Download folder",
-        "downloadFolderHint": "Used by the downloader, converter and archive tools.",
+        "outputFolder": "Output folder",
         "browse": "Browse",
         "reset": "Reset",
         "shortcutEditor": "Shortcut Editor",

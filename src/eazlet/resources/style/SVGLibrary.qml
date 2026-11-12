@@ -26,6 +26,8 @@ QtObject {
     readonly property url textAnalysis: Qt.resolvedUrl("../assets/icons/labels/Text_analyzer.svg")
     readonly property url asciiArt: Qt.resolvedUrl("../assets/icons/labels/Ascii_art.svg")
     readonly property url numberTools: Qt.resolvedUrl("../assets/icons/labels/Numbers.svg")
+    readonly property url math: Qt.resolvedUrl("../assets/icons/labels/Math.svg")
+    readonly property url generators: Qt.resolvedUrl("../assets/icons/labels/Generators.svg")
 
     readonly property url checkMark: Qt.resolvedUrl("../assets/icons/labels/check_mark.svg")
     readonly property url cross: Qt.resolvedUrl("../assets/icons/labels/cross.svg")

@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Dialogs
 import components
 
 Item {
@@ -69,61 +70,104 @@ Item {
         height: parent.height * 0.94
 
         ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: LayoutMetrics.spacing.lg
+            id: contentLayout
+            width: Math.max(0, parent.width - LayoutMetrics.spacing.lg * 2)
+            height: parent.height - LayoutMetrics.spacing.lg * 2
+            x: (parent.width - width) / 2
+            y: LayoutMetrics.spacing.lg
             spacing: LayoutMetrics.spacing.md
 
-            RowLayout {
+            Title {
                 Layout.fillWidth: true
+                Layout.minimumWidth: 0
+                Layout.preferredWidth: contentLayout.width
+                Layout.maximumWidth: contentLayout.width
+                horizontalAlignment: Text.AlignHCenter
+                text: "Text Analysis"
+                textColor: Theme.textColor
+                pixelSize: Typography.h2
+                elide: Text.ElideRight
+            }
+
+            Label {
+                Layout.fillWidth: true
+                Layout.preferredWidth: contentLayout.width
+                Layout.maximumWidth: contentLayout.width
+                horizontalAlignment: Text.AlignHCenter
+                bold: false
+                text: "Measure readability, word frequency, and text structure without leaving your machine."
+                textColor: Theme.dividerColor
+                pixelSize: Typography.h6
+                wrapMode: Text.WordWrap
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.minimumWidth: 0
+                Layout.preferredHeight: LayoutMetrics.spacing.xxs
+                color: Theme.dividerColor
+            }
+
+            Column {
+                Layout.alignment: Qt.AlignHCenter
                 spacing: LayoutMetrics.spacing.sm
 
-                Title {
-                    Layout.fillWidth: true
-                    Layout.minimumWidth: 0
-                    text: "Text Analysis"
-                    textColor: Theme.textColor
-                    pixelSize: Typography.h2
-                    elide: Text.ElideRight
-                }
+                Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: LayoutMetrics.spacing.sm
 
-                Switch {
-                    text: "Code / unusual"
-                    checked: textAnalysisVM.mode === "code"
-                    onCheckedChanged: {
-                        var nextMode = checked ? "code" : "text"
-                        if (nextMode !== textAnalysisVM.mode)
-                            textAnalysisVM.setMode(nextMode)
+                    Switch {
+                        text: "Code / unusual"
+                        checked: textAnalysisVM.mode === "code"
+                        onCheckedChanged: {
+                            var nextMode = checked ? "code" : "text"
+                            if (nextMode !== textAnalysisVM.mode)
+                                textAnalysisVM.setMode(nextMode)
+                        }
                     }
                 }
 
-                Button {
-                    buttonText: "Process"
-                    primary: true
-                    isometric: true
-                    heightMultiplier: 1.3
-                    onPressed: textAnalysisVM.process()
-                }
+                Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: LayoutMetrics.spacing.sm
 
-                Button {
-                    buttonText: "Clear"
-                    iconPath: SVGLibrary.eraser
-                    onPressed: textAnalysisVM.clear()
+                    Button {
+                        buttonText: "Open file"
+                        iconPath: SVGLibrary.browse
+                        onPressed: analysisFileDialog.open()
+                    }
+
+                    Button {
+                        buttonText: "Process"
+                        primary: true
+                        isometric: true
+                        heightMultiplier: 1.3
+                        onPressed: textAnalysisVM.process()
+                    }
+
+                    Button {
+                        buttonText: "Clear"
+                        iconPath: SVGLibrary.eraser
+                        onPressed: textAnalysisVM.clear()
+                    }
                 }
             }
 
             TextEdit {
                 id: analysisInput
                 Layout.fillWidth: true
+                Layout.minimumWidth: 0
                 Layout.preferredHeight: LayoutMetrics.unit * 13
                 text: textAnalysisVM.input
                 placeholderText: textAnalysisVM.mode === "code"
                     ? "Paste code, a random string, or other unusual text, then press Process..."
-                    : "Paste or type text here, then press Process..."
+                    : "Paste or type text here, or open a .txt / .md file..."
                 onTextChanged: textAnalysisVM.input = text
             }
 
             RowLayout {
                 Layout.fillWidth: true
+                Layout.minimumWidth: 0
                 spacing: LayoutMetrics.spacing.sm
 
                 Label {
@@ -157,6 +201,7 @@ Item {
 
             RowLayout {
                 Layout.fillWidth: true
+                Layout.minimumWidth: 0
                 spacing: LayoutMetrics.spacing.sm
                 visible: textAnalysisVM.error !== ""
 
@@ -180,6 +225,7 @@ Item {
 
             Rectangle {
                 Layout.fillWidth: true
+                Layout.minimumWidth: 0
                 Layout.topMargin: LayoutMetrics.spacing.xs
                 Layout.bottomMargin: LayoutMetrics.spacing.xs
                 height: LayoutMetrics.border.m
@@ -190,6 +236,7 @@ Item {
 
             Item {
                 Layout.fillWidth: true
+                Layout.minimumWidth: 0
                 Layout.fillHeight: true
                 visible: !textAnalysisVM.hasResults
 
@@ -210,7 +257,7 @@ Item {
                         bold: false
                         width: parent.width
                         horizontalAlignment: Text.AlignHCenter
-                        text: "Paste or type some text above and press Process to see what the analyzer reports."
+                        text: "Paste or type some text above, open a .txt / .md file, then press Process to see what the analyzer reports."
                         textColor: Theme.dividerColor
                         pixelSize: Typography.h6
                         wrapMode: Text.WordWrap
@@ -222,6 +269,7 @@ Item {
             Flickable {
                 id: resultsFlick
                 Layout.fillWidth: true
+                Layout.minimumWidth: 0
                 Layout.fillHeight: true
                 visible: textAnalysisVM.hasResults
                 contentHeight: resultsColumn.implicitHeight
@@ -229,10 +277,7 @@ Item {
                 interactive: false
                 flickableDirection: Flickable.VerticalFlick
                 boundsBehavior: Flickable.StopAtBounds
-                ScrollBar.vertical: ScrollBar {
-                policy: ScrollBar.AsNeeded
-                implicitWidth: LayoutMetrics.unit * 1.2
-            }
+                ScrollBar.vertical: AppScrollBar {}
 
                 MouseArea {
                     anchors.fill: parent
@@ -249,7 +294,7 @@ Item {
 
                 Column {
                     id: resultsColumn
-                    width: Math.max(0, resultsFlick.width - LayoutMetrics.spacing.md)
+                    width: Math.max(0, resultsFlick.width - LayoutMetrics.unit * 1.6)
                     spacing: LayoutMetrics.spacing.md
 
                     readonly property real cardGap: LayoutMetrics.spacing.md
@@ -372,7 +417,7 @@ Item {
                                             anchors.verticalCenter: parent.verticalCenter
                                             width: barWidth
                                             height: LayoutMetrics.unit * 1.3
-                                            radius: height / 2
+                                            radius: LayoutMetrics.radius.s
                                             color: Theme.dividerColor
                                             opacity: 0.25
                                         }
@@ -383,7 +428,7 @@ Item {
                                             width: Math.max(2, barWidth * modelData.count
                                                                / Math.max(1, textAnalysisVM.topWordMax))
                                             height: LayoutMetrics.unit * 1.3
-                                            radius: height / 2
+                                            radius: LayoutMetrics.radius.s
                                             color: Theme.themeColor
                                         }
 
@@ -395,7 +440,7 @@ Item {
                                             horizontalAlignment: Text.AlignRight
                                             text: modelData.count
                                             textColor: Theme.dividerColor
-                                            pixelSize: Typography.caption
+                                            pixelSize: Typography.body
                                             elide: Text.ElideRight
                                         }
                                     }
@@ -632,7 +677,7 @@ Item {
 
                                         Label {
                                             bold: false
-                                            width: parent.width - lengthLabel.implicitWidth - parent.spacing
+                                            width: parent.width - wordLengthLabel.implicitWidth - parent.spacing
                                             text: modelData.word
                                             textColor: Theme.textColor
                                             pixelSize: Typography.h6
@@ -641,7 +686,7 @@ Item {
                                         }
 
                                         Label {
-                                            id: lengthLabel
+                                            id: wordLengthLabel
                                             bold: false
                                             text: modelData.length
                                             textColor: Theme.dividerColor
@@ -655,5 +700,13 @@ Item {
                 }
             }
         }
+    }
+
+    FileDialog {
+        id: analysisFileDialog
+        title: "Open a text file"
+        fileMode: FileDialog.OpenFile
+        nameFilters: ["Text files (*.txt *.md *.markdown)", "All files (*)"]
+        onAccepted: textAnalysisVM.loadFile(selectedFile.toString())
     }
 }

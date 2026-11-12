@@ -13,20 +13,26 @@ Item {
     readonly property bool modeBase: numberToolsVM.mode === "Base converter"
     readonly property bool modeGcd: numberToolsVM.mode === "GCD / LCM"
     readonly property bool modeFactors: numberToolsVM.mode === "Factors & divisors"
-    readonly property bool modeOps: numberToolsVM.mode === "Operations"
+    readonly property bool modeBitwise: numberToolsVM.mode === "Bitwise"
+    readonly property bool bitwiseCount: numberToolsVM.operation.indexOf("Shift") === 0
+                                          || numberToolsVM.operation.indexOf("Rotate") === 0
 
-    Rectangle {
-        anchors.fill: parent
-        color: "transparent"
+    Surface {
+        anchors.centerIn: parent
+        width: parent.width * 0.9
+        height: parent.height * 0.9
 
         Column {
             id: pageColumn
-            anchors.fill: parent
-            anchors.margins: LayoutMetrics.spacing.lg
+            width: Math.max(0, parent.width - LayoutMetrics.spacing.lg * 2)
+            height: parent.height - LayoutMetrics.spacing.lg * 2
+            x: (parent.width - width) / 2
+            y: LayoutMetrics.spacing.lg
             spacing: LayoutMetrics.spacing.md
 
             Title {
                 id: pageTitle
+                anchors.horizontalCenter: parent.horizontalCenter
                 text: "Number Tools"
                 textColor: Theme.textColor
                 pixelSize: Typography.h2
@@ -36,7 +42,8 @@ Item {
                 id: pageSubtitle
                 bold: false
                 width: parent.width
-                text: "Base conversion, GCD/LCM, factors, and integer operations."
+                horizontalAlignment: Text.AlignHCenter
+                text: "Base conversion, GCD/LCM, factors, and bitwise operations."
                 textColor: Theme.dividerColor
                 pixelSize: Typography.h6
                 wrapMode: Text.WordWrap
@@ -102,37 +109,23 @@ Item {
                     }
                 }
 
-                ScrollBar.vertical: ScrollBar {
-                    parent: pageFlickable
-                    x: pageFlickable.mirrored ? 0 : pageFlickable.width - width
-                    y: 0
-                    height: pageFlickable.height
-                    policy: ScrollBar.AsNeeded
-                    visible: size < 1.0
-                    padding: 0
-                    implicitWidth: LayoutMetrics.unit * 1.2
-                    minimumSize: 0.14
+                ScrollBar.vertical: AppScrollBar {}
 
-                    contentItem: Rectangle {
-                        implicitWidth: LayoutMetrics.unit * 1.2
-                        radius: 0
-                        color: (parent.pressed || parent.hovered) ? Theme.textColor : Theme.dividerColor
-                        Behavior on color {
-                            enabled: LayoutMetrics.animationsEnabled
-                            ColorAnimation { duration: 120 }
-                        }
-                    }
+                TabSlide {
+                    id: tabSlide
+                    tabBar: modeTabs
+                    target: contentColumn
                 }
 
                 Column {
                     id: contentColumn
-                    width: parent.width
+                    width: Math.max(0, parent.width - LayoutMetrics.unit * 1.6)
                     spacing: LayoutMetrics.spacing.lg
 
                     Row {
                         width: parent.width
                         spacing: LayoutMetrics.spacing.md
-                        visible: page.modeBase || page.modeOps || page.modeGcd
+                        visible: page.modeBase || page.modeBitwise || page.modeGcd
 
                         Label {
                             bold: false
@@ -168,7 +161,7 @@ Item {
                     Row {
                         width: parent.width
                         spacing: LayoutMetrics.spacing.md
-                        visible: (page.modeBase || page.modeOps || page.modeGcd) && numberToolsVM.fromBase === "Custom"
+                        visible: (page.modeBase || page.modeBitwise || page.modeGcd) && numberToolsVM.fromBase === "Custom"
 
                         Label {
                             bold: false
@@ -245,7 +238,7 @@ Item {
 
                     Label {
                         bold: false
-                        text: page.modeGcd ? "Integers (space/comma separated)" : (page.modeOps ? "A" : "Value")
+                        text: page.modeGcd ? "Integers (space/comma separated)" : (page.modeBitwise ? "A" : "Value")
                         textColor: Theme.textColor
                         pixelSize: Typography.h4
                     }
@@ -255,6 +248,7 @@ Item {
                         placeholderText: page.modeBase ? "e.g. 255, FF, 11111111"
                                       : page.modeGcd ? "e.g. 48 18 30"
                                       : page.modeFactors ? "e.g. 360"
+                                      : page.modeBitwise ? "e.g. 255 or FF"
                                       : "e.g. 12"
                         text: numberToolsVM.inputA
                         onTextEdited: numberToolsVM.setInputA(text)
@@ -263,7 +257,7 @@ Item {
                     Row {
                         width: parent.width
                         spacing: LayoutMetrics.spacing.md
-                        visible: page.modeOps
+                        visible: page.modeBitwise
 
                         Label {
                             bold: false
@@ -294,25 +288,58 @@ Item {
                                 }
                             }
                         }
+
+                        Label {
+                            bold: false
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "Width"
+                            textColor: Theme.textColor
+                            pixelSize: Typography.h6
+                        }
+
+                        ComboBox {
+                            width: Math.min(LayoutMetrics.unit * 12, parent.width * 0.25)
+                            model: numberToolsVM.bitwiseWidths
+                            scrollablePopup: true
+                            maxVisibleItems: 4
+                            currentIndex: {
+                                var idx = numberToolsVM.bitwiseWidths.indexOf(numberToolsVM.bitwiseWidth)
+                                return idx >= 0 ? idx : 3
+                            }
+                            onActivated: function(index) {
+                                if (index >= 0 && index < numberToolsVM.bitwiseWidths.length)
+                                    numberToolsVM.setBitwiseWidth(numberToolsVM.bitwiseWidths[index])
+                            }
+                            onCurrentIndexChanged: {
+                                if (currentIndex >= 0 && currentIndex < numberToolsVM.bitwiseWidths.length) {
+                                    var width = numberToolsVM.bitwiseWidths[currentIndex]
+                                    if (width && width !== numberToolsVM.bitwiseWidth)
+                                        numberToolsVM.setBitwiseWidth(width)
+                                }
+                            }
+                        }
                     }
 
                     Label {
                         bold: false
-                        visible: page.modeOps || page.modeGcd
-                        text: page.modeGcd ? "Extra integer (optional)" : "B"
+                        visible: page.modeGcd || (page.modeBitwise && numberToolsVM.operation !== "NOT")
+                        text: page.modeGcd ? "Extra integer (optional)"
+                                           : page.bitwiseCount ? "Shift / rotate count" : "B"
                         textColor: Theme.textColor
                         pixelSize: Typography.h4
                     }
 
                     LineEdit {
                         width: parent.width
-                        visible: page.modeOps || page.modeGcd
-                        placeholderText: page.modeOps ? "e.g. 5" : "e.g. 12 (optional)"
+                        visible: page.modeGcd || (page.modeBitwise && numberToolsVM.operation !== "NOT")
+                        placeholderText: page.modeGcd ? "e.g. 12 (optional)"
+                                      : page.bitwiseCount ? "e.g. 3" : "e.g. 5"
                         text: numberToolsVM.inputB
                         onTextEdited: numberToolsVM.setInputB(text)
                     }
 
                     Row {
+                        anchors.horizontalCenter: parent.horizontalCenter
                         spacing: LayoutMetrics.spacing.sm
 
                         Button {
@@ -332,7 +359,8 @@ Item {
                     }
 
                     ProgressBar {
-                        width: parent.width
+                        width: Math.min(parent.width, LayoutMetrics.unit * 50)
+                        anchors.horizontalCenter: parent.horizontalCenter
                         visible: page.modeFactors && (numberToolsVM.computing || numberToolsVM.progress > 0)
                         value: numberToolsVM.progress
                     }

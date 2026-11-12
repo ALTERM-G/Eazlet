@@ -19,6 +19,7 @@ Item {
         favorites: asciiArtVM.favorites
         recents: asciiArtVM.recents
         sampleText: asciiArtVM.input
+        tileSampleLength: 4
         itemNameSingular: "font"
         itemNamePlural: "fonts"
         noRecentsLabel: "No recent fonts yet"
@@ -35,9 +36,10 @@ Item {
         }
     }
 
-    Rectangle {
-        anchors.fill: parent
-        color: "transparent"
+    Surface {
+        anchors.centerIn: parent
+        width: parent.width * 0.9
+        height: parent.height * 0.9
 
         Flickable {
             id: pageFlickable
@@ -62,34 +64,16 @@ Item {
                 }
             }
 
-            ScrollBar.vertical: ScrollBar {
-                parent: pageFlickable
-                x: pageFlickable.mirrored ? 0 : pageFlickable.width - width
-                y: 0
-                height: pageFlickable.height
-                policy: ScrollBar.AsNeeded
-                visible: size < 1.0
-                padding: 0
-                implicitWidth: LayoutMetrics.unit * 1.2
-                minimumSize: 0.14
-
-                contentItem: Rectangle {
-                    implicitWidth: LayoutMetrics.unit * 1.2
-                    radius: 0
-                    color: (parent.pressed || parent.hovered) ? Theme.textColor : Theme.dividerColor
-                    Behavior on color {
-                        enabled: LayoutMetrics.animationsEnabled
-                        ColorAnimation { duration: 120 }
-                    }
-                }
-            }
+            ScrollBar.vertical: AppScrollBar {}
 
             Column {
                 id: contentColumn
-                width: parent.width
+                width: Math.max(0, parent.width - LayoutMetrics.unit * 1.6)
+                x: Math.max(0, (parent.width - width) / 2)
                 spacing: LayoutMetrics.spacing.lg
 
                 Title {
+                    anchors.horizontalCenter: parent.horizontalCenter
                     text: "ASCII Art"
                     textColor: Theme.textColor
                     pixelSize: Typography.h2
@@ -98,14 +82,21 @@ Item {
                 Label {
                     bold: false
                     width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
                     text: "Convert text into ASCII art using FIGlet fonts."
                     textColor: Theme.dividerColor
                     pixelSize: Typography.h6
                     wrapMode: Text.WordWrap
                 }
 
-                Row {
+                Rectangle {
                     width: parent.width
+                    height: LayoutMetrics.spacing.xxs
+                    color: Theme.dividerColor
+                }
+
+                Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
                     spacing: LayoutMetrics.spacing.md
 
                     Label {
@@ -125,6 +116,7 @@ Item {
                 }
 
                 Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
                     spacing: LayoutMetrics.spacing.sm
 
                     Button {
@@ -141,6 +133,8 @@ Item {
                 }
 
                 Label {
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
                     bold: false
                     text: "Input"
                     textColor: Theme.textColor
@@ -177,7 +171,7 @@ Item {
                         height: LayoutMetrics.size.iconS
                         path: SVGLibrary.checkMark
                         color: Theme.textColor
-                        visible: asciiArtVM.status === "Done" || asciiArtVM.status === "Copied"
+                        visible: asciiArtVM.status === "Copied"
                     }
                     Label {
                         bold: false
@@ -212,6 +206,8 @@ Item {
                 }
 
                 Label {
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
                     bold: false
                     text: "Output"
                     textColor: Theme.textColor

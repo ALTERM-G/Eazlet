@@ -52,7 +52,7 @@ class UnifiedDownloadVM(BaseVM):
         self._formats = []
         self._selected_format = ""
         self._audio_only = False
-        self._status = "Idle"
+        self._status = ""
         self._downloading = False
         self._progress = 0.0
         self._error = ""
@@ -266,7 +266,6 @@ class UnifiedDownloadVM(BaseVM):
                 if vcodec == "none" and acodec == "none":
                     continue
                 if vcodec == "none":
-                    # audio-only: keep out of the video format picker (audio handled separately)
                     continue
                 height = f.get("height")
                 try:
@@ -308,14 +307,11 @@ class UnifiedDownloadVM(BaseVM):
                 return (-int(x.get("height") or 0), -int(x.get("fps") or 0), mp4_pref, str(x.get("id") or ""))
 
             fmts = sorted(fmts, key=sort_key)
-            # dedupe by (height, fps, kind/ext-ish label shape) keeping best id order? keep all ids but avoid exact dup labels
             seen = set()
             uniq = []
             for x in fmts:
                 k = (x.get("height"), x.get("fps"), x.get("ext"), "A+V" in x["label"])
-                # allow different containers/ids when meaningfully different; cap duplicates of same bucket
                 bucket = f"{k}"
-                # keep a few per bucket
                 count = sum(1 for s in seen if s == bucket)
                 if count >= 2:
                     continue
@@ -342,7 +338,6 @@ class UnifiedDownloadVM(BaseVM):
             self._error = "Enter a URL"
             self.errorChanged.emit()
             return
-        # resolve short URLs
         try:
             import urllib.request
 
@@ -392,7 +387,6 @@ class UnifiedDownloadVM(BaseVM):
                 args = ["-f", self._selected_format + "+bestaudio/best", "--no-playlist", "--merge-output-format", "mp4", "-o", outtmpl, self._url.strip()]
             else:
                 if shutil.which("ffmpeg") is None:
-                    # try to fall back to best single stream
                     args = ["-f", "best[ext=mp4]/best", "--no-playlist", "-o", outtmpl, self._url.strip()]
                 else:
                     args = ["-f", "bestvideo*+bestaudio/best", "--no-playlist", "--merge-output-format", "mp4", "-o", outtmpl, self._url.strip()]
@@ -524,7 +518,6 @@ class UnifiedDownloadVM(BaseVM):
             if not self._error:
                 self._error = err
                 self.errorChanged.emit()
-            # also update status with last meaningful line
             lines = [l.strip() for l in err.splitlines() if l.strip()]
             if lines:
                 self._status = lines[-1]

@@ -17,7 +17,7 @@
         "scale": "Échelle",
         "language": "Langue",
         "downloadFolder": "Dossier de téléchargement",
-        "downloadFolderHint": "Utilisé par le téléchargeur, le convertisseur et l'outil d'archivage.",
+        "outputFolder": "Dossier de sortie",
         "browse": "Parcourir",
         "reset": "Réinitialiser",
         "shortcutEditor": "Éditeur de raccourcis",

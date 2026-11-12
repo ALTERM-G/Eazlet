@@ -15,12 +15,14 @@ ComboBox {
 
     contentItem: Text {
         text: control.displayText !== "" ? control.displayText : "Select"
+        width: control.availableWidth
         anchors.verticalCenter: parent.verticalCenter
         font.pixelSize: Typography.h4
         font.family: Typography.fontBold
         font.weight: Font.Bold
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
+        elide: Text.ElideRight
         color: mouseArea.containsMouse
                ? Theme.hoverTextColor
                : Theme.textColor

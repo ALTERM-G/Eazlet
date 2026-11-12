@@ -162,6 +162,60 @@ def _fmt_base(n: int, base: int) -> str:
     return _fmt_base_py(n, base)
 
 
+def _parse_bitwise_width(label: str) -> int:
+    text = (label or "").strip().lower()
+    if text.endswith("-bit"):
+        text = text[:-4]
+    try:
+        width = int(text)
+    except ValueError as e:
+        raise ValueError("Choose a bit width of 8, 16, 32, or 64") from e
+    if width not in (8, 16, 32, 64):
+        raise ValueError("Choose a bit width of 8, 16, 32, or 64")
+    return width
+
+
+def _apply_bitwise(op: str, a: int, b: int, width: int) -> int:
+    if a < 0 or b < 0:
+        raise ValueError("Bitwise operations accept non-negative integers only")
+    mask = (1 << width) - 1
+    a &= mask
+    b &= mask
+    if op == "NOT":
+        return (~a) & mask
+    if op == "AND":
+        return a & b
+    if op == "OR":
+        return a | b
+    if op == "XOR":
+        return a ^ b
+    if op == "Shift left":
+        return 0 if b >= width else (a << b) & mask
+    if op == "Shift right":
+        return 0 if b >= width else a >> b
+    if op == "Rotate left":
+        shift = b % width
+        if shift == 0:
+            return a
+        return ((a << shift) | (a >> (width - shift))) & mask
+    if op == "Rotate right":
+        shift = b % width
+        if shift == 0:
+            return a
+        return ((a >> shift) | (a << (width - shift))) & mask
+    raise ValueError(f"Unknown bitwise operation: {op}")
+
+
+def _signed_from_width(value: int, width: int) -> int:
+    sign_bit = 1 << (width - 1)
+    return value - (1 << width) if value & sign_bit else value
+
+
+def _format_binary(value: int, width: int) -> str:
+    bits = f"{value:0{width}b}"
+    return " ".join(bits[i:i + 4] for i in range(0, width, 4))
+
+
 def _gcd(a: int, b: int) -> int:
     if _NATIVE is not None and _fits_i64(a) and _fits_i64(b):
         try:
@@ -399,14 +453,25 @@ class NumberToolsVM(BaseVM):
     customFromBaseChanged = Signal()
     customToBaseChanged = Signal()
     operationChanged = Signal()
+    bitwiseWidthChanged = Signal()
     outputChanged = Signal()
     statusChanged = Signal()
     errorChanged = Signal()
     computingChanged = Signal()
     progressChanged = Signal()
 
-    MODES = ["Base converter", "GCD / LCM", "Factors & divisors", "Operations"]
-    OPS = ["+", "−", "×", "÷", "mod", "pow"]
+    MODES = ["Base converter", "GCD / LCM", "Factors & divisors", "Bitwise"]
+    BITWISE_OPS = [
+        "AND",
+        "OR",
+        "XOR",
+        "NOT",
+        "Shift left",
+        "Shift right",
+        "Rotate left",
+        "Rotate right",
+    ]
+    BITWISE_WIDTHS = ["8-bit", "16-bit", "32-bit", "64-bit"]
     BASES = ["Auto", "2 (bin)", "8 (oct)", "10 (dec)", "16 (hex)", "36", "Custom"]
     TO_BASES = ["2 (bin)", "8 (oct)", "10 (dec)", "16 (hex)", "All common", "36", "Custom"]
 
@@ -419,9 +484,10 @@ class NumberToolsVM(BaseVM):
         self._custom_from_base = "10"
         self._to_base = "All common"
         self._custom_to_base = "43"
-        self._operation = "+"
+        self._operation = "AND"
+        self._bitwise_width = "64-bit"
         self._output = ""
-        self._status = "Idle"
+        self._status = ""
         self._error = ""
         self._computing = False
         self._progress = 0.0
@@ -511,10 +577,21 @@ class NumberToolsVM(BaseVM):
 
     @operation.setter
     def operation(self, value: str) -> None:
-        value = value or "+"
+        value = value or "AND"
         if value != self._operation:
             self._operation = value
             self.operationChanged.emit()
+
+    @Property(str, notify=bitwiseWidthChanged)
+    def bitwiseWidth(self) -> str:
+        return self._bitwise_width
+
+    @bitwiseWidth.setter
+    def bitwiseWidth(self, value: str) -> None:
+        value = value or "64-bit"
+        if value != self._bitwise_width:
+            self._bitwise_width = value
+            self.bitwiseWidthChanged.emit()
 
     @Property(str, notify=outputChanged)
     def output(self) -> str:
@@ -542,7 +619,11 @@ class NumberToolsVM(BaseVM):
 
     @Property(list, constant=True)
     def operations(self) -> list:
-        return list(self.OPS)
+        return list(self.BITWISE_OPS)
+
+    @Property(list, constant=True)
+    def bitwiseWidths(self) -> list:
+        return list(self.BITWISE_WIDTHS)
 
     @Property(list, constant=True)
     def fromBases(self) -> list:
@@ -645,6 +726,10 @@ class NumberToolsVM(BaseVM):
     def setOperation(self, value: str) -> None:
         self.operation = value
 
+    @Slot(str)
+    def setBitwiseWidth(self, value: str) -> None:
+        self.bitwiseWidth = value
+
     @Slot()
     def process(self) -> None:
         if self._computing:
@@ -657,8 +742,8 @@ class NumberToolsVM(BaseVM):
                 self._run_gcd_lcm()
             elif self._mode == "Factors & divisors":
                 self._start_factors()
-            elif self._mode == "Operations":
-                self._run_ops()
+            elif self._mode == "Bitwise":
+                self._run_bitwise()
             else:
                 self._set_output("")
                 self._set_status("Unknown mode")
@@ -781,51 +866,23 @@ class NumberToolsVM(BaseVM):
         self._set_output("\n".join(lines))
         self._set_status("Done")
 
-    def _run_ops(self) -> None:
-        a = self._parse_a()
-        b = self._parse_b()
+    def _run_bitwise(self) -> None:
         op = self._operation
-        if op == "+":
-            r = a + b
-            res = f"{a} + {b} = {r}"
-        elif op == "−":
-            r = a - b
-            res = f"{a} − {b} = {r}"
-        elif op == "×":
-            r = a * b
-            res = f"{a} × {b} = {r}"
-        elif op == "÷":
-            if b == 0:
-                raise ValueError("Division by zero")
-            q, rem = divmod(a, b)
-            res = f"{a} ÷ {b} = {q} remainder {rem}\n(Exact: {a}/{b})"
-        elif op == "mod":
-            if b == 0:
-                raise ValueError("Modulo by zero")
-            res = f"{a} mod {b} = {a % b}"
-        elif op == "pow":
-            r = pow(a, b)
-            res = f"{a} ^ {b} = {r}"
-        else:
-            raise ValueError("Unknown operation")
-        try:
-            if op == "÷":
-                primary = divmod(a, b)[0]
-                lines = [
-                    res,
-                    f"Quotient bin: {_fmt_base(primary, 2)}",
-                    f"Quotient hex: {_fmt_base(primary, 16)}",
-                ]
-            else:
-                primary = r
-                lines = [
-                    res,
-                    f"Binary: {_fmt_base(primary, 2)}",
-                    f"Octal:  {_fmt_base(primary, 8)}",
-                    f"Hex:    {_fmt_base(primary, 16)}",
-                ]
-        except Exception:
-            lines = [res]
+        width = _parse_bitwise_width(self._bitwise_width)
+        a = self._parse_a()
+        b = 0 if op == "NOT" else self._parse_b()
+        result = _apply_bitwise(op, a, b, width)
+        label = f"{a} {op}" if op == "NOT" else f"{a} {op} {b}"
+        lines = [
+            f"{label} ({width}-bit)",
+            f"Decimal (unsigned): {result}",
+            f"Decimal (signed):   {_signed_from_width(result, width)}",
+            f"Binary:  {_format_binary(result, width)}",
+            f"Octal:   {_fmt_base(result, 8)}",
+            f"Hex:     {result:0{width // 4}X}",
+            f"Popcount: {result.bit_count()}",
+            f"Bit length: {result.bit_length()}",
+        ]
         self._set_output("\n".join(lines))
         self._set_status("Done")
 
@@ -841,7 +898,7 @@ class NumberToolsVM(BaseVM):
         self.inputB = ""
         self._set_output("")
         self._set_error("")
-        self._set_status("Idle")
+        self._set_status("")
         self._set_progress(0.0)
 
     @Slot()

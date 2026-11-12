@@ -11,6 +11,25 @@ from PySide6.QtGui import QGuiApplication
 from .base_vm import BaseVM
 
 
+def _normalize_preview(rendered: str) -> str:
+    """Trim the empty border FIGlet fonts add around their glyphs."""
+    lines = rendered.splitlines()
+    while lines and not lines[0].strip():
+        lines.pop(0)
+    while lines and not lines[-1].strip():
+        lines.pop()
+    lines = [line.rstrip() for line in lines]
+
+    # Right-to-left fonts and FIGlet justification pad the art with a large
+    # left margin. Dedent it so the preview stays centred and scalable.
+    indents = [len(line) - len(line.lstrip()) for line in lines if line]
+    if indents:
+        common = min(indents)
+        if common:
+            lines = [line[common:] if line else line for line in lines]
+    return "\n".join(lines)
+
+
 class AsciiArtVM(BaseVM):
     inputChanged = Signal()
     outputChanged = Signal()
@@ -24,15 +43,19 @@ class AsciiArtVM(BaseVM):
     MAX_RECENTS = 24
     MAX_PREVIEWS = 256
     PREVIEW_TEXT_LENGTH = 32
+    # FIGlet's default width is 80 columns, which wraps tall/wide fonts into
+    # several stacked blocks. Previews render on one line instead.
+    PREVIEW_WIDTH = 1000
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self._controller = parent
         self._input = ""
         self._output = ""
-        self._status = "Idle"
+        self._status = ""
         self._error = ""
         self._figures: dict[str, object] = {}
+        self._preview_figures: dict[str, object] = {}
         self._preview_cache: OrderedDict[tuple[str, str], str] = OrderedDict()
         self._favorites: list[str] = []
         self._recents: list[str] = []
@@ -134,6 +157,13 @@ class AsciiArtVM(BaseVM):
             self._figures[font] = figure
         return figure
 
+    def _preview_figure(self, font: str):
+        figure = self._preview_figures.get(font)
+        if figure is None:
+            figure = pyfiglet.Figlet(font=font, width=self.PREVIEW_WIDTH)
+            self._preview_figures[font] = figure
+        return figure
+
     def _persist_favorites(self) -> None:
         controller = self._controller
         if controller is not None and hasattr(controller, "save_ascii_favorites"):
@@ -196,7 +226,7 @@ class AsciiArtVM(BaseVM):
             self._preview_cache.move_to_end(key)
             return cached
         try:
-            rendered = self._figure(font).renderText(sample).rstrip("\n")
+            rendered = _normalize_preview(self._preview_figure(font).renderText(sample))
         except Exception:
             return ""
         self._preview_cache[key] = rendered
@@ -227,7 +257,7 @@ class AsciiArtVM(BaseVM):
             return
         self._output = rendered.rstrip("\n")
         self.outputChanged.emit()
-        self._set_status("Done")
+        self._set_status("")
 
     @Slot()
     def processAction(self) -> None:
@@ -239,7 +269,7 @@ class AsciiArtVM(BaseVM):
         self._output = ""
         self.outputChanged.emit()
         self._set_error("")
-        self._set_status("Idle")
+        self._set_status("")
 
     @Slot()
     def copyOutput(self) -> None:

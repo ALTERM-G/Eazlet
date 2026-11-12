@@ -39,8 +39,6 @@ class ConverterVM(BaseVM):
     DOC_FORMATS = ["txt", "md", "html", "pdf"]
     ALL_FORMATS = VIDEO_FORMATS + AUDIO_FORMATS + IMAGE_FORMATS + DOC_FORMATS
 
-    # Input extensions are grouped separately from output formats: we can read
-    # more container types than we offer as targets.
     FORMAT_ALIASES = {
         "jpeg": "jpg",
         "jpe": "jpg",
@@ -81,7 +79,6 @@ class ConverterVM(BaseVM):
         "pdf": ["txt", "md", "html"] if shutil.which("pdftotext") else [],
     }
 
-    # Each target needs at least one encoder from every group to be offered.
     ENCODER_CANDIDATES = {
         "mp3": (("libmp3lame", "mp3"),),
         "aac": (("aac",),),
@@ -120,10 +117,10 @@ class ConverterVM(BaseVM):
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._files = []
-        self._output_dir = str(Path.home() / "Downloads")
+        self._output_dir = str(Path.home() / "Documents")
         self._converting = False
         self._progress = 0.0
-        self._status = "Idle"
+        self._status = ""
         self._error = ""
         self._target_format = ""
         self._valid_target_formats = []
@@ -284,7 +281,7 @@ class ConverterVM(BaseVM):
         self._refresh_targets()
 
         if not self._files:
-            self._status = "Idle"
+            self._status = ""
         elif self.sourceCategory == "unsupported":
             self._status = "Unsupported file type"
         elif self._valid_target_formats:
@@ -352,7 +349,6 @@ class ConverterVM(BaseVM):
         self._temp_files = []
 
     def _rasterize_svg(self, path):
-        """Render an SVG to a temporary PNG so ffmpeg can consume it."""
         if QGuiApplication.instance() is None:
             raise RuntimeError("SVG conversion requires the application to be running")
         reader = QImageReader(path)

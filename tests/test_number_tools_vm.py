@@ -1,10 +1,16 @@
+import pytest
+
 from eazlet.backend.viewmodels.number_tools_vm import (
+    _apply_bitwise,
     _bezout,
     _divisors_from_factors_py,
     _fmt_base,
+    _format_binary,
     _gcd,
     _lcm,
+    _parse_bitwise_width,
     _prime_factors_py,
+    _signed_from_width,
 )
 
 
@@ -47,3 +53,52 @@ def test_python_fallback_handles_bigint():
     for p, e in pf:
         product *= p**e
     assert product == n
+
+
+def test_parse_bitwise_width():
+    assert _parse_bitwise_width("8-bit") == 8
+    assert _parse_bitwise_width("16") == 16
+    assert _parse_bitwise_width("64-bit") == 64
+    with pytest.raises(ValueError):
+        _parse_bitwise_width("12-bit")
+    with pytest.raises(ValueError):
+        _parse_bitwise_width("wide")
+
+
+def test_bitwise_logical_ops():
+    assert _apply_bitwise("AND", 0b1100, 0b1010, 8) == 0b1000
+    assert _apply_bitwise("OR", 0b1100, 0b1010, 8) == 0b1110
+    assert _apply_bitwise("XOR", 0b1100, 0b1010, 8) == 0b0110
+    assert _apply_bitwise("NOT", 0b1010, 0, 8) == 0xF5
+
+
+def test_bitwise_shifts_and_rotates():
+    assert _apply_bitwise("Shift left", 1, 3, 8) == 8
+    assert _apply_bitwise("Shift right", 16, 2, 8) == 4
+    # Shifting past the width yields zero rather than growing the number.
+    assert _apply_bitwise("Shift left", 1, 9, 8) == 0
+    assert _apply_bitwise("Rotate left", 0b10000001, 1, 8) == 0b00000011
+    assert _apply_bitwise("Rotate right", 0b00000011, 1, 8) == 0b10000001
+    assert _apply_bitwise("Rotate left", 5, 8, 8) == 5
+
+
+def test_bitwise_masks_to_width():
+    assert _apply_bitwise("AND", 0x1FF, 0x1FF, 8) == 0xFF
+    assert _apply_bitwise("NOT", 0, 0, 16) == 0xFFFF
+    assert _apply_bitwise("NOT", 0, 0, 32) == 0xFFFFFFFF
+    assert _apply_bitwise("NOT", 0, 0, 64) == 0xFFFFFFFFFFFFFFFF
+
+
+def test_bitwise_rejects_negative_inputs():
+    with pytest.raises(ValueError):
+        _apply_bitwise("AND", -1, 5, 8)
+    with pytest.raises(ValueError):
+        _apply_bitwise("OR", 5, -1, 8)
+
+
+def test_signed_conversion_and_binary_grouping():
+    assert _signed_from_width(0xFF, 8) == -1
+    assert _signed_from_width(0x7F, 8) == 127
+    assert _signed_from_width(0xFFFF, 16) == -1
+    assert _format_binary(0b1010, 8) == "0000 1010"
+    assert _format_binary(0xFFFF, 16) == "1111 1111 1111 1111"

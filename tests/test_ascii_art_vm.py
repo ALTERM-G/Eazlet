@@ -32,6 +32,17 @@ def test_preview_is_rendered_and_cached():
     assert len(vm._preview_cache) == 1
 
 
+def test_preview_trims_empty_border_and_trailing_whitespace():
+    vm = AsciiArtVM()
+    rendered = vm.preview("standard", "Hi")
+    lines = rendered.splitlines()
+
+    assert lines
+    assert lines[0].strip()
+    assert lines[-1].strip()
+    assert all(line == line.rstrip() for line in lines)
+
+
 def test_preview_uses_font_name_for_empty_text_and_rejects_unknown_fonts():
     vm = AsciiArtVM()
     assert vm.preview("standard", "") != ""
@@ -46,6 +57,25 @@ def test_preview_collapses_and_truncates_sample_text():
     key = next(iter(vm._preview_cache))
     assert key[1].startswith("one two three")
     assert len(key[1]) <= vm.PREVIEW_TEXT_LENGTH
+
+
+def test_preview_does_not_wrap_wide_fonts():
+    vm = AsciiArtVM()
+    rendered = vm.preview("alpha", "Abcdefghijklmnopqrstuvwxyz123456")
+
+    lines = rendered.splitlines()
+    assert len(lines) <= 30
+    assert max(len(line) for line in lines) > 80
+
+
+def test_preview_dedents_right_to_left_fonts():
+    vm = AsciiArtVM()
+    rendered = vm.preview("mirror", "Hello")
+
+    lines = [line for line in rendered.splitlines() if line]
+    assert lines
+    assert min(len(line) - len(line.lstrip()) for line in lines) == 0
+    assert max(len(line) for line in lines) < 120
 
 
 def test_preview_cache_is_bounded():

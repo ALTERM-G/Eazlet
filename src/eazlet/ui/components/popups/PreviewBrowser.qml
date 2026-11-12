@@ -48,6 +48,9 @@ Controls.Popup {
     property var favorites: []
     property var recents: []
     property string sampleText: ""
+    // Thumbnails use a shorter sample so very wide text stays legible in a
+    // tile. The full selected preview below still shows the complete sample.
+    property int tileSampleLength: 8
 
     // itemLabel and previewProvider make this component reusable for any
     // searchable collection. previewProvider returns the text shown in a tile.
@@ -68,6 +71,10 @@ Controls.Popup {
     readonly property string effectiveSample: {
         var cleaned = String(browser.sampleText || "").replace(/\s+/g, " ").trim()
         return cleaned.length > 0 ? cleaned.substring(0, 32) : "Abc"
+    }
+    readonly property string tileSample: {
+        var length = Math.max(1, browser.tileSampleLength)
+        return browser.effectiveSample.substring(0, length)
     }
     readonly property var filteredItems: {
         var source
@@ -100,7 +107,7 @@ Controls.Popup {
                                                    && browser.favorites.indexOf(browser.selectedItem) !== -1
 
     function previewFor(item) {
-        return browser.previewProvider ? browser.previewProvider(item, browser.effectiveSample) : ""
+        return browser.previewProvider ? browser.previewProvider(item, browser.tileSample) : ""
     }
 
     function setFilter(mode) {
@@ -344,9 +351,12 @@ Controls.Popup {
                     boundsBehavior: Flickable.StopAtBounds
                     reuseItems: true
                     cacheBuffer: LayoutMetrics.unit * 8
-                    readonly property int columns: Math.max(2, Math.floor(width / (LayoutMetrics.unit * 16)))
+                    readonly property int columns: Math.max(2, Math.floor(width / (LayoutMetrics.unit * 18)))
                     cellWidth: Math.floor(width / columns)
-                    cellHeight: LayoutMetrics.unit * 11
+                    // Keep each tile a landscape rectangle instead of letting it
+                    // collapse into a square as the window gets wider.
+                    cellHeight: Math.max(LayoutMetrics.unit * 10,
+                                         Math.round(cellWidth * 0.72))
                     model: browser.filteredItems
 
                     Keys.onReturnPressed: browser.applySelected()
@@ -426,23 +436,53 @@ Controls.Popup {
                             spacing: LayoutMetrics.spacing.xxs
 
                             Item {
+                                id: previewFrame
                                 width: parent.width
                                 height: Math.max(0, parent.height - tileLabel.implicitHeight - parent.spacing)
+                                clip: true
 
+                                // FIGlet art is a fixed grid of characters. Render
+                                // it at the size that actually fits the tile instead
+                                // of rasterising it at a huge size and scaling it
+                                // down, which turned large fonts into a smudge.
                                 Text {
-                                    anchors.fill: parent
+                                    id: previewMeasure
+                                    visible: false
                                     text: tile.previewText
                                     textFormat: Text.PlainText
                                     wrapMode: Text.NoWrap
-                                    fontSizeMode: Text.Fit
-                                    minimumPixelSize: 2
-                                    clip: true
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: 12
+                                    lineHeight: 1.0
+                                }
+
+                                readonly property real artPixelSize: {
+                                    if (previewMeasure.contentWidth <= 0
+                                            || previewMeasure.contentHeight <= 0)
+                                        return 0
+                                    var availableWidth = Math.max(1, width
+                                                                  - LayoutMetrics.spacing.xxs * 2)
+                                    var availableHeight = Math.max(1, height
+                                                                   - LayoutMetrics.spacing.xxs * 2)
+                                    return Math.max(0.5, 12 * Math.min(
+                                        availableWidth / previewMeasure.contentWidth,
+                                        availableHeight / previewMeasure.contentHeight))
+                                }
+
+                                Text {
+                                    id: previewArt
+                                    anchors.centerIn: parent
+                                    text: tile.previewText
+                                    textFormat: Text.PlainText
+                                    wrapMode: Text.NoWrap
                                     color: tile.highlighted ? Theme.hoverTextColor : Theme.textColor
                                     font.family: "JetBrains Mono"
-                                    font.pixelSize: Math.max(6, Math.round(Typography.caption * 0.85))
-                                    lineHeight: 0.9
+                                    lineHeight: 1.0
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
+                                    font.pixelSize: Math.max(1, Math.floor(previewFrame.artPixelSize))
+                                    scale: previewFrame.artPixelSize
+                                           / Math.max(1, Math.floor(previewFrame.artPixelSize))
 
                                     Behavior on color {
                                         enabled: LayoutMetrics.animationsEnabled
@@ -501,7 +541,7 @@ Controls.Popup {
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
-                height: Math.round(Math.max(LayoutMetrics.unit * 14, parent.height * 0.44))
+                height: Math.round(Math.max(LayoutMetrics.unit * 12, parent.height * 0.34))
 
                 Item {
                     id: previewHeader

@@ -212,7 +212,6 @@ import "tabs"
             settingsPopup.forceActiveFocus()
         }
         onClosed: {
-            generalTab.commitDownloadDir()
             Shortcuts.capturing = false
             Shortcuts.overlayOpen = false
         }
@@ -329,7 +328,8 @@ import "tabs"
                 anchors.bottom: parent.bottom
                 contentHeight: scrollContent.height
                 clip: true
-                ScrollBar.vertical.policy: ScrollBar.AsNeeded
+                ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
                 Binding {
                     target: scrollView.contentItem
@@ -366,8 +366,6 @@ import "tabs"
                 Item {
                     id: scrollContent
                     width: scrollView.width
-                           - (scrollView.ScrollBar.vertical.visible
-                              ? scrollView.ScrollBar.vertical.width : 0)
                     height: LayoutMetrics.spacing.xxl
                             + tabStage.height
                             + LayoutMetrics.spacing.xl * 3

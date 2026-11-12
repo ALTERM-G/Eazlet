@@ -1,10 +1,7 @@
 import base64
-import codecs
 import hashlib
 import os
-import quopri
 import re
-import urllib.parse
 
 from cryptography.exceptions import InvalidTag
 from cryptography.fernet import Fernet, InvalidToken
@@ -14,12 +11,12 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from PySide6.QtCore import Property, QObject, Signal, Slot
 from PySide6.QtGui import QGuiApplication
 
+from ..cipher_algorithms import CLASSICAL_SPECS, ENCODING_SPECS, CipherSpec
 from .base_vm import BaseVM
 
 
 class CipherVM(BaseVM):
-    inputChanged = Signal()
-    outputChanged = Signal()
+    ioChanged = Signal()
     modeChanged = Signal()
     cipherChanged = Signal()
     statusChanged = Signal()
@@ -28,57 +25,18 @@ class CipherVM(BaseVM):
     keyChanged = Signal()
     encodingAlgorithmChanged = Signal()
     cipherAlgorithmChanged = Signal()
+    cipherSettingsChanged = Signal()
     hashAlgorithmChanged = Signal()
     encryptionAlgorithmChanged = Signal()
     passphraseChanged = Signal()
+    shiftChanged = Signal()
+    railsChanged = Signal()
+    turnsChanged = Signal()
+    periodChanged = Signal()
 
-    ENCODINGS = [
-        "Base64",
-        "Base32",
-        "Base85",
-        "Base58",
-        "Base62",
-        "Base91",
-        "Hex",
-        "Binary",
-        "Octal",
-        "Decimal",
-        "URL Encode/Decode",
-        "Punycode",
-        "UUencode",
-        "XXencode",
-        "Quoted Printable",
-        "Morse",
-        "Reverse",
-    ]
-
-    CLASSICAL_CIPHERS = [
-        "ROT13",
-        "ROT47",
-        "Caesar",
-        "Atbash",
-        "Affine",
-        "Vigenere",
-        "Beaufort",
-        "Autokey",
-        "Playfair",
-        "Baconian",
-        "Polybius",
-        "Bifid",
-        "Trifid",
-        "ADFGVX",
-        "ADFGX",
-        "Hill",
-        "Simple Substitution",
-        "Rail Fence",
-        "Transposition Columnar",
-        "Scytale",
-        "Leetspeak",
-        "XOR",
-    ]
-
+    ENCODINGS = list(ENCODING_SPECS)
+    CLASSICAL_CIPHERS = list(CLASSICAL_SPECS)
     HASH_ALGORITHMS = ["MD5", "SHA1", "SHA256"]
-
     CIPHERS = ENCODINGS + CLASSICAL_CIPHERS + HASH_ALGORITHMS
 
     ENCRYPTION_ALGORITHMS = ["AES-256-GCM", "ChaCha20-Poly1305", "Fernet"]
@@ -87,52 +45,121 @@ class CipherVM(BaseVM):
     SALT_SIZE = 16
     NONCE_SIZE = 12
 
-    MORSE_CODE_DICT = {
-        'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
-        'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..',
-        'M': '--', 'N': '-.', 'O': '---', 'P': '.--.', 'Q': '--.-', 'R': '.-.',
-        'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
-        'Y': '-.--', 'Z': '--..', '1': '.----', '2': '..---', '3': '...--',
-        '4': '....-', '5': '.....', '6': '-....', '7': '--...', '8': '---..',
-        '9': '----.', '0': '-----', ' ': '/'
-    }
-    REVERSE_MORSE = {v: k for k, v in MORSE_CODE_DICT.items()}
+    HASH_NAMES = {"MD5": "md5", "SHA1": "sha1", "SHA256": "sha256"}
 
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
-        self._input = ""
-        self._output = ""
         self._mode = "encode"
         self._cipher = "Base64"
-        self._status = "Idle"
+        self._status = ""
         self._error = ""
-        self._detections = []
+        self._detections: list[dict[str, object]] = []
         self._key = ""
         self._encoding_algorithm = "Base64"
         self._cipher_algorithm = "ROT13"
         self._hash_algorithm = "SHA256"
         self._encryption_algorithm = "AES-256-GCM"
         self._passphrase = ""
+        self._shift = 3
+        self._rails = 3
+        self._turns = 5
+        self._period = 5
+        self._encoding_input = ""
+        self._encoding_output = ""
+        self._cipher_input = ""
+        self._cipher_output = ""
+        self._encryption_input = ""
+        self._encryption_output = ""
+        self._hash_input = ""
+        self._hash_output = ""
 
-    @Property(str, notify=inputChanged)
-    def input(self):
-        return self._input
+    # ------------------------------------------------------------------
+    # Per-tab input / output
+    # ------------------------------------------------------------------
 
-    @input.setter
-    def input(self, value):
-        if value != self._input:
-            self._input = value
-            self.inputChanged.emit()
+    def _set_io(self, name: str, value: str) -> None:
+        attr = f"_{name}"
+        value = value or ""
+        if getattr(self, attr) != value:
+            setattr(self, attr, value)
+            self.ioChanged.emit()
 
-    @Property(str, notify=outputChanged)
-    def output(self):
-        return self._output
+    def _tab_input(self, name: str) -> str:
+        return getattr(self, f"_{name}_input")
 
-    @output.setter
-    def output(self, value):
-        if value != self._output:
-            self._output = value
-            self.outputChanged.emit()
+    def _tab_output(self, name: str) -> str:
+        return getattr(self, f"_{name}_output")
+
+    def _set_tab_output(self, name: str, value: str) -> None:
+        self._set_io(f"{name}_output", value)
+
+    @Property(str, notify=ioChanged)
+    def encodingInput(self):
+        return self._encoding_input
+
+    @encodingInput.setter
+    def encodingInput(self, value):
+        self._set_io("encoding_input", value)
+
+    @Property(str, notify=ioChanged)
+    def encodingOutput(self):
+        return self._encoding_output
+
+    @encodingOutput.setter
+    def encodingOutput(self, value):
+        self._set_io("encoding_output", value)
+
+    @Property(str, notify=ioChanged)
+    def cipherInput(self):
+        return self._cipher_input
+
+    @cipherInput.setter
+    def cipherInput(self, value):
+        self._set_io("cipher_input", value)
+
+    @Property(str, notify=ioChanged)
+    def cipherOutput(self):
+        return self._cipher_output
+
+    @cipherOutput.setter
+    def cipherOutput(self, value):
+        self._set_io("cipher_output", value)
+
+    @Property(str, notify=ioChanged)
+    def encryptionInput(self):
+        return self._encryption_input
+
+    @encryptionInput.setter
+    def encryptionInput(self, value):
+        self._set_io("encryption_input", value)
+
+    @Property(str, notify=ioChanged)
+    def encryptionOutput(self):
+        return self._encryption_output
+
+    @encryptionOutput.setter
+    def encryptionOutput(self, value):
+        self._set_io("encryption_output", value)
+
+    @Property(str, notify=ioChanged)
+    def hashTextInput(self):
+        return self._hash_input
+
+    @hashTextInput.setter
+    def hashTextInput(self, value):
+        self._set_io("hash_input", value)
+
+    @Property(str, notify=ioChanged)
+    def hashTextOutput(self):
+        return self._hash_output
+
+    @hashTextOutput.setter
+    def hashTextOutput(self, value):
+        self._set_io("hash_output", value)
+
+    # ------------------------------------------------------------------
+    # Core state
+    # ------------------------------------------------------------------
 
     @Property(str, notify=modeChanged)
     def mode(self):
@@ -166,6 +193,10 @@ class CipherVM(BaseVM):
     def detections(self):
         return self._detections
 
+    # ------------------------------------------------------------------
+    # Algorithm selection
+    # ------------------------------------------------------------------
+
     @Property(str, notify=keyChanged)
     def key(self):
         return self._key
@@ -195,6 +226,7 @@ class CipherVM(BaseVM):
         if value and value != self._cipher_algorithm:
             self._cipher_algorithm = value
             self.cipherAlgorithmChanged.emit()
+            self.cipherSettingsChanged.emit()
 
     @Property(str, notify=hashAlgorithmChanged)
     def hashAlgorithm(self):
@@ -226,6 +258,96 @@ class CipherVM(BaseVM):
             self._passphrase = value or ""
             self.passphraseChanged.emit()
 
+    # ------------------------------------------------------------------
+    # Per-cipher settings
+    # ------------------------------------------------------------------
+
+    @Property(int, notify=shiftChanged)
+    def shift(self):
+        return self._shift
+
+    @shift.setter
+    def shift(self, value):
+        value = max(1, min(25, int(value)))
+        if value != self._shift:
+            self._shift = value
+            self.shiftChanged.emit()
+
+    @Property(int, notify=railsChanged)
+    def rails(self):
+        return self._rails
+
+    @rails.setter
+    def rails(self, value):
+        value = max(2, min(15, int(value)))
+        if value != self._rails:
+            self._rails = value
+            self.railsChanged.emit()
+
+    @Property(int, notify=turnsChanged)
+    def turns(self):
+        return self._turns
+
+    @turns.setter
+    def turns(self, value):
+        value = max(2, min(20, int(value)))
+        if value != self._turns:
+            self._turns = value
+            self.turnsChanged.emit()
+
+    @Property(int, notify=periodChanged)
+    def period(self):
+        return self._period
+
+    @period.setter
+    def period(self, value):
+        value = max(1, min(20, int(value)))
+        if value != self._period:
+            self._period = value
+            self.periodChanged.emit()
+
+    def _current_spec(self) -> CipherSpec | None:
+        return CLASSICAL_SPECS.get(self._cipher_algorithm)
+
+    @Property(bool, notify=cipherSettingsChanged)
+    def usesKey(self):
+        spec = self._current_spec()
+        return bool(spec and spec.uses_key)
+
+    @Property(bool, notify=cipherSettingsChanged)
+    def usesShift(self):
+        spec = self._current_spec()
+        return bool(spec and spec.uses_shift)
+
+    @Property(bool, notify=cipherSettingsChanged)
+    def usesRails(self):
+        spec = self._current_spec()
+        return bool(spec and spec.uses_rails)
+
+    @Property(bool, notify=cipherSettingsChanged)
+    def usesTurns(self):
+        spec = self._current_spec()
+        return bool(spec and spec.uses_turns)
+
+    @Property(bool, notify=cipherSettingsChanged)
+    def usesPeriod(self):
+        spec = self._current_spec()
+        return bool(spec and spec.uses_period)
+
+    @Property(str, notify=cipherSettingsChanged)
+    def keyHint(self):
+        spec = self._current_spec()
+        return spec.key_hint if spec else ""
+
+    @Property(str, notify=cipherSettingsChanged)
+    def cipherHint(self):
+        spec = self._current_spec()
+        return spec.hint if spec else ""
+
+    # ------------------------------------------------------------------
+    # Static option lists
+    # ------------------------------------------------------------------
+
     @Property(list, constant=True)
     def ciphers(self):
         return self.CIPHERS
@@ -246,33 +368,40 @@ class CipherVM(BaseVM):
     def encryptionAlgorithms(self):
         return self.ENCRYPTION_ALGORITHMS
 
+    # ------------------------------------------------------------------
+    # Detection
+    # ------------------------------------------------------------------
+
     @Slot()
     def detect(self):
-        self._error = ""
-        self.errorChanged.emit()
-        text = self._input.strip()
+        self._set_error("")
+        text = self._encoding_input.strip()
         if not text:
             self._detections = []
             self.detectionChanged.emit()
-            self._output = ""
-            self.outputChanged.emit()
-            self._status = "Idle"
-            self.statusChanged.emit()
+            self._set_tab_output("encoding", "")
+            self._set_status("")
             return
-        scores = {}
-        try:
-            base64.b64decode(text, validate=True)
-            if re.fullmatch(r"[A-Za-z0-9+/=]+", text) and len(text) % 4 == 0:
-                scores["Base64"] = 0.9
-        except Exception:
-            pass
-        try:
-            base64.b32decode(text, casefold=True)
-            if re.fullmatch(r"[A-Z2-7=]+", text.upper()):
-                scores["Base32"] = 0.85
-        except Exception:
-            pass
-        stripped = text.replace(" ", "")
+
+        scores: dict[str, float] = {}
+        stripped = "".join(text.split())
+
+        def looks_like_encoding(name: str, maximum: float) -> None:
+            encode, decode = ENCODING_SPECS[name]
+            try:
+                decoded = decode(text)
+                reencoded = encode(decoded)
+            except Exception:
+                return
+            if decoded and reencoded.rstrip("=") in {
+                "".join(text.split()).rstrip("="),
+                "".join(text.split()).upper().rstrip("="),
+            }:
+                scores[name] = maximum
+
+        for name in ("Base64", "Base32", "Base85", "Base58", "Base62", "Base91"):
+            looks_like_encoding(name, 0.9)
+
         if re.fullmatch(r"[0-9a-fA-F\s]+", text) and len(stripped) % 2 == 0 and stripped:
             scores["Hex"] = 0.95
         if re.fullmatch(r"[01\s]+", text) and len(stripped) % 8 == 0 and stripped:
@@ -280,8 +409,8 @@ class CipherVM(BaseVM):
         if re.fullmatch(r"[0-7\s]+", text) and len(stripped) % 3 == 0 and stripped:
             scores["Octal"] = 0.7
         if re.fullmatch(r"[0-9\s]+", text) and stripped:
-            nums = text.split()
-            if all(n.isdigit() and 0 <= int(n) <= 255 for n in nums):
+            values = text.split()
+            if all(value.isdigit() and 0 <= int(value) <= 255 for value in values):
                 scores["Decimal"] = 0.75
         if "%" in text and re.search(r"%[0-9a-fA-F]{2}", text):
             scores["URL Encode/Decode"] = 0.85
@@ -301,26 +430,92 @@ class CipherVM(BaseVM):
             scores["Rail Fence"] = 0.35
         if re.search(r"[0-9]", text) and re.search(r"[a-zA-Z]", text):
             scores["Leetspeak"] = 0.6
-        items = sorted(scores.items(), key=lambda x: -x[1])
-        self._detections = [{"name": k, "prob": round(v * 100, 1)} for k, v in items]
+
+        items = sorted(scores.items(), key=lambda item: -item[1])
+        self._detections = [{"name": name, "prob": round(value * 100, 1)} for name, value in items]
         self.detectionChanged.emit()
-        lines = [f"{k}: {round(v * 100, 1)}%" for k, v in items]
-        self._output = "\n".join(lines)
-        self.outputChanged.emit()
-        self._status = "Detected"
+        self._set_tab_output(
+            "encoding",
+            "\n".join(f"{name}: {round(value * 100, 1)}%" for name, value in items),
+        )
+        self._set_status("Detected")
+
+    # ------------------------------------------------------------------
+    # State helpers
+    # ------------------------------------------------------------------
+
+    def _set_error(self, message: str) -> None:
+        self._error = message
+        self.errorChanged.emit()
+
+    def _set_status(self, value: str) -> None:
+        self._status = value
         self.statusChanged.emit()
 
-    def _run_selected(self, algorithm: str) -> None:
+    def _fail(self, message: str) -> None:
+        self._set_error(message or "Operation failed")
+        self._set_status("Failed")
+
+    # ------------------------------------------------------------------
+    # Processing
+    # ------------------------------------------------------------------
+
+    def _run_selected(self, algorithm: str, tab: str) -> None:
         if algorithm != self._cipher:
             self._cipher = algorithm
             self.cipherChanged.emit()
-        self.process()
+        self._process(tab)
 
-    def _fail(self, message: str) -> None:
-        self._error = message or "Operation failed"
-        self.errorChanged.emit()
-        self._status = "Failed"
-        self.statusChanged.emit()
+    @Slot()
+    def processEncoding(self):
+        self._run_selected(self._encoding_algorithm, "encoding")
+
+    @Slot()
+    def processCipher(self):
+        self._run_selected(self._cipher_algorithm, "cipher")
+
+    @Slot()
+    def processHash(self):
+        self._run_selected(self._hash_algorithm, "hash")
+
+    def _transform_classical(self, text: str, mode: str) -> str:
+        spec = CLASSICAL_SPECS[self._cipher]
+        kwargs: dict[str, object] = {}
+        if spec.uses_key:
+            kwargs["key"] = self._key
+        if spec.uses_shift:
+            kwargs["shift"] = self._shift
+        if spec.uses_rails:
+            kwargs["rails"] = self._rails
+        if spec.uses_turns:
+            kwargs["turns"] = self._turns
+        if spec.uses_period:
+            kwargs["period"] = self._period
+        transform = spec.decode if mode == "decode" else spec.encode
+        return transform(text, **kwargs)
+
+    def _process(self, tab: str) -> None:
+        self._set_error("")
+        try:
+            text = self._tab_input(tab)
+            cipher = self._cipher
+            if cipher in self.HASH_ALGORITHMS:
+                result = hashlib.new(self.HASH_NAMES[cipher], text.encode("utf-8")).hexdigest()
+            elif cipher in ENCODING_SPECS:
+                encode, decode = ENCODING_SPECS[cipher]
+                result = (decode if self._mode == "decode" else encode)(text)
+            elif cipher in CLASSICAL_SPECS:
+                result = self._transform_classical(text, self._mode)
+            else:
+                raise ValueError(f"Unknown algorithm {cipher!r}")
+            self._set_tab_output(tab, result)
+            self._set_status("Done")
+        except Exception as exc:
+            self._fail(str(exc)[:200])
+
+    # ------------------------------------------------------------------
+    # Authenticated encryption
+    # ------------------------------------------------------------------
 
     @staticmethod
     def _derive_key(passphrase: str, salt: bytes) -> bytes:
@@ -333,21 +528,8 @@ class CipherVM(BaseVM):
         return kdf.derive(passphrase.encode("utf-8"))
 
     @Slot()
-    def processEncoding(self):
-        self._run_selected(self._encoding_algorithm)
-
-    @Slot()
-    def processCipher(self):
-        self._run_selected(self._cipher_algorithm)
-
-    @Slot()
-    def hashInput(self):
-        self._run_selected(self._hash_algorithm)
-
-    @Slot()
     def encrypt(self):
-        self._error = ""
-        self.errorChanged.emit()
+        self._set_error("")
         if not self._passphrase:
             self._fail("Enter a passphrase")
             return
@@ -359,36 +541,30 @@ class CipherVM(BaseVM):
             key = self._derive_key(self._passphrase, salt)
             header = self.ENCRYPTION_MAGIC + bytes([algorithm_id]) + salt + nonce
             if algorithm == "Fernet":
-                token = Fernet(base64.urlsafe_b64encode(key)).encrypt(
-                    self._input.encode("utf-8")
+                payload = Fernet(base64.urlsafe_b64encode(key)).encrypt(
+                    self._encryption_input.encode("utf-8")
                 )
-                payload = token
             else:
                 aead = (
                     AESGCM(key)
                     if algorithm == "AES-256-GCM"
                     else ChaCha20Poly1305(key)
                 )
-                payload = aead.encrypt(nonce, self._input.encode("utf-8"), header)
-            self._output = base64.b64encode(header + payload).decode("ascii")
-            self.outputChanged.emit()
-            self._status = f"Encrypted with {algorithm}"
-            self.statusChanged.emit()
+                payload = aead.encrypt(nonce, self._encryption_input.encode("utf-8"), header)
+            self._set_tab_output("encryption", base64.b64encode(header + payload).decode("ascii"))
+            self._set_status(f"Encrypted with {algorithm}")
         except Exception as exc:
             self._fail(str(exc)[:200])
 
     @Slot()
     def decrypt(self):
-        self._error = ""
-        self.errorChanged.emit()
+        self._set_error("")
         if not self._passphrase:
             self._fail("Enter a passphrase")
             return
         try:
-            raw = base64.b64decode(self._input.strip(), validate=True)
-            header_size = (
-                len(self.ENCRYPTION_MAGIC) + 1 + self.SALT_SIZE + self.NONCE_SIZE
-            )
+            raw = base64.b64decode(self._encryption_input.strip(), validate=True)
+            header_size = len(self.ENCRYPTION_MAGIC) + 1 + self.SALT_SIZE + self.NONCE_SIZE
             if len(raw) <= header_size or not raw.startswith(self.ENCRYPTION_MAGIC):
                 raise ValueError("Not a valid Eazlet encrypted payload")
             algorithm_id = raw[len(self.ENCRYPTION_MAGIC)]
@@ -410,253 +586,58 @@ class CipherVM(BaseVM):
                     else ChaCha20Poly1305(key)
                 )
                 clear = aead.decrypt(nonce, payload, raw[:header_size])
-            self._output = clear.decode("utf-8")
-            self.outputChanged.emit()
-            self._status = f"Decrypted with {algorithm}"
-            self.statusChanged.emit()
+            self._set_tab_output("encryption", clear.decode("utf-8"))
+            self._set_status(f"Decrypted with {algorithm}")
         except (InvalidToken, InvalidTag):
             self._fail("Wrong passphrase or corrupted payload")
         except Exception as exc:
             self._fail(str(exc)[:200])
 
+    # ------------------------------------------------------------------
+    # Shared actions
+    # ------------------------------------------------------------------
+
+    def _swap(self, tab: str) -> None:
+        current_input = self._tab_input(tab)
+        current_output = self._tab_output(tab)
+        self._set_io(f"{tab}_input", current_output)
+        self._set_io(f"{tab}_output", current_input)
+
+    def _clear(self, tab: str) -> None:
+        self._set_io(f"{tab}_input", "")
+        self._set_io(f"{tab}_output", "")
+        self._set_error("")
+        self._set_status("")
+
     @Slot()
-    def process(self):
-        self._error = ""
-        self.errorChanged.emit()
+    def swapEncoding(self):
+        self._swap("encoding")
+
+    @Slot()
+    def swapCipher(self):
+        self._swap("cipher")
+
+    @Slot()
+    def clearEncoding(self):
+        self._clear("encoding")
+
+    @Slot()
+    def clearCipher(self):
+        self._clear("cipher")
+
+    @Slot()
+    def clearEncryption(self):
+        self._clear("encryption")
+
+    @Slot()
+    def clearHash(self):
+        self._clear("hash")
+
+    @Slot(str)
+    def copyText(self, text):
         try:
-            text = self._input
-            cipher = self._cipher
-            mode = self._mode
-            if cipher == "Base64":
-                if mode == "encode":
-                    res = base64.b64encode(text.encode("utf-8")).decode("utf-8")
-                else:
-                    res = base64.b64decode(text.strip()).decode("utf-8")
-            elif cipher == "Base32":
-                if mode == "encode":
-                    res = base64.b32encode(text.encode("utf-8")).decode("utf-8")
-                else:
-                    res = base64.b32decode(text.strip()).decode("utf-8")
-            elif cipher == "Base85":
-                if mode == "encode":
-                    res = base64.b85encode(text.encode("utf-8")).decode("utf-8")
-                else:
-                    res = base64.b85decode(text.strip()).decode("utf-8")
-            elif cipher == "URL Encode/Decode":
-                if mode == "encode":
-                    res = urllib.parse.quote(text)
-                else:
-                    res = urllib.parse.unquote(text)
-            elif cipher == "ROT13":
-                res = codecs.decode(text, "rot_13")
-            elif cipher == "ROT47":
-                res = "".join(chr(33 + ((ord(c) - 33 + 47) % 94)) if 33 <= ord(c) <= 126 else c for c in text) if mode == "encode" else "".join(chr(33 + ((ord(c) - 33 - 47) % 94)) if 33 <= ord(c) <= 126 else c for c in text)
-            elif cipher == "Caesar":
-                shift = 3
-                if mode == "encode":
-                    res = "".join(chr((ord(c) - ord('a') + shift) % 26 + ord('a')) if 'a' <= c <= 'z' else chr((ord(c) - ord('A') + shift) % 26 + ord('A')) if 'A' <= c <= 'Z' else c for c in text)
-                else:
-                    res = "".join(chr((ord(c) - ord('a') - shift) % 26 + ord('a')) if 'a' <= c <= 'z' else chr((ord(c) - ord('A') - shift) % 26 + ord('A')) if 'A' <= c <= 'Z' else c for c in text)
-            elif cipher == "Affine":
-                keystr = self._key or "5,8"
-                try:
-                    if "," in keystr:
-                        a_str, b_str = keystr.split(",")
-                        a, b = int(a_str.strip()), int(b_str.strip())
-                    else:
-                        a, b = int(keystr.strip()) or 5, 8
-                except Exception:
-                    a, b = 5, 8
-                if mode == "encode":
-                    res = "".join(chr((a * (ord(c) - ord('a')) + b) % 26 + ord('a')) if 'a' <= c <= 'z' else chr((a * (ord(c) - ord('A')) + b) % 26 + ord('A')) if 'A' <= c <= 'Z' else c for c in text)
-                else:
-                    a_inv = None
-                    for x in range(1, 26):
-                        if (a * x) % 26 == 1:
-                            a_inv = x
-                            break
-                    if a_inv is None:
-                        a_inv = 21
-                    res = "".join(chr((a_inv * (ord(c) - ord('a') - b)) % 26 + ord('a')) if 'a' <= c <= 'z' else chr((a_inv * (ord(c) - ord('A') - b)) % 26 + ord('A')) if 'A' <= c <= 'Z' else c for c in text)
-            elif cipher == "Vigenere":
-                key = "".join(c for c in (self._key or "KEY") if c.isalpha()) or "KEY"
-                res_out = []
-                k = 0
-                if mode == "encode":
-                    for c in text:
-                        if 'a' <= c <= 'z':
-                            res_out.append(chr((ord(c) - ord('a') + ord(key[k % len(key)].lower()) - ord('a')) % 26 + ord('a')))
-                            k += 1
-                        elif 'A' <= c <= 'Z':
-                            res_out.append(chr((ord(c) - ord('A') + ord(key[k % len(key)].upper()) - ord('A')) % 26 + ord('A')))
-                            k += 1
-                        else:
-                            res_out.append(c)
-                else:
-                    for c in text:
-                        if 'a' <= c <= 'z':
-                            res_out.append(chr((ord(c) - ord('a') - (ord(key[k % len(key)].lower()) - ord('a'))) % 26 + ord('a')))
-                            k += 1
-                        elif 'A' <= c <= 'Z':
-                            res_out.append(chr((ord(c) - ord('A') - (ord(key[k % len(key)].upper()) - ord('A'))) % 26 + ord('A')))
-                            k += 1
-                        else:
-                            res_out.append(c)
-                res = "".join(res_out)
-            elif cipher == "Atbash":
-                res = "".join(chr(ord('z') - (ord(c) - ord('a'))) if 'a' <= c <= 'z' else chr(ord('Z') - (ord(c) - ord('A'))) if 'A' <= c <= 'Z' else c for c in text)
-            elif cipher == "Hex":
-                if mode == "encode":
-                    res = text.encode("utf-8").hex()
-                else:
-                    res = bytes.fromhex(text.strip().replace(" ", "")).decode("utf-8")
-            elif cipher == "Binary":
-                if mode == "encode":
-                    res = " ".join(format(ord(c), "08b") for c in text)
-                else:
-                    res = "".join(chr(int(b, 2)) for b in text.replace("\n", " ").split())
-            elif cipher == "Octal":
-                if mode == "encode":
-                    res = " ".join(oct(ord(c))[2:].zfill(3) for c in text)
-                else:
-                    res = "".join(chr(int(b, 8)) for b in text.replace("\n", " ").split())
-            elif cipher == "Decimal":
-                if mode == "encode":
-                    res = " ".join(str(ord(c)) for c in text)
-                else:
-                    res = "".join(chr(int(b)) for b in text.replace("\n", " ").split())
-            elif cipher == "Reverse":
-                res = text[::-1]
-            elif cipher == "Leetspeak":
-                d = {"a": "4", "e": "3", "i": "1", "o": "0", "s": "5", "t": "7"}
-                res = "".join(d.get(c.lower(), c) for c in text)
-            elif cipher == "Morse":
-                if mode == "encode":
-                    res = " ".join(self.MORSE_CODE_DICT.get(c.upper(), "/") if c != " " else "/" for c in text)
-                else:
-                    res = "".join(self.REVERSE_MORSE.get(m.strip(), " ") if m.strip() else " " for m in text.replace("   ", " / ").split())
-            elif cipher == "Rail Fence":
-                rails = 3
-                if mode == "encode":
-                    fence = [[] for _ in range(rails)]
-                    rail = 0
-                    down = False
-                    for c in text:
-                        fence[rail].append(c)
-                        if rail == 0 or rail == rails - 1:
-                            down = not down
-                        rail += 1 if down else -1
-                    res = "".join("".join(r) for r in fence)
-                else:
-                    res = text
-            elif cipher == "XOR":
-                key_bytes = (self._key or "A").encode("utf-8")
-                res = "".join(
-                    chr(ord(c) ^ key_bytes[i % len(key_bytes)])
-                    for i, c in enumerate(text)
-                )
-            elif cipher == "MD5":
-                res = hashlib.md5(text.encode("utf-8")).hexdigest()
-            elif cipher == "SHA1":
-                res = hashlib.sha1(text.encode("utf-8")).hexdigest()
-            elif cipher == "SHA256":
-                res = hashlib.sha256(text.encode("utf-8")).hexdigest()
-            elif cipher == "Base58":
-                if mode == "encode":
-                    alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
-                    n = int.from_bytes(text.encode("utf-8"), "big")
-                    out = ""
-                    while n > 0:
-                        n, r = divmod(n, 58)
-                        out = alphabet[r] + out
-                    res = out
-                else:
-                    res = text
-            elif cipher == "Punycode":
-                if mode == "encode":
-                    res = text.encode("punycode").decode("ascii")
-                else:
-                    res = text.encode("ascii").decode("punycode")
-            elif cipher == "Quoted Printable":
-                if mode == "encode":
-                    res = quopri.encodestring(text.encode("utf-8")).decode("ascii")
-                else:
-                    res = quopri.decodestring(text.encode("ascii")).decode("utf-8")
-            elif cipher == "Playfair":
-                res = text[::-1]
-            elif cipher == "Beaufort":
-                key = "".join(c for c in (self._key or "KEY") if c.isalpha()) or "KEY"
-                res_out = []
-                k = 0
-                for c in text:
-                    if 'a' <= c <= 'z':
-                        res_out.append(chr((ord(key[k % len(key)].lower()) - ord(c) + 26) % 26 + ord('a')))
-                        k += 1
-                    elif 'A' <= c <= 'Z':
-                        res_out.append(chr((ord(key[k % len(key)].upper()) - ord(c) + 26) % 26 + ord('A')))
-                        k += 1
-                    else:
-                        res_out.append(c)
-                res = "".join(res_out)
-            elif cipher == "Autokey":
-                key = "".join(c for c in (self._key or "KEY") if c.isalpha()) or "KEY"
-                full_key = (key + text).lower()
-                res_out = []
-                for i, c in enumerate(text):
-                    if 'a' <= c <= 'z':
-                        res_out.append(chr((ord(c) - ord('a') + ord(full_key[i]) - ord('a')) % 26 + ord('a')))
-                    elif 'A' <= c <= 'Z':
-                        res_out.append(chr((ord(c) - ord('A') + ord(full_key[i].upper()) - ord('A')) % 26 + ord('A')))
-                    else:
-                        res_out.append(c)
-                res = "".join(res_out)
-            elif cipher == "Baconian":
-                bacon = {"a": "AAAAA", "b": "AAAAB", "c": "AAABA", "d": "AAABB", "e": "AABAA", "f": "AABAB", "g": "AABBA", "h": "AABBB", "i": "ABAAA", "j": "ABAAB", "k": "ABABA", "l": "ABABB", "m": "ABBAA", "n": "ABBAB", "o": "ABBBA", "p": "ABBBB", "q": "BAAAA", "r": "BAAAB", "s": "BAABA", "t": "BAABB", "u": "BABAA", "v": "BABAB", "w": "BABBA", "x": "BABBB", "y": "BBAAA", "z": "BBAAB"}
-                res = " ".join(bacon.get(c.lower(), c) for c in text)
-            elif cipher == "Polybius":
-                res = text
-            elif cipher == "Simple Substitution":
-                sub = "QWERTYUIOPASDFGHJKLZXCVBNM"
-                res = "".join(sub[ord(c) - ord('A')] if 'A' <= c <= 'Z' else sub[ord(c) - ord('a')].lower() if 'a' <= c <= 'z' else c for c in text)
-            elif cipher == "Scytale":
-                res = text
-            elif cipher == "Transposition Columnar":
-                res = text
-            else:
-                res = text
-            self._output = res
-            self.outputChanged.emit()
-            self._status = "Done"
-            self.statusChanged.emit()
-        except Exception as e:
-            self._error = str(e)[:200]
-            self.errorChanged.emit()
-            self._status = "Failed"
-            self.statusChanged.emit()
-
-    @Slot()
-    def swap(self):
-        self._input, self._output = self._output, self._input
-        self.inputChanged.emit()
-        self.outputChanged.emit()
-
-    @Slot()
-    def clear(self):
-        self._input = ""
-        self._output = ""
-        self._error = ""
-        self.inputChanged.emit()
-        self.outputChanged.emit()
-        self.errorChanged.emit()
-        self._status = "Idle"
-        self.statusChanged.emit()
-
-    @Slot()
-    def copyOutput(self):
-        try:
-            if self._output:
-                QGuiApplication.clipboard().setText(self._output)
-                self._status = "Copied to clipboard"
-                self.statusChanged.emit()
+            if text:
+                QGuiApplication.clipboard().setText(text)
+                self._set_status("Copied to clipboard")
         except Exception:
             pass

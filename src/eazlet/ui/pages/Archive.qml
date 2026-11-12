@@ -21,10 +21,7 @@ Item {
 
         Flickable {
             id: flick
-            ScrollBar.vertical: ScrollBar {
-                policy: ScrollBar.AsNeeded
-                implicitWidth: LayoutMetrics.unit * 1.2
-            }
+            ScrollBar.vertical: AppScrollBar {}
             interactive: false
 
             anchors.fill: parent
@@ -49,13 +46,31 @@ Item {
 
             Column {
                 id: archColumn
-                width: parent.width
+                width: Math.max(0, parent.width - LayoutMetrics.unit * 1.6)
+                x: Math.max(0, (parent.width - width) / 2)
                 spacing: LayoutMetrics.spacing.lg
 
                 Title {
+                    anchors.horizontalCenter: parent.horizontalCenter
                     text: "Archive / Compressor"
                     textColor: Theme.textColor
                     pixelSize: Typography.h2
+                }
+
+                Label {
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    bold: false
+                    text: "Compress files into an archive or extract an archive you added."
+                    textColor: Theme.dividerColor
+                    pixelSize: Typography.h6
+                    wrapMode: Text.WordWrap
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: LayoutMetrics.spacing.xxs
+                    color: Theme.dividerColor
                 }
 
                 DropZone {
@@ -81,6 +96,7 @@ Item {
                 }
 
                 Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
                     spacing: LayoutMetrics.spacing.sm
                     Button { buttonText: "Clear"; iconPath: SVGLibrary.eraser; onPressed: archiveVM.clearFiles() }
                     Label {
@@ -124,6 +140,7 @@ Item {
                 }
 
                 Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
                     spacing: LayoutMetrics.spacing.md
                     Label {
                         bold: false
@@ -164,25 +181,35 @@ Item {
                     }
                 }
 
-                Row {
-                    spacing: LayoutMetrics.spacing.sm
-                    Label {
-                        bold: false
-                        text: "Output: " + archiveVM.outputDir
-                        textColor: Theme.textColor
-                        pixelSize: Typography.h6
-                        elide: Text.ElideMiddle
-                        width: parent.width * 0.7
+                PathPicker {
+                    label: Lang.labels.outputFolder
+                    path: archiveVM.outputDir
+                    defaultPath: controller.get_archive_default_dir()
+                    onPathAccepted: function(newPath) {
+                        controller.save_archive_dir(newPath)
                     }
-                    Button { buttonText: "Open Folder"; onPressed: archiveVM.openOutputDir() }
                 }
 
                 Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: LayoutMetrics.spacing.sm
+                    Button { buttonText: "Open Folder"; onPressed: archiveVM.openOutputDir() }
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: LayoutMetrics.spacing.xxs
+                    color: Theme.dividerColor
+                }
+
+                Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
                     spacing: LayoutMetrics.spacing.sm
                     Button { buttonText: "Compress"; primary: true; isometric: true; heightMultiplier: 1.3; enabled: !archiveVM.compressing && !archiveVM.extracting && archiveVM.files.length > 0; onPressed: archiveVM.compress() }
                 }
 
                 Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
                     spacing: LayoutMetrics.spacing.sm
                     Label {
                         bold: false
@@ -195,7 +222,8 @@ Item {
                 }
 
                 ProgressBar {
-                    width: parent.width
+                    width: Math.min(parent.width, LayoutMetrics.unit * 50)
+                    anchors.horizontalCenter: parent.horizontalCenter
                     value: archiveVM.progress
                     visible: archiveVM.compressing || archiveVM.extracting || archiveVM.progress >= 1.0
                 }

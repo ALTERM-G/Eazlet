@@ -205,6 +205,44 @@ Item {
         }
     }
 
+    // The nearest scrollable page around this editor.
+    function pageFlickable() {
+        var item = control.parent
+        while (item && (item.contentY === undefined || item.contentHeight === undefined))
+            item = item.parent
+        return item
+    }
+
+    // Scrolling over the editor should scroll its text when it is scrollable,
+    // otherwise it should scroll the page. At the text's top or bottom the
+    // remaining wheel delta is handed to the page.
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.NoButton
+        cursorShape: Qt.IBeamCursor
+        z: 1
+        onWheel: function(wheel) {
+            var delta = wheel.pixelDelta.y !== 0
+                ? wheel.pixelDelta.y * 2
+                : wheel.angleDelta.y / 120 * LayoutMetrics.unit * 24
+
+            var inner = view.contentItem
+            if (inner && inner.contentHeight > inner.height + 1) {
+                var maxInner = inner.contentHeight - inner.height
+                var target = Math.max(0, Math.min(maxInner, inner.contentY - delta))
+                delta += target - inner.contentY
+                inner.contentY = target
+            }
+
+            var flick = control.pageFlickable()
+            if (flick && Math.abs(delta) > 0.5) {
+                var maxY = Math.max(0, flick.contentHeight - flick.height)
+                flick.contentY = Math.max(0, Math.min(maxY, flick.contentY - delta))
+            }
+            wheel.accepted = true
+        }
+    }
+
     IconButton {
         id: copyOverlay
         anchors.top: parent.top

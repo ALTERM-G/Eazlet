@@ -21,10 +21,7 @@ Item {
 
         Flickable {
             id: flick
-            ScrollBar.vertical: ScrollBar {
-                policy: ScrollBar.AsNeeded
-                implicitWidth: LayoutMetrics.unit * 1.2
-            }
+            ScrollBar.vertical: AppScrollBar {}
             interactive: false
 
             anchors.fill: parent
@@ -49,13 +46,31 @@ Item {
 
             Column {
                 id: orgColumn
-                width: parent.width
+                width: Math.max(0, parent.width - LayoutMetrics.unit * 1.6)
+                x: Math.max(0, (parent.width - width) / 2)
                 spacing: LayoutMetrics.spacing.lg
 
                 Title {
+                    anchors.horizontalCenter: parent.horizontalCenter
                     text: "Organizer / Sorter"
                     textColor: Theme.textColor
                     pixelSize: Typography.h2
+                }
+
+                Label {
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    bold: false
+                    text: "Scan a folder for duplicate files or rename its files in order."
+                    textColor: Theme.dividerColor
+                    pixelSize: Typography.h6
+                    wrapMode: Text.WordWrap
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: LayoutMetrics.spacing.xxs
+                    color: Theme.dividerColor
                 }
 
                 Row {
@@ -72,11 +87,13 @@ Item {
                 }
 
                 Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
                     spacing: LayoutMetrics.spacing.sm
                     Button { buttonText: "Scan for duplicates"; primary: true; isometric: true; heightMultiplier: 1.3; enabled: !organizerVM.scanning; onPressed: organizerVM.scan() }
                 }
 
                 Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
                     spacing: LayoutMetrics.spacing.sm
                     LineEdit {
                         id: renamePattern
@@ -84,11 +101,29 @@ Item {
                         placeholderText: "Prefix (e.g. photo)"
                         text: "file"
                     }
-                    Button { buttonText: "Rename sequential"; onPressed: organizerVM.renameSequential(renamePattern.text) }
+                    Button {
+                        buttonText: "Rename all files…"
+                        enabled: !organizerVM.scanning
+                        onPressed: {
+                            renameDialog.fileCount = organizerVM.renameTargetCount()
+                            renameDialog.open()
+                        }
+                    }
+                }
+
+                Label {
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    bold: false
+                    text: "Renames every file directly inside the selected folder. Files in subfolders are left untouched."
+                    textColor: Theme.dividerColor
+                    pixelSize: Typography.h6
+                    wrapMode: Text.WordWrap
                 }
 
                 ProgressBar {
-                    width: parent.width
+                    width: Math.min(parent.width, LayoutMetrics.unit * 50)
+                    anchors.horizontalCenter: parent.horizontalCenter
                     value: organizerVM.progress
                     visible: organizerVM.scanning
                 }
@@ -174,6 +209,90 @@ Item {
             FolderDialog {
                 id: orgFolderDialog
                 onAccepted: organizerVM.folder = selectedFolder.toString().replace("file://", "")
+            }
+        }
+    }
+
+    Popup {
+        id: renameDialog
+
+        property int fileCount: 0
+
+        width: Math.min(LayoutMetrics.window.width * 0.86, LayoutMetrics.unit * 58)
+        height: confirmColumn.implicitHeight + LayoutMetrics.spacing.xl * 2
+        x: (LayoutMetrics.window.width - width) / 2
+        y: (LayoutMetrics.window.height - height) / 2
+        padding: 0
+        background: Item {}
+        modal: true
+        focus: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+        Surface {
+            anchors.fill: parent
+
+            Column {
+                id: confirmColumn
+                anchors.fill: parent
+                anchors.margins: LayoutMetrics.spacing.lg
+                spacing: LayoutMetrics.spacing.md
+
+                Label {
+                    width: parent.width
+                    text: "Rename files?"
+                    textColor: Theme.textColor
+                    pixelSize: Typography.h3
+                }
+
+                Label {
+                    width: parent.width
+                    bold: false
+                    textFormat: Text.PlainText
+                    text: renameDialog.fileCount > 0
+                        ? "This will rename " + (renameDialog.fileCount === 1
+                           ? "1 file" : renameDialog.fileCount + " files")
+                          + " directly inside \"" + organizerVM.folder + "\". "
+                          + "This cannot be undone."
+                        : "There are no files directly inside \""
+                          + organizerVM.folder + "\" to rename."
+                    textColor: Theme.textColor
+                    pixelSize: Typography.h6
+                    wrapMode: Text.WordWrap
+                }
+
+                Label {
+                    width: parent.width
+                    bold: false
+                    visible: renameDialog.fileCount > 0
+                    text: "Files inside subfolders are not touched."
+                    textColor: Theme.dividerColor
+                    pixelSize: Typography.h6
+                    wrapMode: Text.WordWrap
+                }
+
+                RowLayout {
+                    width: parent.width
+                    spacing: LayoutMetrics.spacing.sm
+
+                    Item { Layout.fillWidth: true }
+
+                    Button {
+                        buttonText: "Cancel"
+                        onPressed: renameDialog.close()
+                    }
+
+                    Button {
+                        buttonText: renameDialog.fileCount === 1
+                                    ? "Rename 1 file"
+                                    : "Rename " + renameDialog.fileCount + " files"
+                        primary: true
+                        enabled: renameDialog.fileCount > 0
+                        onPressed: {
+                            organizerVM.renameSequential(renamePattern.text)
+                            renameDialog.close()
+                        }
+                    }
+                }
             }
         }
     }

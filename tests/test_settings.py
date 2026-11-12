@@ -119,37 +119,89 @@ def test_ascii_font_lists_ignore_invalid_values(isolated_controller):
     assert controller.get_ascii_recents() == []
 
 
-def test_download_dir_round_trip_and_propagation(isolated_controller, tmp_path):
+def test_workspace_default_dirs(isolated_controller):
     controller = isolated_controller
-    default_dir = str(Path.home() / "Downloads")
-    assert controller.get_download_dir() == default_dir
+    assert controller.get_downloader_dir() == str(Path.home() / "Downloads")
+    assert controller.get_converter_dir() == str(Path.home() / "Documents")
+    assert controller.get_archive_dir() == str(Path.home() / "Documents")
 
-    target = str(tmp_path / "Saved")
-    controller.save_download_dir(f"file://{target}")
 
-    assert controller.get_download_dir() == target
+def test_downloader_dir_round_trip_and_propagation(isolated_controller, tmp_path):
+    controller = isolated_controller
+    target = str(tmp_path / "DownloadsTarget")
+    controller.save_downloader_dir(f"file://{target}")
+
+    assert controller.get_downloader_dir() == target
     assert controller.downloadVM.destination == target
     assert controller.unifiedDownloadVM.destination == target
-    assert controller.converterVM.outputDir == target
-    assert controller.archiveVM.outputDir == target
-    assert json.loads(controller._settings_path.read_text())["downloadDir"] == target
+    assert controller.converterVM.outputDir == controller.get_converter_default_dir()
+    assert controller.archiveVM.outputDir == controller.get_archive_default_dir()
+    assert json.loads(controller._settings_path.read_text())["downloaderDir"] == target
 
 
-def test_apply_saved_settings_loads_download_dir(isolated_controller, tmp_path):
+def test_converter_dir_round_trip(isolated_controller, tmp_path):
     controller = isolated_controller
-    target = str(tmp_path / "Existing")
-    controller._settings_path.write_text(json.dumps({"downloadDir": target}))
+    target = str(tmp_path / "ConverterTarget")
+    controller.save_converter_dir(target)
+
+    assert controller.get_converter_dir() == target
+    assert controller.converterVM.outputDir == target
+    assert controller.unifiedDownloadVM.destination == controller.get_downloader_default_dir()
+    assert json.loads(controller._settings_path.read_text())["converterOutputDir"] == target
+
+
+def test_archive_dir_round_trip(isolated_controller, tmp_path):
+    controller = isolated_controller
+    target = str(tmp_path / "ArchiveTarget")
+    controller.save_archive_dir(target)
+
+    assert controller.get_archive_dir() == target
+    assert controller.archiveVM.outputDir == target
+    assert controller.converterVM.outputDir == controller.get_converter_default_dir()
+    assert json.loads(controller._settings_path.read_text())["archiveOutputDir"] == target
+
+
+def test_apply_saved_settings_loads_workspace_dirs(isolated_controller, tmp_path):
+    controller = isolated_controller
+    downloader = str(tmp_path / "SavedDownloads")
+    converter = str(tmp_path / "SavedConverter")
+    archive = str(tmp_path / "SavedArchive")
+    controller._settings_path.write_text(
+        json.dumps(
+            {
+                "downloaderDir": downloader,
+                "converterOutputDir": converter,
+                "archiveOutputDir": archive,
+            }
+        )
+    )
 
     controller.apply_saved_settings()
 
-    assert controller.unifiedDownloadVM.destination == target
-    assert controller.converterVM.outputDir == target
-    assert controller.archiveVM.outputDir == target
+    assert controller.unifiedDownloadVM.destination == downloader
+    assert controller.converterVM.outputDir == converter
+    assert controller.archiveVM.outputDir == archive
 
 
-def test_empty_download_dir_uses_default(isolated_controller):
+def test_downloader_dir_falls_back_to_legacy_setting(
+    isolated_controller, tmp_path
+):
     controller = isolated_controller
-    controller.save_download_dir("")
-    assert controller.get_download_dir() == controller.get_default_download_dir()
+    legacy = str(tmp_path / "LegacyDownloads")
+    controller._settings_path.write_text(json.dumps({"downloadDir": legacy}))
+
+    assert controller.get_downloader_dir() == legacy
+    assert controller.get_converter_dir() == controller.get_converter_default_dir()
+
+
+def test_empty_workspace_dirs_use_defaults(isolated_controller):
+    controller = isolated_controller
+    controller.save_downloader_dir("")
+    controller.save_converter_dir("")
+    controller.save_archive_dir("")
+
+    assert controller.get_downloader_dir() == controller.get_downloader_default_dir()
+    assert controller.get_converter_dir() == controller.get_converter_default_dir()
+    assert controller.get_archive_dir() == controller.get_archive_default_dir()
 
 

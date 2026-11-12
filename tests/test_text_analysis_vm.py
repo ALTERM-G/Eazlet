@@ -94,6 +94,54 @@ def test_load_sample_populates_input_and_analyzes():
     assert vm.reportText
 
 
+def test_load_file_reads_txt_and_analyzes(tmp_path):
+    path = tmp_path / "notes.txt"
+    path.write_text(SAMPLE, encoding="utf-8")
+
+    vm = TextAnalysisVM()
+    vm.loadFile(str(path))
+
+    assert vm.input == SAMPLE
+    assert vm.hasResults is True
+    assert vm.error == ""
+    assert vm.status == "Loaded notes.txt"
+    assert vm.stats
+
+
+def test_load_file_reads_markdown(tmp_path):
+    path = tmp_path / "readme.md"
+    path.write_text("# Heading\n\nSome analysable words here.", encoding="utf-8")
+
+    vm = TextAnalysisVM()
+    vm.loadFile(path.as_uri())
+
+    assert vm.input.startswith("# Heading")
+    assert vm.hasResults is True
+    assert vm.status == "Loaded readme.md"
+
+
+def test_load_file_rejects_unsupported_types(tmp_path):
+    path = tmp_path / "document.pdf"
+    path.write_bytes(b"%PDF-1.7")
+
+    vm = TextAnalysisVM()
+    vm.loadFile(str(path))
+
+    assert vm.input == ""
+    assert vm.hasResults is False
+    assert "Unsupported file type" in vm.error
+    assert vm.status == "Nothing loaded"
+
+
+def test_load_file_reports_missing_file(tmp_path):
+    vm = TextAnalysisVM()
+    vm.loadFile(str(tmp_path / "missing.txt"))
+
+    assert vm.hasResults is False
+    assert vm.error.startswith("Could not read missing.txt")
+    assert vm.status == "Nothing loaded"
+
+
 def test_copy_report_writes_to_clipboard(qtbot):
     vm = TextAnalysisVM()
     vm.input = SAMPLE

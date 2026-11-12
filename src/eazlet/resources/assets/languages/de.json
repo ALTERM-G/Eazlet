@@ -17,7 +17,7 @@
         "scale": "Skalierung",
         "language": "Sprache",
         "downloadFolder": "Download-Ordner",
-        "downloadFolderHint": "Wird vom Downloader, Konverter und Archivierungstool verwendet.",
+        "outputFolder": "Ausgabeordner",
         "browse": "Durchsuchen",
         "reset": "Zurücksetzen",
         "shortcutEditor": "Shortcut-Editor",

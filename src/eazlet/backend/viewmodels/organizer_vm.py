@@ -24,7 +24,7 @@ class OrganizerVM(BaseVM):
         self._scanning = False
         self._files = []
         self._duplicates = []
-        self._status = "Idle"
+        self._status = ""
         self._error = ""
         self._progress = 0.0
 
@@ -116,7 +116,6 @@ class OrganizerVM(BaseVM):
             self.filesChanged.emit()
             self._status = f"Found {len(all_files)} files. Checking duplicates..."
             self.statusChanged.emit()
-            # group by size first
             by_size = defaultdict(list)
             for f in all_files:
                 by_size[f["size"]].append(f)
@@ -124,7 +123,6 @@ class OrganizerVM(BaseVM):
             for sz, lst in by_size.items():
                 if sz > 0 and len(lst) > 1:
                     candidates.extend(lst)
-            # hash candidates
             hashes = defaultdict(list)
             total = len(candidates)
             for i, f in enumerate(candidates):
@@ -152,6 +150,17 @@ class OrganizerVM(BaseVM):
             self._scanning = False
             self.scanningChanged.emit()
 
+    @Slot(result=int)
+    def renameTargetCount(self):
+        """Number of files directly inside the folder that a rename would touch."""
+        if not os.path.isdir(self._folder):
+            return 0
+        try:
+            with os.scandir(self._folder) as entries:
+                return sum(1 for entry in entries if entry.is_file())
+        except OSError:
+            return 0
+
     @Slot(str)
     def renameSequential(self, pattern="file"):
         if self._scanning:
@@ -170,7 +179,6 @@ class OrganizerVM(BaseVM):
         try:
             items = []
             for root, dirs, files in os.walk(self._folder):
-                # only top level
                 for fn in files:
                     items.append(os.path.join(root, fn))
                 break
@@ -183,7 +191,6 @@ class OrganizerVM(BaseVM):
                 if os.path.normcase(new_path) == os.path.normcase(full):
                     continue
                 if os.path.exists(new_path):
-                    # try to find unique
                     j = 1
                     while True:
                         cand = os.path.join(self._folder, f"{pattern} {i+1} ({j}){ext}")

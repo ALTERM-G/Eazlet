@@ -47,10 +47,7 @@ Item {
 
         Flickable {
             id: flick
-            ScrollBar.vertical: ScrollBar {
-                policy: ScrollBar.AsNeeded
-                implicitWidth: LayoutMetrics.unit * 1.2
-            }
+            ScrollBar.vertical: AppScrollBar {}
             interactive: false
 
             anchors.fill: parent
@@ -75,13 +72,31 @@ Item {
 
             Column {
                 id: convColumn
-                width: parent.width
+                width: Math.max(0, parent.width - LayoutMetrics.unit * 1.6)
+                x: Math.max(0, (parent.width - width) / 2)
                 spacing: LayoutMetrics.spacing.lg
 
                 Title {
+                    anchors.horizontalCenter: parent.horizontalCenter
                     text: "Converter"
                     textColor: Theme.textColor
                     pixelSize: Typography.h2
+                }
+
+                Label {
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    bold: false
+                    text: "Drop a file, choose a target format, and convert it locally."
+                    textColor: Theme.dividerColor
+                    pixelSize: Typography.h6
+                    wrapMode: Text.WordWrap
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: LayoutMetrics.spacing.xxs
+                    color: Theme.dividerColor
                 }
 
                 DropZone {
@@ -176,6 +191,7 @@ Item {
                 }
 
                 Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
                     spacing: LayoutMetrics.spacing.md
                     visible: converterVM.files.length > 0 && converterVM.validTargetFormats.length > 0
                     Label {
@@ -203,6 +219,7 @@ Item {
                 }
 
                 Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
                     spacing: LayoutMetrics.spacing.sm
                     visible: converterVM.files.length > 0 && converterVM.validTargetFormats.length === 0
                     SVGObject {
@@ -221,41 +238,58 @@ Item {
                     }
                 }
 
-                Row {
-                    spacing: LayoutMetrics.spacing.sm
-                    Label {
-                        bold: false
-                        text: "Output: " + converterVM.outputDir
-                        textColor: Theme.textColor
-                        pixelSize: Typography.h6
-                        elide: Text.ElideMiddle
-                        width: parent.width * 0.7
+                PathPicker {
+                    label: Lang.labels.outputFolder
+                    path: converterVM.outputDir
+                    defaultPath: controller.get_converter_default_dir()
+                    onPathAccepted: function(newPath) {
+                        controller.save_converter_dir(newPath)
                     }
-                    Button { buttonText: "Open Folder"; onPressed: converterVM.openOutputDir() }
                 }
 
                 Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
                     spacing: LayoutMetrics.spacing.sm
+                    Button { buttonText: "Open Folder"; onPressed: converterVM.openOutputDir() }
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: LayoutMetrics.spacing.xxs
+                    color: Theme.dividerColor
+                }
+
+                Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: LayoutMetrics.spacing.md
+
                     Button {
                         buttonText: "Convert"
                         primary: true
                         isometric: true
                         heightMultiplier: 1.3
-                        enabled: !converterVM.converting && converterVM.files.length === 1 && converterVM.targetFormat !== ""
+                        visible: !converterVM.converting
+                        enabled: converterVM.files.length === 1 && converterVM.targetFormat !== ""
                         onPressed: converterVM.convert()
                     }
-                    Button { buttonText: "Cancel"; enabled: converterVM.converting; onPressed: converterVM.cancel() }
+
+                    Button {
+                        buttonText: "Cancel"
+                        visible: converterVM.converting
+                        onPressed: converterVM.cancel()
+                    }
                 }
 
                 ProgressBar {
-                    width: parent.width
+                    width: Math.min(parent.width, LayoutMetrics.unit * 50)
+                    anchors.horizontalCenter: parent.horizontalCenter
                     value: converterVM.progress
                     visible: converterVM.converting || converterVM.progress >= 1.0
                 }
 
                 Row {
                     spacing: LayoutMetrics.spacing.sm
-                    visible: converterVM.status !== "" && converterVM.status !== "Idle"
+                    visible: converterVM.status !== ""
                     SVGObject {
                         anchors.verticalCenter: parent.verticalCenter
                         width: LayoutMetrics.size.iconS

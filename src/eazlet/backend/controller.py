@@ -10,7 +10,9 @@ from .viewmodels import (
     CipherVM,
     ConverterVM,
     DownloadVM,
+    GeneratorsVM,
     MainVM,
+    MathVM,
     NumberToolsVM,
     OrganizerVM,
     SettingsVM,
@@ -54,6 +56,8 @@ class Controller(QObject):
         self._text_analysis_vm = TextAnalysisVM(self)
         self._ascii_art_vm = AsciiArtVM(self)
         self._number_tools_vm = NumberToolsVM(self)
+        self._math_vm = MathVM(self)
+        self._generators_vm = GeneratorsVM(self)
 
         self._language_files = ["en.json", "fr.json", "de.json", "es.json", "it.json"]
         self._languages_path = (
@@ -274,41 +278,82 @@ class Controller(QObject):
             asciiArtRecents=[font for font in fonts if isinstance(font, str)]
         )
 
-    def _default_download_dir(self) -> str:
+    def _default_downloads_dir(self) -> str:
         return str(Path.home() / "Downloads")
 
-    def _normalise_dir(self, value: object) -> str:
+    def _default_documents_dir(self) -> str:
+        return str(Path.home() / "Documents")
+
+    def _normalise_dir(self, value: object, default: str) -> str:
         path = str(value or "").strip()
         if path.startswith("file://"):
             path = path[len("file://") :]
         if not path:
-            return self._default_download_dir()
+            return default
         return str(Path(path).expanduser())
 
-    def _apply_download_dir(self, directory: str | None = None) -> None:
-        target = directory if directory is not None else self.get_download_dir()
-        self._download_vm.destination = target
-        self._unified_download_vm.destination = target
-        self._converter_vm.outputDir = target
-        self._archive_vm.outputDir = target
+    def _workspace_dir(
+        self, key: str, default: str, legacy_key: str | None = None
+    ) -> str:
+        settings = self._load_settings()
+        value = settings.get(key)
+        if value is None and legacy_key is not None:
+            value = settings.get(legacy_key)
+        return self._normalise_dir(value, default)
 
     @Slot()
     def apply_saved_settings(self) -> None:
-        self._apply_download_dir()
+        self._download_vm.destination = self.get_downloader_dir()
+        self._unified_download_vm.destination = self.get_downloader_dir()
+        self._converter_vm.outputDir = self.get_converter_dir()
+        self._archive_vm.outputDir = self.get_archive_dir()
 
     @Slot(result=str)
-    def get_default_download_dir(self) -> str:
-        return self._default_download_dir()
+    def get_downloader_default_dir(self) -> str:
+        return self._default_downloads_dir()
 
     @Slot(result=str)
-    def get_download_dir(self) -> str:
-        return self._normalise_dir(self._load_settings().get("downloadDir", ""))
+    def get_downloader_dir(self) -> str:
+        return self._workspace_dir(
+            "downloaderDir", self._default_downloads_dir(), legacy_key="downloadDir"
+        )
 
     @Slot(str)
-    def save_download_dir(self, path: str) -> None:
-        directory = self._normalise_dir(path)
-        self._update_settings(downloadDir=directory)
-        self._apply_download_dir(directory)
+    def save_downloader_dir(self, path: str) -> None:
+        directory = self._normalise_dir(path, self._default_downloads_dir())
+        self._update_settings(downloaderDir=directory)
+        self._download_vm.destination = directory
+        self._unified_download_vm.destination = directory
+
+    @Slot(result=str)
+    def get_converter_default_dir(self) -> str:
+        return self._default_documents_dir()
+
+    @Slot(result=str)
+    def get_converter_dir(self) -> str:
+        return self._workspace_dir(
+            "converterOutputDir", self._default_documents_dir()
+        )
+
+    @Slot(str)
+    def save_converter_dir(self, path: str) -> None:
+        directory = self._normalise_dir(path, self._default_documents_dir())
+        self._update_settings(converterOutputDir=directory)
+        self._converter_vm.outputDir = directory
+
+    @Slot(result=str)
+    def get_archive_default_dir(self) -> str:
+        return self._default_documents_dir()
+
+    @Slot(result=str)
+    def get_archive_dir(self) -> str:
+        return self._workspace_dir("archiveOutputDir", self._default_documents_dir())
+
+    @Slot(str)
+    def save_archive_dir(self, path: str) -> None:
+        directory = self._normalise_dir(path, self._default_documents_dir())
+        self._update_settings(archiveOutputDir=directory)
+        self._archive_vm.outputDir = directory
 
     @Property(QObject, constant=True)
     def mainVM(self) -> MainVM:
@@ -357,3 +402,11 @@ class Controller(QObject):
     @Property(QObject, constant=True)
     def numberToolsVM(self) -> NumberToolsVM:
         return self._number_tools_vm
+
+    @Property(QObject, constant=True)
+    def mathVM(self) -> MathVM:
+        return self._math_vm
+
+    @Property(QObject, constant=True)
+    def generatorsVM(self) -> GeneratorsVM:
+        return self._generators_vm

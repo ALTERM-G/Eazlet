@@ -30,7 +30,7 @@ class DownloadVM(BaseVM):
         self._url = ""
         self._destination = str(Path.home() / "Downloads")
         self._progress = 0.0
-        self._status = "Idle"
+        self._status = ""
         self._downloading = False
         self._paused = False
         self._error = ""

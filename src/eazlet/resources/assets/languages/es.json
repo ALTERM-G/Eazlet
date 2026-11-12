@@ -17,7 +17,7 @@
         "scale": "Escala",
         "language": "Idioma",
         "downloadFolder": "Carpeta de descargas",
-        "downloadFolderHint": "Usada por el descargador, el convertidor y la herramienta de archivo.",
+        "outputFolder": "Carpeta de salida",
         "browse": "Examinar",
         "reset": "Restablecer",
         "shortcutEditor": "Editor de atajos",

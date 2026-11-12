@@ -148,7 +148,9 @@ Window {
                     { source: "pages/Cipher.qml" },
                     { source: "pages/TextAnalysis.qml" },
                     { source: "pages/AsciiArt.qml" },
-                    { source: "pages/NumberTools.qml" }
+                    { source: "pages/NumberTools.qml" },
+                    { source: "pages/Mathematics.qml" },
+                    { source: "pages/Generators.qml" }
                 ]
 
                 delegate: Loader {

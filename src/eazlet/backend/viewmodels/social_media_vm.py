@@ -26,7 +26,7 @@ class SocialMediaVM(BaseVM):
         self._formats = []
         self._selected_format = ""
         self._audio_only = False
-        self._status = "Idle"
+        self._status = ""
         self._downloading = False
         self._progress = 0.0
         self._error = ""

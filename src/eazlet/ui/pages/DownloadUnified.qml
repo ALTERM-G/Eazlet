@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Dialogs
 import QtQuick.Layouts
 import components
 
@@ -14,6 +13,8 @@ Item {
             unifiedDownloadVM.startDownload()
     }
 
+    // Keeps the form readable and centred on wide windows without letting it
+    // get cramped when the window is small.
     Surface {
         anchors.centerIn: parent
         width: parent.width * 0.9
@@ -21,10 +22,7 @@ Item {
 
         Flickable {
             id: flick
-            ScrollBar.vertical: ScrollBar {
-                policy: ScrollBar.AsNeeded
-                implicitWidth: LayoutMetrics.unit * 1.2
-            }
+            ScrollBar.vertical: AppScrollBar {}
             interactive: false
 
             anchors.fill: parent
@@ -49,21 +47,41 @@ Item {
 
             Column {
                 id: contentColumn
-                width: parent.width
+                width: Math.max(0, parent.width - LayoutMetrics.unit * 1.6)
+                x: Math.max(0, (parent.width - width) / 2)
                 spacing: LayoutMetrics.spacing.lg
 
                 Title {
+                    anchors.horizontalCenter: parent.horizontalCenter
                     text: unifiedDownloadVM.mode === "social" ? "Social Media Download" : "Direct Download"
                     textColor: Theme.textColor
                     pixelSize: Typography.h2
                 }
 
-                Row {
-                    spacing: LayoutMetrics.spacing.sm
+                Label {
                     width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    bold: false
+                    text: unifiedDownloadVM.mode === "social"
+                        ? "Paste a video link from a supported site, choose a format, then download."
+                        : "Paste a direct file link, choose where to save it, then download."
+                    textColor: Theme.dividerColor
+                    pixelSize: Typography.h6
+                    wrapMode: Text.WordWrap
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: LayoutMetrics.spacing.xxs
+                    color: Theme.dividerColor
+                }
+
+                Row {
+                    width: parent.width
+                    spacing: LayoutMetrics.spacing.sm
                     LineEdit {
                         id: unifiedUrl
-                        width: parent.width - pasteBtn.width - LayoutMetrics.spacing.sm
+                        width: Math.max(0, parent.width - pasteBtn.width - parent.spacing)
                         placeholderText: "Paste a link here (YouTube, TikTok, Instagram, etc. or direct file URL)"
                         text: unifiedDownloadVM.url
                         onTextChanged: unifiedDownloadVM.url = text
@@ -76,28 +94,30 @@ Item {
                     }
                 }
 
-                Row {
-                    spacing: LayoutMetrics.spacing.sm
-                    Button { buttonText: "Destination"; onPressed: unifFolderDialog.open() }
-                    Label {
-                        bold: false
-                        text: unifiedDownloadVM.destination
-                        textColor: Theme.textColor
-                        pixelSize: Typography.h6
-                        elide: Text.ElideMiddle
-                        width: parent.width * 0.3
+                PathPicker {
+                    label: Lang.labels.downloadFolder
+                    path: unifiedDownloadVM.destination
+                    defaultPath: controller.get_downloader_default_dir()
+                    onPathAccepted: function(newPath) {
+                        controller.save_downloader_dir(newPath)
                     }
+                }
+
+                Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: LayoutMetrics.spacing.sm
                     Button { buttonText: "Open Folder"; onPressed: unifiedDownloadVM.openDestination() }
                     Button { buttonText: "Force File"; onPressed: unifiedDownloadVM.forceDirect() }
                     Button { buttonText: "Force Social"; onPressed: unifiedDownloadVM.forceSocial() }
                 }
 
                 Column {
+                    width: parent.width
                     visible: unifiedDownloadVM.mode === "social"
                     spacing: LayoutMetrics.spacing.md
-                    width: parent.width
 
                     Row {
+                        anchors.horizontalCenter: parent.horizontalCenter
                         spacing: LayoutMetrics.spacing.md
                         Button { buttonText: "Load Formats"; onPressed: unifiedDownloadVM.fetchFormats() }
                         Switch {
@@ -108,9 +128,11 @@ Item {
                     }
 
                     Row {
+                        width: parent.width
                         spacing: LayoutMetrics.spacing.md
                         visible: !unifiedDownloadVM.audioOnly
                         Label {
+                            id: formatLabel
                             bold: false
                             text: "Format:"
                             textColor: Theme.textColor
@@ -118,7 +140,7 @@ Item {
                             anchors.verticalCenter: parent.verticalCenter
                         }
                         ComboBox {
-                            width: parent.width * 0.85
+                            width: Math.max(0, parent.width - formatLabel.width - parent.spacing)
                             model: unifiedDownloadVM.formats.length > 0 ? unifiedDownloadVM.formats : []
                             textRole: "label"
                             displayText: unifiedDownloadVM.formats.length > 0 ? currentText : "Best available"
@@ -132,19 +154,41 @@ Item {
                     }
                 }
 
+                Rectangle {
+                    width: parent.width
+                    height: LayoutMetrics.spacing.xxs
+                    color: Theme.dividerColor
+                }
+
                 Row {
-                    spacing: LayoutMetrics.spacing.sm
-                    Button { buttonText: "Download"; primary: true; isometric: true; heightMultiplier: 1.3; enabled: !unifiedDownloadVM.downloading; onPressed: unifiedDownloadVM.startDownload() }
-                    Button { buttonText: "Cancel"; enabled: unifiedDownloadVM.downloading; onPressed: unifiedDownloadVM.cancel() }
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: LayoutMetrics.spacing.md
+
+                    Button {
+                        buttonText: "Download"
+                        primary: true
+                        isometric: true
+                        heightMultiplier: 1.3
+                        visible: !unifiedDownloadVM.downloading
+                        onPressed: unifiedDownloadVM.startDownload()
+                    }
+
+                    Button {
+                        buttonText: "Cancel"
+                        visible: unifiedDownloadVM.downloading
+                        onPressed: unifiedDownloadVM.cancel()
+                    }
                 }
 
                 ProgressBar {
-                    width: parent.width
+                    width: Math.min(parent.width, LayoutMetrics.unit * 50)
+                    anchors.horizontalCenter: parent.horizontalCenter
                     value: unifiedDownloadVM.progress
                     visible: unifiedDownloadVM.downloading || unifiedDownloadVM.progress >= 1.0
                 }
 
                 Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
                     spacing: LayoutMetrics.spacing.lg
                     visible: unifiedDownloadVM.downloading || unifiedDownloadVM.size !== "" || unifiedDownloadVM.speed !== ""
                     Label {
@@ -214,11 +258,6 @@ Item {
                     }
                 }
                 Item { width: 1; height: LayoutMetrics.spacing.xl }
-            }
-
-            FolderDialog {
-                id: unifFolderDialog
-                onAccepted: controller.save_download_dir(selectedFolder.toString())
             }
         }
     }

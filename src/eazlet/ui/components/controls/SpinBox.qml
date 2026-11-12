@@ -9,6 +9,8 @@ SpinBox {
     stepSize: 10
     wheelEnabled: false
     focusPolicy: Qt.TabFocus
+    leftPadding: LayoutMetrics.spacing.sm
+    rightPadding: LayoutMetrics.size.iconS + LayoutMetrics.spacing.sm
 
     Component.onCompleted: contentItem.activeFocusOnTab = false
 
@@ -22,21 +24,37 @@ SpinBox {
     function setValue(newValue) { spinBox.value = newValue }
 
     contentItem: TextInput {
+        id: spinInput
         text: spinBox.value.toString()
         activeFocusOnPress: true
         activeFocusOnTab: false
         font.pixelSize: Typography.h4
         font.family: Typography.fontBold
         font.weight: Font.Bold
-        color: Theme.textColor
+        color: spinInput.activeFocus ? Theme.textColor : "transparent"
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         selectionColor: Theme.themeColor
         selectByMouse: true
         selectedTextColor: Theme.hoverTextColor
+        clip: true
         validator: IntValidator {
             bottom: spinBox.from
             top: spinBox.to
+        }
+
+        // TextInput cannot elide, so show a read-only elided copy while the
+        // field is not being edited and hide the underlying input text.
+        Text {
+            anchors.fill: parent
+            visible: !spinInput.activeFocus
+            text: spinInput.text
+            font: spinInput.font
+            color: Theme.textColor
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            elide: Text.ElideRight
+            enabled: false
         }
 
         onActiveFocusChanged: {

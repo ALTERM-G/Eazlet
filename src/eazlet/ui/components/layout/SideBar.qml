@@ -34,6 +34,8 @@ Rectangle {
             case "textAnalysis": return SVGLibrary.textAnalysis
             case "asciiArt": return SVGLibrary.asciiArt
             case "numberTools": return SVGLibrary.numberTools
+            case "math": return SVGLibrary.math
+            case "generators": return SVGLibrary.generators
             case "settings": return SVGLibrary.settings
             case "info": return SVGLibrary.info
             default: return ""
@@ -46,8 +48,19 @@ Rectangle {
 
         var target = Math.max(0, Math.min(navRepeater.count - 1, index))
         var item = navRepeater.itemAt(target)
-        if (item)
-            item.forceActiveFocus()
+        if (!item)
+            return
+
+        item.forceActiveFocus()
+
+        var margin = LayoutMetrics.spacing.sm
+        var maxY = Math.max(0, sidebarScroll.contentHeight - sidebarScroll.height)
+        if (item.y < sidebarScroll.contentY + margin)
+            sidebarScroll.contentY = Math.max(0, item.y - margin)
+        else if (item.y + item.height > sidebarScroll.contentY + sidebarScroll.height - margin)
+            sidebarScroll.contentY = Math.min(maxY,
+                                             item.y + item.height
+                                             - sidebarScroll.height + margin)
     }
 
     function releaseItemFocus() {
@@ -111,102 +124,113 @@ Rectangle {
         }
     }
 
-
-
-    Column {
+    Flickable {
+        id: sidebarScroll
         anchors.left: parent.left
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         width: parent.width - LayoutMetrics.border.m
-        spacing: 0
+        contentWidth: width
+        contentHeight: sidebarColumn.implicitHeight
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
+        flickableDirection: Flickable.VerticalFlick
 
-        Item {
-            width: parent.width
-            height: LayoutMetrics.spacing.md
-        }
+        Column {
+            id: sidebarColumn
+            width: sidebarScroll.width
+            spacing: 0
 
-        Repeater {
-            id: navRepeater
-            model: [
-                { label: "Home", icon: "home" },
-                { label: "Downloader", icon: "downloader" },
-                { label: "Converter", icon: "converter" },
-                { label: "Archive", icon: "archive" },
-                { label: "Organizer", icon: "organizer" },
-                { label: "Code Tools", icon: "codeTools" },
-                { label: "Text Analysis", icon: "textAnalysis" },
-                { label: "ASCII Art", icon: "asciiArt" },
-                { label: "Number Tools", icon: "numberTools" }
-            ]
+            Item {
+                width: parent.width
+                height: LayoutMetrics.spacing.md
+            }
 
-            delegate: SideBarItem {
-                id: sidebarItemDelegate
-                itemText: modelData.label
-                itemIcon: sidebar.getIconUrl(modelData.icon)
-                isActive: sidebar.currentIndex === index
-                collapsed: sidebar.collapsed
-                showFocusRing: sidebar.keyboardNavigated
+            Repeater {
+                id: navRepeater
+                model: [
+                    { label: "Home", icon: "home" },
+                    { label: "Downloader", icon: "downloader" },
+                    { label: "Converter", icon: "converter" },
+                    { label: "Archive", icon: "archive" },
+                    { label: "Organizer", icon: "organizer" },
+                    { label: "Code Tools", icon: "codeTools" },
+                    { label: "Text Analysis", icon: "textAnalysis" },
+                    { label: "ASCII Art", icon: "asciiArt" },
+                    { label: "Number Tools", icon: "numberTools" },
+                    { label: "Math", icon: "math" },
+                    { label: "Generators", icon: "generators" }
+                ]
 
-                Keys.onPressed: (event) => {
-                    if (event.key === Qt.Key_Down) {
-                        sidebar.keyboardNavigated = true
-                        sidebar.focusItemAt(index + 1)
-                        event.accepted = true
-                    } else if (event.key === Qt.Key_Up) {
-                        sidebar.keyboardNavigated = true
-                        sidebar.focusItemAt(index - 1)
-                        event.accepted = true
-                    } else if (event.key === Qt.Key_Tab && !event.modifiers) {
-                        sidebar.keyboardNavigated = true
-                        if (index < navRepeater.count - 1) {
+                delegate: SideBarItem {
+                    id: sidebarItemDelegate
+                    itemText: modelData.label
+                    itemIcon: sidebar.getIconUrl(modelData.icon)
+                    isActive: sidebar.currentIndex === index
+                    collapsed: sidebar.collapsed
+                    showFocusRing: sidebar.keyboardNavigated
+
+                    Keys.onPressed: (event) => {
+                        if (event.key === Qt.Key_Down) {
+                            sidebar.keyboardNavigated = true
                             sidebar.focusItemAt(index + 1)
                             event.accepted = true
-                        } else {
-                            sidebarItemDelegate.focus = false
-                            sidebar.keyboardNavigated = false
-                            if (window && window.contentItem) {
-                                window.contentItem.forceActiveFocus()
-                            }
-                            event.accepted = true
-                        }
-                        return
-                    } else if (event.key === Qt.Key_Tab && (event.modifiers & Qt.ShiftModifier)) {
-                        sidebar.keyboardNavigated = true
-                        if (index > 0) {
+                        } else if (event.key === Qt.Key_Up) {
+                            sidebar.keyboardNavigated = true
                             sidebar.focusItemAt(index - 1)
                             event.accepted = true
-                        } else {
-                            sidebarItemDelegate.focus = false
-                            sidebar.keyboardNavigated = false
-                            if (window && window.contentItem) {
-                                window.contentItem.forceActiveFocus()
+                        } else if (event.key === Qt.Key_Tab && !event.modifiers) {
+                            sidebar.keyboardNavigated = true
+                            if (index < navRepeater.count - 1) {
+                                sidebar.focusItemAt(index + 1)
+                                event.accepted = true
+                            } else {
+                                sidebarItemDelegate.focus = false
+                                sidebar.keyboardNavigated = false
+                                if (window && window.contentItem) {
+                                    window.contentItem.forceActiveFocus()
+                                }
+                                event.accepted = true
                             }
+                            return
+                        } else if (event.key === Qt.Key_Tab && (event.modifiers & Qt.ShiftModifier)) {
+                            sidebar.keyboardNavigated = true
+                            if (index > 0) {
+                                sidebar.focusItemAt(index - 1)
+                                event.accepted = true
+                            } else {
+                                sidebarItemDelegate.focus = false
+                                sidebar.keyboardNavigated = false
+                                if (window && window.contentItem) {
+                                    window.contentItem.forceActiveFocus()
+                                }
+                                event.accepted = true
+                            }
+                            return
+                        } else if (event.key === Qt.Key_Home) {
+                            sidebar.keyboardNavigated = true
+                            sidebar.focusItemAt(0)
+                            event.accepted = true
+                        } else if (event.key === Qt.Key_End) {
+                            sidebar.keyboardNavigated = true
+                            sidebar.focusItemAt(navRepeater.count - 1)
+                            event.accepted = true
+                        } else if (event.key === Qt.Key_Return
+                                   || event.key === Qt.Key_Enter
+                                   || event.key === Qt.Key_Space) {
+                            sidebar.keyboardNavigated = true
+                            sidebar.currentIndex = index
+                            sidebar.navigationClicked(index)
                             event.accepted = true
                         }
-                        return
-                    } else if (event.key === Qt.Key_Home) {
-                        sidebar.keyboardNavigated = true
-                        sidebar.focusItemAt(0)
-                        event.accepted = true
-                    } else if (event.key === Qt.Key_End) {
-                        sidebar.keyboardNavigated = true
-                        sidebar.focusItemAt(navRepeater.count - 1)
-                        event.accepted = true
-                    } else if (event.key === Qt.Key_Return
-                               || event.key === Qt.Key_Enter
-                               || event.key === Qt.Key_Space) {
-                        sidebar.keyboardNavigated = true
+                    }
+
+                    onClicked: {
+                        sidebar.keyboardNavigated = false
+                        sidebar.focusItemAt(index)
                         sidebar.currentIndex = index
                         sidebar.navigationClicked(index)
-                        event.accepted = true
                     }
-                }
-
-                onClicked: {
-                    sidebar.keyboardNavigated = false
-                    sidebar.focusItemAt(index)
-                    sidebar.currentIndex = index
-                    sidebar.navigationClicked(index)
                 }
             }
         }

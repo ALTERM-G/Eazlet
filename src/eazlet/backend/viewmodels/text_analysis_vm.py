@@ -1,7 +1,8 @@
 import re
 from collections import Counter
+from pathlib import Path
 
-from PySide6.QtCore import Property, QObject, Signal, Slot
+from PySide6.QtCore import Property, QObject, QUrl, Signal, Slot
 from PySide6.QtGui import QGuiApplication
 
 from .base_vm import BaseVM
@@ -550,6 +551,51 @@ class TextAnalysisVM(BaseVM):
         self.process()
         if self._has_results:
             self._status = "Sample loaded"
+            self.statusChanged.emit()
+
+    @Slot(str)
+    def loadFile(self, path):
+        self._error = ""
+        self.errorChanged.emit()
+
+        raw = (path or "").strip()
+        if raw.startswith("file:"):
+            local = QUrl(raw).toLocalFile()
+            if local:
+                raw = local
+        if not raw:
+            self._error = "No file selected"
+            self.errorChanged.emit()
+            self._status = "Nothing loaded"
+            self.statusChanged.emit()
+            return
+
+        file_path = Path(raw)
+        suffix = file_path.suffix.lower()
+        if suffix not in {".txt", ".md", ".markdown"}:
+            self._error = (
+                f"Unsupported file type: {suffix or 'unknown'} "
+                "(open a .txt or .md file)"
+            )
+            self.errorChanged.emit()
+            self._status = "Nothing loaded"
+            self.statusChanged.emit()
+            return
+
+        try:
+            text = file_path.read_text(encoding="utf-8", errors="replace")
+        except OSError as exc:
+            self._error = f"Could not read {file_path.name}: {exc}"
+            self.errorChanged.emit()
+            self._status = "Nothing loaded"
+            self.statusChanged.emit()
+            return
+
+        self._input = text
+        self.inputChanged.emit()
+        self.process()
+        if self._has_results:
+            self._status = f"Loaded {file_path.name}"
             self.statusChanged.emit()
 
     @Slot()

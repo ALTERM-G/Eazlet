@@ -27,11 +27,11 @@ class ArchiveVM(BaseVM):
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._files = []
-        self._output_dir = str(Path.home() / "Downloads")
+        self._output_dir = str(Path.home() / "Documents")
         self._compressing = False
         self._extracting = False
         self._progress = 0.0
-        self._status = "Idle"
+        self._status = ""
         self._error = ""
         self._format = "zip"
         self._compression_level = 6

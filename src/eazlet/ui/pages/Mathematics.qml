@@ -12,6 +12,35 @@ Item {
 
     readonly property bool latexMode: mathVM.mode === "LaTeX → PNG"
 
+    // Tabs group related tools; the operation picker chooses within a group.
+    readonly property var modeGroups: [
+        { name: "Algebra", modes: ["Simplify", "Expand", "Factor", "Solve"] },
+        { name: "Calculus", modes: ["Derivative", "Integral", "Limit"] },
+        { name: "LaTeX → PNG", modes: ["LaTeX → PNG"] }
+    ]
+
+    property var rememberedModes: [null, null, null]
+
+    function groupIndexForMode(mode) {
+        for (var i = 0; i < modeGroups.length; i++) {
+            if (modeGroups[i].modes.indexOf(mode) >= 0)
+                return i
+        }
+        return 0
+    }
+
+    readonly property int modeGroupIndex: groupIndexForMode(mathVM.mode)
+    readonly property var groupModes: modeGroups[modeGroupIndex].modes
+    readonly property bool showOperationPicker: groupModes.length > 1
+
+    function preferredModeForGroup(index) {
+        var group = modeGroups[index]
+        var remembered = rememberedModes[index]
+        if (remembered && group.modes.indexOf(remembered) >= 0)
+            return remembered
+        return group.modes[0]
+    }
+
     function isTransparent(value) {
         return String(value || "").trim().toLowerCase() === "transparent"
     }
@@ -45,16 +74,18 @@ Item {
         case "Derivative":
             return "Differentiates with respect to the chosen variable."
         case "Integral":
-            return "Finds an antiderivative with respect to the chosen variable; results include + C."
+            return "Write \\int ... dx for an antiderivative, or \\int_{a}^{b} ... dx "
+                    + "for a definite integral."
         case "Limit":
-            return "Evaluates the limit as the variable approaches the point. Try oo, -oo, or pi/2."
+            return "Evaluates the limit at the point."
         case "Factor":
             return "Factors polynomials and integer expressions."
         case "Expand":
             return "Expands products and powers."
         default:
-            return "Supported: + - * / ^, implicit multiplication (2x), fractions, sqrt, sin, "
-                    + "cos, tan, log, exp, abs, pi, E, and I."
+            return "LaTeX only. Supported: \\frac, \\sqrt, powers, implicit multiplication "
+                    + "(2x), \\sin, \\cos, \\tan, \\log, \\exp, \\pi, \\infty, and Greek "
+                    + "letters such as \\alpha."
         }
     }
 
@@ -84,8 +115,8 @@ Item {
                 bold: false
                 width: parent.width
                 horizontalAlignment: Text.AlignHCenter
-                text: "A local math workbench: simplify, expand, factor, solve, differentiate, "
-                      + "integrate, evaluate limits, and render LaTeX to PNG."
+                text: "A local math workbench: algebra, calculus, equation solving, and LaTeX "
+                      + "rendered to PNG at any resolution."
                 textColor: Theme.dividerColor
                 pixelSize: Typography.h6
                 wrapMode: Text.WordWrap
@@ -94,29 +125,28 @@ Item {
             TabBar {
                 id: modeTabs
                 anchors.horizontalCenter: parent.horizontalCenter
-                tabData: mathVM.modes
+                tabData: page.modeGroups
                 active: page.visible
                 currentIndex: 0
                 enabled: !mathVM.computing && !mathVM.latexRendering
-                Component.onCompleted: {
-                    var idx = mathVM.modes.indexOf(mathVM.mode)
-                    if (idx >= 0)
-                        modeTabs.currentIndex = idx
-                }
+                Component.onCompleted: modeTabs.currentIndex = page.modeGroupIndex
                 onCurrentIndexChanged: {
-                    if (currentIndex >= 0 && currentIndex < mathVM.modes.length) {
-                        var m = mathVM.modes[currentIndex]
-                        if (m && m !== mathVM.mode)
-                            mathVM.setMode(m)
-                    }
+                    if (currentIndex < 0 || currentIndex >= page.modeGroups.length)
+                        return
+                    var modes = page.modeGroups[currentIndex].modes
+                    if (modes.indexOf(mathVM.mode) < 0)
+                        mathVM.setMode(page.preferredModeForGroup(currentIndex))
                 }
             }
 
             Connections {
                 target: mathVM
                 function onModeChanged() {
-                    var idx = mathVM.modes.indexOf(mathVM.mode)
-                    if (idx >= 0 && idx !== modeTabs.currentIndex)
+                    var idx = page.groupIndexForMode(mathVM.mode)
+                    var remembered = page.rememberedModes.slice()
+                    remembered[idx] = mathVM.mode
+                    page.rememberedModes = remembered
+                    if (modeTabs.currentIndex !== idx)
                         modeTabs.currentIndex = idx
                 }
             }
@@ -174,6 +204,40 @@ Item {
                         spacing: LayoutMetrics.spacing.md
                         visible: !page.latexMode
 
+                        Row {
+                            width: parent.width
+                            spacing: LayoutMetrics.spacing.md
+                            visible: page.showOperationPicker
+
+                            Label {
+                                bold: false
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: "Operation"
+                                textColor: Theme.textColor
+                                pixelSize: Typography.h6
+                            }
+
+                            ComboBox {
+                                id: operationPicker
+                                width: Math.min(LayoutMetrics.unit * 24, parent.width * 0.45)
+                                model: page.groupModes
+                                currentIndex: page.groupModes.indexOf(mathVM.mode)
+                                onActivated: function(index) {
+                                    if (index >= 0 && index < page.groupModes.length)
+                                        mathVM.setMode(page.groupModes[index])
+                                }
+                            }
+                        }
+
+                        Connections {
+                            target: mathVM
+                            function onModeChanged() {
+                                var idx = page.groupModes.indexOf(mathVM.mode)
+                                if (idx >= 0 && operationPicker.currentIndex !== idx)
+                                    operationPicker.currentIndex = idx
+                            }
+                        }
+
                         Label {
                             bold: false
                             text: mathVM.inputLabel
@@ -186,9 +250,7 @@ Item {
                             width: parent.width
                             height: LayoutMetrics.unit * 12
                             text: mathVM.expression
-                            placeholderText: mathVM.mode === "Solve"
-                                             ? "e.g. x^2 - 4 = 0"
-                                             : "e.g. (x^2 - 1)/(x - 1) or sin(x)^2 + cos(x)^2"
+                            placeholderText: "Write the LaTeX code"
                             fontFamily: "JetBrains Mono"
                             fontPixelSize: Typography.body
                             wrapMode: Text.Wrap
@@ -327,7 +389,7 @@ Item {
                             fontFamily: "JetBrains Mono"
                             fontPixelSize: Typography.body
                             text: mathVM.result
-                            placeholderText: "The result will appear here"
+                            placeholderText: "The LaTeX result will appear here"
                             showCopyButton: true
                         }
 
@@ -359,9 +421,9 @@ Item {
                         TextEdit {
                             id: latexInput
                             width: parent.width
-                            height: LayoutMetrics.unit * 16
+                            height: LayoutMetrics.unit * 8
                             text: mathVM.latexSource
-                            placeholderText: "e.g. \\frac{x^2 - 1}{x - 1} = x + 1"
+                            placeholderText: "Write the LaTeX code"
                             fontFamily: "JetBrains Mono"
                             fontPixelSize: Typography.body
                             wrapMode: Text.Wrap
@@ -397,23 +459,28 @@ Item {
                             }
 
                             ComboBox {
-                                width: Math.min(LayoutMetrics.unit * 16, parent.width * 0.25)
+                                width: Math.min(LayoutMetrics.unit * 16, parent.width * 0.3)
                                 model: mathVM.latexResolutions
                                 scrollablePopup: true
                                 maxVisibleItems: 8
                                 currentIndex: {
-                                    var idx = mathVM.latexResolutions.indexOf(mathVM.latexResolution)
+                                    var idx =
+                                        mathVM.latexResolutions.indexOf(
+                                            mathVM.latexResolution)
                                     return idx >= 0 ? idx : 0
                                 }
                                 onActivated: function(index) {
-                                    if (index >= 0 && index < mathVM.latexResolutions.length)
+                                    if (index >= 0
+                                            && index < mathVM.latexResolutions.length)
                                         mathVM.setLatexResolution(
                                             mathVM.latexResolutions[index])
                                 }
                                 onCurrentIndexChanged: {
                                     if (currentIndex >= 0
-                                            && currentIndex < mathVM.latexResolutions.length) {
-                                        var value = mathVM.latexResolutions[currentIndex]
+                                            && currentIndex
+                                               < mathVM.latexResolutions.length) {
+                                        var value =
+                                            mathVM.latexResolutions[currentIndex]
                                         if (value && value !== mathVM.latexResolution)
                                             mathVM.setLatexResolution(value)
                                     }
@@ -431,7 +498,7 @@ Item {
 
                         Flow {
                             width: parent.width
-                            spacing: LayoutMetrics.spacing.md
+                            spacing: LayoutMetrics.spacing.xl
 
                             Row {
                                 spacing: LayoutMetrics.spacing.sm
@@ -454,7 +521,8 @@ Item {
 
                                     Label {
                                         anchors.centerIn: parent
-                                        visible: page.isTransparent(mathVM.latexBackground)
+                                        visible: page.isTransparent(
+                                                     mathVM.latexBackground)
                                         text: "T"
                                         textColor: Theme.textColor
                                         pixelSize: Typography.caption
@@ -478,19 +546,6 @@ Item {
                                     }
                                 }
                             }
-
-                            Button {
-                                buttonText: page.isTransparent(mathVM.latexBackground)
-                                            ? "Transparent: On" : "Transparent: Off"
-                                onPressed: mathVM.setLatexBackground(
-                                    page.isTransparent(mathVM.latexBackground)
-                                    ? "#FFFFFF" : "Transparent")
-                            }
-                        }
-
-                        Flow {
-                            width: parent.width
-                            spacing: LayoutMetrics.spacing.md
 
                             Row {
                                 spacing: LayoutMetrics.spacing.sm
@@ -531,8 +586,8 @@ Item {
                             }
                         }
 
-                        Row {
-                            anchors.horizontalCenter: parent.horizontalCenter
+                        Flow {
+                            width: parent.width
                             spacing: LayoutMetrics.spacing.sm
 
                             Button {
@@ -540,7 +595,8 @@ Item {
                                 primary: true
                                 isometric: true
                                 heightMultiplier: 1.3
-                                enabled: mathVM.latexAvailable && !mathVM.latexRendering
+                                enabled: mathVM.latexAvailable
+                                         && !mathVM.latexRendering
                                 onPressed: mathVM.renderLatex()
                             }
                             Button {
@@ -560,12 +616,110 @@ Item {
                                 enabled: mathVM.latexImageSource !== ""
                                 onPressed: latexFileDialog.open()
                             }
+                            Button {
+                                buttonText: page.isTransparent(mathVM.latexBackground)
+                                            ? "Transparent: On" : "Transparent: Off"
+                                onPressed: mathVM.setLatexBackground(
+                                    page.isTransparent(mathVM.latexBackground)
+                                    ? "#FFFFFF" : "Transparent")
+                            }
+                        }
+
+                        Label {
+                            bold: false
+                            width: parent.width
+                            visible: !mathVM.latexAvailable
+                            text: mathVM.latexToolchainError
+                            textColor: "red"
+                            pixelSize: Typography.h6
+                            wrapMode: Text.WordWrap
                         }
 
                         Row {
-                            anchors.horizontalCenter: parent.horizontalCenter
+                            width: parent.width
+                            spacing: LayoutMetrics.spacing.md
+                            visible: mathVM.latexImageSource !== ""
+
+                            Label {
+                                bold: false
+                                text: "Preview"
+                                textColor: Theme.textColor
+                                pixelSize: Typography.h4
+                            }
+
+                            Label {
+                                bold: false
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: mathVM.latexDimensions
+                                textColor: Theme.dividerColor
+                                pixelSize: Typography.caption
+                            }
+                        }
+
+                        Rectangle {
+                            id: latexPreview
+                            // Shown only once an image is actually rendered, sized
+                            // to the image so there is no empty framed box.
+                            readonly property real naturalWidth: latexPreviewImage.sourceSize.width
+                            readonly property real naturalHeight: latexPreviewImage.sourceSize.height
+                            readonly property real fitScale: naturalWidth > 0
+                                ? Math.min(1, latexPanel.width / naturalWidth) : 1
+
+                            visible: mathVM.latexImageSource !== ""
+                                     && naturalWidth > 0 && naturalHeight > 0
+                            width: Math.max(1, Math.floor(naturalWidth * fitScale))
+                            height: Math.max(1, Math.floor(naturalHeight * fitScale))
+                            x: Math.round((parent.width - width) / 2)
+                            radius: LayoutMetrics.radius.m
+                            color: Theme.inputBackgroundColor
+                            border.color: Qt.rgba(Theme.textColor.r, Theme.textColor.g,
+                                                  Theme.textColor.b, 0.35)
+                            border.width: LayoutMetrics.border.m
+                            clip: true
+
+                            Canvas {
+                                anchors.fill: parent
+                                visible: page.isTransparent(mathVM.latexBackground)
+                                onVisibleChanged: if (visible) requestPaint()
+                                onWidthChanged: requestPaint()
+                                onHeightChanged: requestPaint()
+                                Component.onCompleted: requestPaint()
+
+                                onPaint: {
+                                    var ctx = getContext("2d")
+                                    var square = LayoutMetrics.unit * 2
+                                    var columns = Math.ceil(width / square)
+                                    var rows = Math.ceil(height / square)
+                                    ctx.fillStyle =
+                                        page.colorString(Theme.backgroundColor)
+                                    ctx.fillRect(0, 0, width, height)
+                                    ctx.fillStyle =
+                                        page.colorString(Theme.inputBackgroundColor)
+                                    for (var row = 0; row < rows; row++) {
+                                        for (var column = 0; column < columns; column++) {
+                                            if ((row + column) % 2 === 0)
+                                                ctx.fillRect(column * square,
+                                                             row * square,
+                                                             square, square)
+                                        }
+                                    }
+                                }
+                            }
+
+                            Image {
+                                id: latexPreviewImage
+                                anchors.fill: parent
+                                source: mathVM.latexImageSource
+                                fillMode: Image.Stretch
+                                smooth: true
+                                asynchronous: true
+                            }
+                        }
+
+                        Row {
                             spacing: LayoutMetrics.spacing.sm
                             visible: mathVM.latexStatus !== ""
+                                     && mathVM.latexStatus !== "Ready"
 
                             SVGObject {
                                 anchors.verticalCenter: parent.verticalCenter
@@ -599,7 +753,8 @@ Item {
                             Label {
                                 bold: false
                                 anchors.verticalCenter: parent.verticalCenter
-                                width: Math.max(0, parent.width - LayoutMetrics.size.iconS
+                                width: Math.max(0, parent.width
+                                                - LayoutMetrics.size.iconS
                                                 - parent.spacing)
                                 text: mathVM.latexError
                                 textColor: "red"
@@ -618,95 +773,13 @@ Item {
                             visible: mathVM.latexSavedMessage !== ""
                         }
 
-                        Row {
-                            width: parent.width
-                            spacing: LayoutMetrics.spacing.md
-
-                            Label {
-                                bold: false
-                                text: "Preview"
-                                textColor: Theme.textColor
-                                pixelSize: Typography.h4
-                            }
-
-                            Label {
-                                bold: false
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: mathVM.latexDimensions
-                                textColor: Theme.dividerColor
-                                pixelSize: Typography.caption
-                            }
-                        }
-
-                        Rectangle {
-                            id: latexPreview
-                            width: parent.width
-                            height: Math.min(LayoutMetrics.unit * 44,
-                                             Math.max(LayoutMetrics.unit * 20, width * 0.42))
-                            radius: LayoutMetrics.radius.m
-                            color: Theme.inputBackgroundColor
-                            border.color: Theme.borderColor
-                            border.width: LayoutMetrics.border.m
-                            clip: true
-
-                            Canvas {
-                                anchors.fill: parent
-                                visible: page.isTransparent(mathVM.latexBackground)
-                                onVisibleChanged: if (visible) requestPaint()
-                                onWidthChanged: requestPaint()
-                                onHeightChanged: requestPaint()
-                                Component.onCompleted: requestPaint()
-
-                                onPaint: {
-                                    var ctx = getContext("2d")
-                                    var square = LayoutMetrics.unit * 2
-                                    var columns = Math.ceil(width / square)
-                                    var rows = Math.ceil(height / square)
-                                    ctx.fillStyle = page.colorString(Theme.backgroundColor)
-                                    ctx.fillRect(0, 0, width, height)
-                                    ctx.fillStyle = page.colorString(Theme.inputBackgroundColor)
-                                    for (var row = 0; row < rows; row++) {
-                                        for (var column = 0; column < columns; column++) {
-                                            if ((row + column) % 2 === 0)
-                                                ctx.fillRect(column * square, row * square,
-                                                             square, square)
-                                        }
-                                    }
-                                }
-                            }
-
-                            Image {
-                                anchors.fill: parent
-                                anchors.margins: latexPreview.border.width
-                                source: mathVM.latexImageSource
-                                fillMode: Image.PreserveAspectFit
-                                smooth: true
-                                asynchronous: true
-                                visible: source !== ""
-                            }
-
-                            Label {
-                                anchors.centerIn: parent
-                                width: parent.width * 0.8
-                                horizontalAlignment: Text.AlignHCenter
-                                wrapMode: Text.WordWrap
-                                bold: false
-                                visible: mathVM.latexImageSource === ""
-                                text: mathVM.latexAvailable
-                                      ? "Render LaTeX to preview the PNG"
-                                      : mathVM.latexToolchainError
-                                textColor: Theme.dividerColor
-                                pixelSize: Typography.h6
-                            }
-                        }
-
                         Label {
                             bold: false
                             width: parent.width
                             horizontalAlignment: Text.AlignHCenter
-                            text: "Rendered locally with LaTeX and dvipng. Use math-mode commands such "
-                                  + "as \\frac, \\sqrt, \\sum, \\int, and \\alpha. Dollar delimiters "
-                                  + "are optional."
+                            text: "Rendered locally with LaTeX and dvipng. Use math-mode commands "
+                                  + "such as \\frac, \\sqrt, \\sum, \\int, and \\alpha. Dollar "
+                                  + "delimiters are optional."
                             textColor: Theme.dividerColor
                             pixelSize: Typography.caption
                             wrapMode: Text.WordWrap

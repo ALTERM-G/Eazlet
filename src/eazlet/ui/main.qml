@@ -150,7 +150,8 @@ Window {
                     { source: "pages/AsciiArt.qml" },
                     { source: "pages/NumberTools.qml" },
                     { source: "pages/Mathematics.qml" },
-                    { source: "pages/Generators.qml" }
+                    { source: "pages/Generators.qml" },
+                    { source: "pages/Dictionary.qml" }
                 ]
 
                 delegate: Loader {

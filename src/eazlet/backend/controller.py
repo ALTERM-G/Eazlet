@@ -9,6 +9,7 @@ from .viewmodels import (
     AsciiArtVM,
     CipherVM,
     ConverterVM,
+    DictionaryVM,
     DownloadVM,
     GeneratorsVM,
     MainVM,
@@ -58,6 +59,7 @@ class Controller(QObject):
         self._number_tools_vm = NumberToolsVM(self)
         self._math_vm = MathVM(self)
         self._generators_vm = GeneratorsVM(self)
+        self._dictionary_vm = DictionaryVM(self)
 
         self._language_files = ["en.json", "fr.json", "de.json", "es.json", "it.json"]
         self._languages_path = (
@@ -410,3 +412,7 @@ class Controller(QObject):
     @Property(QObject, constant=True)
     def generatorsVM(self) -> GeneratorsVM:
         return self._generators_vm
+
+    @Property(QObject, constant=True)
+    def dictionaryVM(self) -> DictionaryVM:
+        return self._dictionary_vm

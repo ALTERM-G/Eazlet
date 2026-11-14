@@ -3,6 +3,7 @@ from .ascii_art_vm import AsciiArtVM
 from .base_vm import BaseVM
 from .cipher_vm import CipherVM
 from .converter_vm import ConverterVM
+from .dictionary_vm import DictionaryVM
 from .download_vm import DownloadVM
 from .generators_vm import GeneratorsVM
 from .main_vm import MainVM
@@ -20,6 +21,7 @@ __all__ = [
     "BaseVM",
     "CipherVM",
     "ConverterVM",
+    "DictionaryVM",
     "DownloadVM",
     "GeneratorsVM",
     "MainVM",

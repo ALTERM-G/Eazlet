@@ -13,6 +13,25 @@ Item {
             unifiedDownloadVM.startDownload()
     }
 
+    function syncDownloader() {
+        var target = unifiedDownloadVM.autoDetect ? "auto" : unifiedDownloadVM.downloader
+        for (var i = 0; i < unifiedDownloadVM.downloaders.length; i++) {
+            if (unifiedDownloadVM.downloaders[i].id === target) {
+                downloaderCombo.currentIndex = i
+                return
+            }
+        }
+        downloaderCombo.currentIndex = 0
+    }
+
+    Component.onCompleted: syncDownloader()
+
+    Connections {
+        target: unifiedDownloadVM
+        function onDownloaderChanged() { page.syncDownloader() }
+        function onAutoDetectChanged() { page.syncDownloader() }
+    }
+
     // Keeps the form readable and centred on wide windows without letting it
     // get cramped when the window is small.
     Surface {
@@ -53,7 +72,7 @@ Item {
 
                 Title {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: unifiedDownloadVM.mode === "social" ? "Social Media Download" : "Direct Download"
+                    text: unifiedDownloadVM.title
                     textColor: Theme.textColor
                     pixelSize: Typography.h2
                 }
@@ -62,9 +81,7 @@ Item {
                     width: parent.width
                     horizontalAlignment: Text.AlignHCenter
                     bold: false
-                    text: unifiedDownloadVM.mode === "social"
-                        ? "Paste a video link from a supported site, choose a format, then download."
-                        : "Paste a direct file link, choose where to save it, then download."
+                    text: unifiedDownloadVM.hint
                     textColor: Theme.dividerColor
                     pixelSize: Typography.h6
                     wrapMode: Text.WordWrap
@@ -82,7 +99,7 @@ Item {
                     LineEdit {
                         id: unifiedUrl
                         width: Math.max(0, parent.width - pasteBtn.width - parent.spacing)
-                        placeholderText: "Paste a link here (YouTube, TikTok, Instagram, etc. or direct file URL)"
+                        placeholderText: "Paste a link here (video, gallery, Spotify, Bandcamp, Khinsider, or direct file URL)"
                         text: unifiedDownloadVM.url
                         onTextChanged: unifiedDownloadVM.url = text
                     }
@@ -104,16 +121,35 @@ Item {
                 }
 
                 Row {
+                    width: parent.width
+                    spacing: LayoutMetrics.spacing.md
+                    Label {
+                        id: downloaderLabel
+                        bold: false
+                        text: "Downloader:"
+                        textColor: Theme.textColor
+                        pixelSize: Typography.h6
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                    ComboBox {
+                        id: downloaderCombo
+                        width: Math.max(0, parent.width - downloaderLabel.width - parent.spacing)
+                        model: unifiedDownloadVM.downloaders
+                        textRole: "label"
+                        valueRole: "id"
+                        onActivated: unifiedDownloadVM.setDownloader(currentValue)
+                    }
+                }
+
+                Row {
                     anchors.horizontalCenter: parent.horizontalCenter
                     spacing: LayoutMetrics.spacing.sm
                     Button { buttonText: "Open Folder"; onPressed: unifiedDownloadVM.openDestination() }
-                    Button { buttonText: "Force File"; onPressed: unifiedDownloadVM.forceDirect() }
-                    Button { buttonText: "Force Social"; onPressed: unifiedDownloadVM.forceSocial() }
                 }
 
                 Column {
                     width: parent.width
-                    visible: unifiedDownloadVM.mode === "social"
+                    visible: unifiedDownloadVM.supportsFormats
                     spacing: LayoutMetrics.spacing.md
 
                     Row {

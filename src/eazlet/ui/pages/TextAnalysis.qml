@@ -66,8 +66,8 @@ Item {
 
     Surface {
         anchors.centerIn: parent
-        width: parent.width * 0.94
-        height: parent.height * 0.94
+        width: parent.width * 0.9
+        height: parent.height * 0.9
 
         ColumnLayout {
             id: contentLayout

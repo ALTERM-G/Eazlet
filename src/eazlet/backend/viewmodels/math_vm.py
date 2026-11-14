@@ -10,6 +10,12 @@ from pathlib import Path
 
 from PySide6.QtCore import Property, QObject, QThread, QUrl, Signal, Slot
 
+from ..latex_math import (
+    parse_latex_equation,
+    parse_latex_expression,
+    parse_latex_integral,
+    parse_latex_variable,
+)
 from .base_vm import BaseVM
 
 MAX_EXPRESSION_LENGTH = 500
@@ -21,12 +27,12 @@ _ALLOWED_CHARACTERS = frozenset(
 )
 _EQUATION_CHARACTERS = _ALLOWED_CHARACTERS | frozenset("=")
 _IDENTIFIER_RE = re.compile(r"[A-Za-z][A-Za-z0-9]*")
+_SYMBOL_NAME_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 _DECIMAL_RE = re.compile(r"(?:\d+\.\d*|\.\d+)")
 
-# Only the functions and constants returned by _function_table() are exposed
-# to the parser. Everything else is treated as a variable, which keeps SymPy
-# from evaluating arbitrary Python names from user input.
-SAMPLE_EXPRESSION = "(x^2 - 1)/(x - 1)"
+# Inputs are LaTeX. The parser converts them to the small plain expression
+# language understood by the restricted SymPy parser below.
+SAMPLE_EXPRESSION = r"\frac{x^2 - 1}{x - 1}"
 
 MATH_MODES = [
     "Simplify",
@@ -41,13 +47,13 @@ MATH_MODES = [
 LATEX_MODE = "LaTeX → PNG"
 
 SAMPLE_EXPRESSIONS = {
-    "Simplify": SAMPLE_EXPRESSION,
-    "Expand": "(x + 1)^3",
-    "Factor": "x^2 - 1",
-    "Solve": "x^2 - 4 = 0",
-    "Derivative": "x^3 - 3*x + 2",
-    "Integral": "x*sin(x)",
-    "Limit": "sin(x)/x",
+    "Simplify": r"\frac{x^2 - 1}{x - 1}",
+    "Expand": r"(x + 1)^3",
+    "Factor": r"x^2 - 1",
+    "Solve": r"x^2 - 4 = 0",
+    "Derivative": r"x^3 - 3x + 2",
+    "Integral": r"\int x\sin(x) \, dx",
+    "Limit": r"\frac{\sin(x)}{x}",
 }
 SAMPLE_LATEX = r"\frac{x^2 - 1}{x - 1} = x + 1"
 
@@ -232,6 +238,7 @@ def _function_table(sympy) -> dict:
         "ln": sympy.log,
         "abs": sympy.Abs,
         "factorial": sympy.factorial,
+        "gamma": sympy.gamma,
         "gcd": sympy.gcd,
         "lcm": sympy.lcm,
         "floor": sympy.floor,
@@ -312,6 +319,15 @@ def _parse_expression(sympy, expression: str):
         standard_transformations,
     )
 
+    # Python keywords cannot appear as identifiers in the generated expression.
+    # Rename them while parsing, then restore the original symbol names.
+    renamed: dict[str, str] = {}
+    for name in set(_SYMBOL_NAME_RE.findall(expression)):
+        if keyword.iskeyword(name):
+            safe = f"{name}_"
+            renamed[safe] = name
+            expression = re.sub(rf"\b{name}\b", safe, expression)
+
     local_dict = {
         "Symbol": sympy.Symbol,
         "Integer": sympy.Integer,
@@ -321,7 +337,7 @@ def _parse_expression(sympy, expression: str):
     }
     local_dict.update(_function_table(sympy))
 
-    for name in _IDENTIFIER_RE.findall(expression):
+    for name in _SYMBOL_NAME_RE.findall(expression):
         if name not in local_dict:
             local_dict[name] = sympy.Symbol(name)
 
@@ -330,86 +346,141 @@ def _parse_expression(sympy, expression: str):
         convert_xor,
     )
 
-    return parse_expr(
+    parsed = parse_expr(
         expression,
         local_dict=local_dict,
         global_dict={},
         transformations=transformations,
     )
 
+    if renamed:
+        parsed = parsed.subs(
+            {
+                sympy.Symbol(safe): sympy.Symbol(original)
+                for safe, original in renamed.items()
+            }
+        )
+    return parsed
 
-def _format_expression(expression) -> str:
-    return str(expression).replace("**", "^")
+
+def _format_latex(sympy, expression) -> str:
+    return sympy.latex(expression)
 
 
 def _simplify_expression(text: str) -> tuple[str, str]:
-    expression = _validate_expression(text)
+    expression = parse_latex_expression(text)
     sympy = _import_sympy()
     parsed = _parse_expression(sympy, expression)
     simplified = sympy.simplify(parsed)
-    return expression, _format_expression(simplified)
+    return text.strip(), _format_latex(sympy, simplified)
 
 
 def _expand_expression(text: str) -> tuple[str, str]:
-    expression = _validate_expression(text)
+    expression = parse_latex_expression(text)
     sympy = _import_sympy()
     parsed = _parse_expression(sympy, expression)
-    return expression, _format_expression(sympy.expand(parsed))
+    return text.strip(), _format_latex(sympy, sympy.expand(parsed))
 
 
 def _factor_expression(text: str) -> tuple[str, str]:
-    expression = _validate_expression(text)
+    expression = parse_latex_expression(text)
     sympy = _import_sympy()
     parsed = _parse_expression(sympy, expression)
-    return expression, _format_expression(sympy.factor(parsed))
+    return text.strip(), _format_latex(sympy, sympy.factor(parsed))
 
 
 def _solve_equation(text: str, variable: str = "x") -> tuple[str, str]:
-    equation = _validate_equation(text)
-    variable = _validate_variable(variable)
+    left_text, right_text = parse_latex_equation(text)
+    variable = parse_latex_variable(variable)
     sympy = _import_sympy()
-    left_text, right_text = (side.strip() for side in equation.split("="))
     left = _parse_expression(sympy, left_text)
     right = _parse_expression(sympy, right_text)
     solutions = sympy.solve(sympy.Eq(left, right), sympy.Symbol(variable))
     if isinstance(solutions, dict):
         solutions = list(solutions.values())
     if not solutions:
-        return equation, f"No solutions for {variable}"
+        return text.strip(), r"\text{No solutions}"
     solutions = sorted(solutions, key=str)
-    return equation, ", ".join(_format_expression(solution) for solution in solutions)
+    return text.strip(), ", ".join(_format_latex(sympy, solution) for solution in solutions)
 
 
 def _differentiate_expression(text: str, variable: str = "x") -> tuple[str, str]:
-    expression = _validate_expression(text)
-    variable = _validate_variable(variable)
+    expression = parse_latex_expression(text)
+    variable = parse_latex_variable(variable)
     sympy = _import_sympy()
     parsed = _parse_expression(sympy, expression)
     result = sympy.simplify(sympy.diff(parsed, sympy.Symbol(variable)))
-    return expression, _format_expression(result)
+    return text.strip(), _format_latex(sympy, result)
 
 
 def _integrate_expression(text: str, variable: str = "x") -> tuple[str, str]:
-    expression = _validate_expression(text)
-    variable = _validate_variable(variable)
+    integral = parse_latex_integral(text)
+    if integral is None:
+        integrand = parse_latex_expression(text)
+        target = parse_latex_variable(variable)
+        lower = None
+        upper = None
+    else:
+        integrand = integral.integrand
+        target = integral.variable or parse_latex_variable(variable)
+        lower = integral.lower
+        upper = integral.upper
+
     sympy = _import_sympy()
-    parsed = _parse_expression(sympy, expression)
-    result = sympy.integrate(parsed, sympy.Symbol(variable))
-    formatted = _format_expression(result)
+    parsed = _parse_expression(sympy, integrand)
+
+    if lower is not None and upper is not None:
+        lower_value = _parse_expression(sympy, lower)
+        upper_value = _parse_expression(sympy, upper)
+        result = sympy.integrate(parsed, (sympy.Symbol(target), lower_value, upper_value))
+        exact = _format_latex(sympy, result)
+        if result.is_number and not result.is_Integer:
+            approximate = sympy.N(result, 12)
+            exact = f"{exact} \\approx {_format_latex(sympy, approximate)}"
+        return text.strip(), exact
+
+    result = sympy.integrate(parsed, sympy.Symbol(target))
     if result.has(sympy.Integral):
-        return expression, formatted
-    return expression, f"{formatted} + C"
+        return text.strip(), _format_latex(sympy, result)
+    return text.strip(), f"{_format_latex(sympy, result)} + C"
 
 
 def _limit_expression(text: str, variable: str = "x", point: str = "0") -> tuple[str, str]:
-    expression = _validate_expression(text)
-    variable = _validate_variable(variable)
-    point_text = _validate_point(point)
+    expression = parse_latex_expression(text)
+    variable = parse_latex_variable(variable)
+    point_text = parse_latex_expression(point or "0")
     sympy = _import_sympy()
     parsed = _parse_expression(sympy, expression)
     point_expression = _parse_expression(sympy, point_text)
     result = sympy.limit(parsed, sympy.Symbol(variable), point_expression)
-    return expression, _format_expression(result)
+    return text.strip(), _format_latex(sympy, result)
+
+
+def _prepare_math_input(mode: str, text: str, variable: str, point: str) -> None:
+    """Validate a request without computing it, for instant UI feedback."""
+
+    if mode == "Solve":
+        parse_latex_equation(text)
+        parse_latex_variable(variable)
+        return
+    if mode == "Integral":
+        if parse_latex_integral(text) is None:
+            parse_latex_expression(text)
+        parse_latex_variable(variable)
+        return
+    if mode in {"Simplify", "Expand", "Factor"}:
+        parse_latex_expression(text)
+        return
+    if mode == "Derivative":
+        parse_latex_expression(text)
+        parse_latex_variable(variable)
+        return
+    if mode == "Limit":
+        parse_latex_expression(text)
+        parse_latex_variable(variable)
+        parse_latex_expression(point or "0")
+        return
+    raise ValueError(f"Unsupported math tool: {mode}")
 
 
 def _compute_math(
@@ -751,7 +822,7 @@ class MathVM(BaseVM):
 
         self._latex_source = ""
         self._latex_resolution = 300
-        self._latex_resolutions = [72, 96, 150, 200, 300, 450, 600]
+        self._latex_resolutions = [72, 96, 150, 200, 300, 450, 600, 900]
         self._latex_background = "#FFFFFF"
         self._latex_foreground = "#000000"
         self._latex_image_source = ""
@@ -829,7 +900,7 @@ class MathVM(BaseVM):
 
     @Property(str, notify=modeChanged)
     def inputLabel(self) -> str:
-        return "Equation" if self._mode == "Solve" else "Expression"
+        return "LaTeX"
 
     @Property(bool, notify=modeChanged)
     def requiresVariable(self) -> bool:
@@ -1044,15 +1115,7 @@ class MathVM(BaseVM):
 
         self._set_error("")
         try:
-            expression = (
-                _validate_equation(self._expression)
-                if self._mode == "Solve"
-                else _validate_expression(self._expression)
-            )
-            if self.requiresVariable:
-                _validate_variable(self._variable)
-            if self.requiresPoint:
-                _validate_point(self._point)
+            _prepare_math_input(self._mode, self._expression, self._variable, self._point)
         except ValueError as error:
             self._set_error(str(error))
             self._set_result("")
@@ -1065,7 +1128,7 @@ class MathVM(BaseVM):
 
         worker = _MathWorker(
             self._mode,
-            expression,
+            self._expression,
             self._variable,
             self._point,
             self,

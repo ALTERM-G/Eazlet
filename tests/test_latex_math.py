@@ -32,6 +32,28 @@ def test_parse_implicit_multiplication():
     assert parse_latex_expression("(x + 1)(x - 1)") == "((x + 1) * (x - 1))"
 
 
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        (r"\sin^{-1} x", "asin(x)"),
+        (r"\cos^{-1} x", "acos(x)"),
+        (r"\tan^{-1} x", "atan(x)"),
+        (r"\cot^{-1} x", "acot(x)"),
+        (r"\sec^{-1} x", "asec(x)"),
+        (r"\csc^{-1} x", "acsc(x)"),
+        (r"\sinh^{-1} x", "asinh(x)"),
+        (r"\sin^{-1}(x)", "asin(x)"),
+    ],
+)
+def test_inverse_function_notation(source, expected):
+    assert parse_latex_expression(source) == expected
+
+
+def test_negative_exponent_other_than_minus_one_is_still_a_power():
+    assert parse_latex_expression(r"\sin^{-2} x") == "(sin(x))^((-2))"
+    assert parse_latex_expression(r"\sin^2 x") == "(sin(x))^(2)"
+
+
 def test_parse_explicit_multiplication_commands():
     assert parse_latex_expression(r"3 \cdot x") == "(3 * x)"
     assert parse_latex_expression(r"3 \times x") == "(3 * x)"
@@ -170,6 +192,20 @@ def test_parse_integral_with_greek_differential():
 def test_parse_integral_requires_both_bounds():
     with pytest.raises(LatexParseError, match="both a lower and an upper bound"):
         parse_latex_integral(r"\int_0 x^2 \, dx")
+
+
+def test_parse_integral_rejects_text_after_differential():
+    with pytest.raises(LatexParseError, match="Text after the differential"):
+        parse_latex_integral(r"\int x \, dx + 1")
+    with pytest.raises(LatexParseError, match="Text after the differential"):
+        parse_latex_integral(r"\int x dx + 1")
+
+
+def test_parse_integral_still_accepts_a_variable_named_d():
+    parsed = parse_latex_integral(r"\int d x \, dx")
+    assert parsed is not None
+    assert parsed.integrand == "(d * x)"
+    assert parsed.variable == "x"
 
 
 def test_parse_integral_returns_none_for_plain_expression():

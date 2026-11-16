@@ -19,21 +19,26 @@ Column {
         languageCombo.initialized = true
     }
 
-    Label {
-        text: Lang.labels.language
-        style_2: true
-    }
-
-    ComboBox {
-        id: languageCombo
+    Column {
         anchors.horizontalCenter: parent.horizontalCenter
-        model: controller.get_languages()
+        spacing: LayoutMetrics.spacing.xxs
 
-        property bool initialized: false
+        Label {
+            text: Lang.labels.language
+            style_2: true
+        }
 
-        onCurrentIndexChanged: {
-            if (initialized) {
-                controller.save_language(currentIndex)
+        ComboBox {
+            id: languageCombo
+            anchors.horizontalCenter: parent.horizontalCenter
+            model: controller.get_languages()
+
+            property bool initialized: false
+
+            onCurrentIndexChanged: {
+                if (initialized) {
+                    controller.save_language(currentIndex)
+                }
             }
         }
     }

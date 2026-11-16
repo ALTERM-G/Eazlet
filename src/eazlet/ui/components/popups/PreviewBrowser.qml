@@ -33,6 +33,7 @@ Controls.Popup {
     property string noFavoritesLabel: "No favorites yet"
     property string noRecentsLabel: "No recent items yet"
     property string noMatchesLabel: "No matches"
+    property bool showPreview: true
     property string itemNameSingular: "item"
     property string itemNamePlural: "items"
     property string previewLabel: "Preview"
@@ -339,8 +340,8 @@ Controls.Popup {
                 anchors.top: parent.top
                 anchors.left: parent.left
                 anchors.right: parent.right
-                anchors.bottom: previewPane.top
-                anchors.bottomMargin: LayoutMetrics.spacing.md
+                anchors.bottom: browser.showPreview ? previewPane.top : parent.bottom
+                anchors.bottomMargin: browser.showPreview ? LayoutMetrics.spacing.md : 0
 
                 GridView {
                     id: grid
@@ -541,6 +542,7 @@ Controls.Popup {
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
+                visible: browser.showPreview
                 height: Math.round(Math.max(LayoutMetrics.unit * 12, parent.height * 0.34))
 
                 Item {

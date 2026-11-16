@@ -8,6 +8,7 @@ from .viewmodels import (
     ArchiveVM,
     AsciiArtVM,
     CipherVM,
+    ColorsVM,
     ConverterVM,
     DictionaryVM,
     DownloadVM,
@@ -54,6 +55,7 @@ class Controller(QObject):
         self._archive_vm = ArchiveVM(self)
         self._organizer_vm = OrganizerVM(self)
         self._cipher_vm = CipherVM(self)
+        self._colors_vm = ColorsVM(self)
         self._text_analysis_vm = TextAnalysisVM(self)
         self._ascii_art_vm = AsciiArtVM(self)
         self._number_tools_vm = NumberToolsVM(self)
@@ -392,6 +394,10 @@ class Controller(QObject):
     @Property(QObject, constant=True)
     def cipherVM(self) -> CipherVM:
         return self._cipher_vm
+
+    @Property(QObject, constant=True)
+    def colorsVM(self) -> ColorsVM:
+        return self._colors_vm
 
     @Property(QObject, constant=True)
     def textAnalysisVM(self) -> TextAnalysisVM:

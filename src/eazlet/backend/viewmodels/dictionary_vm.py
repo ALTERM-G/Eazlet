@@ -102,6 +102,47 @@ def _parse_entries(payload: object) -> dict:
     }
 
 
+def _format_output(word: str, phonetic: str, origin: str, entries: list) -> str:
+    heading = str(word or "").strip()
+    phonetic = str(phonetic or "").strip()
+    if phonetic:
+        heading = f"{heading}  {phonetic}".strip()
+
+    blocks: list[str] = []
+    if heading:
+        blocks.append(heading)
+    origin = str(origin or "").strip()
+    if origin:
+        blocks.append(f"Origin: {origin}")
+
+    for entry in entries or []:
+        if not isinstance(entry, dict):
+            continue
+        definitions = entry.get("definitions") or []
+        if not definitions:
+            continue
+        lines = [str(entry.get("partOfSpeech") or "other")]
+        for index, definition in enumerate(definitions, start=1):
+            if not isinstance(definition, dict):
+                continue
+            if index > 1:
+                lines.append("")
+            lines.append(f"{index}. {definition.get('definition') or ''}".rstrip())
+            example = str(definition.get("example") or "").strip()
+            if example:
+                lines.append(f"   \u201C{example}\u201D")
+            synonyms = [
+                str(item).strip()
+                for item in definition.get("synonyms") or []
+                if str(item).strip()
+            ]
+            if synonyms:
+                lines.append("   Synonyms: " + ", ".join(synonyms))
+        blocks.append("\n".join(lines))
+
+    return "\n\n".join(blocks)
+
+
 class _DictionaryWorker(QThread):
     finishedResult = Signal(object)
     failed = Signal(str)
@@ -113,7 +154,7 @@ class _DictionaryWorker(QThread):
     def run(self) -> None:
         try:
             result = _parse_entries(_fetch_entries(self._word))
-        except Exception as error:  # Network, JSON, and validation failures.
+        except Exception as error:
             self.failed.emit(str(error))
             return
         self.finishedResult.emit(result)
@@ -127,6 +168,7 @@ class DictionaryVM(BaseVM):
     phoneticChanged = Signal()
     entriesChanged = Signal()
     originChanged = Signal()
+    outputChanged = Signal()
     hasResultChanged = Signal()
 
     def __init__(self, parent: QObject | None = None) -> None:
@@ -138,6 +180,7 @@ class DictionaryVM(BaseVM):
         self._phonetic = ""
         self._entries: list = []
         self._origin = ""
+        self._output = ""
         self._worker = None
 
     @Property(str, notify=wordChanged)
@@ -172,6 +215,10 @@ class DictionaryVM(BaseVM):
     def origin(self) -> str:
         return self._origin
 
+    @Property(str, notify=outputChanged)
+    def output(self) -> str:
+        return self._output
+
     @Property(bool, notify=hasResultChanged)
     def hasResult(self) -> bool:
         return bool(self._entries)
@@ -181,6 +228,7 @@ class DictionaryVM(BaseVM):
         if value != self._word:
             self._word = value
             self.wordChanged.emit()
+        self._refresh_output()
 
     def _set_status(self, value: str) -> None:
         if value != self._status:
@@ -203,12 +251,14 @@ class DictionaryVM(BaseVM):
         if value != self._phonetic:
             self._phonetic = value
             self.phoneticChanged.emit()
+        self._refresh_output()
 
     def _set_origin(self, value: str) -> None:
         value = value if value is not None else ""
         if value != self._origin:
             self._origin = value
             self.originChanged.emit()
+        self._refresh_output()
 
     def _set_entries(self, value: list) -> None:
         value = list(value or [])
@@ -218,6 +268,13 @@ class DictionaryVM(BaseVM):
             self.entriesChanged.emit()
             if had_result != bool(value):
                 self.hasResultChanged.emit()
+        self._refresh_output()
+
+    def _refresh_output(self) -> None:
+        value = _format_output(self._word, self._phonetic, self._origin, self._entries)
+        if value != self._output:
+            self._output = value
+            self.outputChanged.emit()
 
     @Slot(str)
     def setWord(self, value: str) -> None:
@@ -280,8 +337,3 @@ class DictionaryVM(BaseVM):
         self._set_entries([])
         self._set_error("")
         self._set_status("Ready")
-
-    @Slot()
-    def loadExample(self) -> None:
-        self._set_word("serendipity")
-        self.search()

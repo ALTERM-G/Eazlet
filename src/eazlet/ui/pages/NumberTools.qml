@@ -119,17 +119,16 @@ Item {
 
                 Column {
                     id: contentColumn
-                    width: Math.max(0, parent.width - LayoutMetrics.unit * 1.6)
-                    spacing: LayoutMetrics.spacing.lg
+                    width: parent.width
+                    spacing: LayoutMetrics.spacing.md
 
-                    Row {
+                    Column {
                         width: parent.width
-                        spacing: LayoutMetrics.spacing.md
+                        spacing: LayoutMetrics.spacing.xxs
                         visible: page.modeBase || page.modeBitwise || page.modeGcd
 
                         Label {
                             bold: false
-                            anchors.verticalCenter: parent.verticalCenter
                             text: "Input base"
                             textColor: Theme.textColor
                             pixelSize: Typography.h6
@@ -158,14 +157,13 @@ Item {
                         }
                     }
 
-                    Row {
+                    Column {
                         width: parent.width
-                        spacing: LayoutMetrics.spacing.md
+                        spacing: LayoutMetrics.spacing.xxs
                         visible: (page.modeBase || page.modeBitwise || page.modeGcd) && numberToolsVM.fromBase === "Custom"
 
                         Label {
                             bold: false
-                            anchors.verticalCenter: parent.verticalCenter
                             text: "Custom input base"
                             textColor: Theme.textColor
                             pixelSize: Typography.h6
@@ -179,14 +177,13 @@ Item {
                         }
                     }
 
-                    Row {
+                    Column {
                         width: parent.width
-                        spacing: LayoutMetrics.spacing.md
+                        spacing: LayoutMetrics.spacing.xxs
                         visible: page.modeBase
 
                         Label {
                             bold: false
-                            anchors.verticalCenter: parent.verticalCenter
                             text: "To base"
                             textColor: Theme.textColor
                             pixelSize: Typography.h6
@@ -215,14 +212,13 @@ Item {
                         }
                     }
 
-                    Row {
+                    Column {
                         width: parent.width
-                        spacing: LayoutMetrics.spacing.md
+                        spacing: LayoutMetrics.spacing.xxs
                         visible: page.modeBase && numberToolsVM.toBase === "Custom"
 
                         Label {
                             bold: false
-                            anchors.verticalCenter: parent.verticalCenter
                             text: "Custom base"
                             textColor: Theme.textColor
                             pixelSize: Typography.h6
@@ -256,65 +252,73 @@ Item {
 
                     Row {
                         width: parent.width
-                        spacing: LayoutMetrics.spacing.md
+                        spacing: LayoutMetrics.spacing.lg
                         visible: page.modeBitwise
 
-                        Label {
-                            bold: false
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: "Operation"
-                            textColor: Theme.textColor
-                            pixelSize: Typography.h6
-                        }
-
-                        ComboBox {
+                        Column {
                             width: Math.min(LayoutMetrics.unit * 16, parent.width * 0.3)
-                            model: numberToolsVM.operations
-                            scrollablePopup: true
-                            maxVisibleItems: 10
-                            currentIndex: {
-                                var idx = numberToolsVM.operations.indexOf(numberToolsVM.operation)
-                                return idx >= 0 ? idx : 0
+                            spacing: LayoutMetrics.spacing.xxs
+
+                            Label {
+                                bold: false
+                                text: "Operation"
+                                textColor: Theme.textColor
+                                pixelSize: Typography.h6
                             }
-                            onActivated: function(index) {
-                                if (index >= 0 && index < numberToolsVM.operations.length)
-                                    numberToolsVM.setOperation(numberToolsVM.operations[index])
-                            }
-                            onCurrentIndexChanged: {
-                                if (currentIndex >= 0 && currentIndex < numberToolsVM.operations.length) {
-                                    var op = numberToolsVM.operations[currentIndex]
-                                    if (op && op !== numberToolsVM.operation)
-                                        numberToolsVM.setOperation(op)
+
+                            ComboBox {
+                                width: parent.width
+                                model: numberToolsVM.operations
+                                scrollablePopup: true
+                                maxVisibleItems: 10
+                                currentIndex: {
+                                    var idx = numberToolsVM.operations.indexOf(numberToolsVM.operation)
+                                    return idx >= 0 ? idx : 0
+                                }
+                                onActivated: function(index) {
+                                    if (index >= 0 && index < numberToolsVM.operations.length)
+                                        numberToolsVM.setOperation(numberToolsVM.operations[index])
+                                }
+                                onCurrentIndexChanged: {
+                                    if (currentIndex >= 0 && currentIndex < numberToolsVM.operations.length) {
+                                        var op = numberToolsVM.operations[currentIndex]
+                                        if (op && op !== numberToolsVM.operation)
+                                            numberToolsVM.setOperation(op)
+                                    }
                                 }
                             }
                         }
 
-                        Label {
-                            bold: false
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: "Width"
-                            textColor: Theme.textColor
-                            pixelSize: Typography.h6
-                        }
-
-                        ComboBox {
+                        Column {
                             width: Math.min(LayoutMetrics.unit * 12, parent.width * 0.25)
-                            model: numberToolsVM.bitwiseWidths
-                            scrollablePopup: true
-                            maxVisibleItems: 4
-                            currentIndex: {
-                                var idx = numberToolsVM.bitwiseWidths.indexOf(numberToolsVM.bitwiseWidth)
-                                return idx >= 0 ? idx : 3
+                            spacing: LayoutMetrics.spacing.xxs
+
+                            Label {
+                                bold: false
+                                text: "Width"
+                                textColor: Theme.textColor
+                                pixelSize: Typography.h6
                             }
-                            onActivated: function(index) {
-                                if (index >= 0 && index < numberToolsVM.bitwiseWidths.length)
-                                    numberToolsVM.setBitwiseWidth(numberToolsVM.bitwiseWidths[index])
-                            }
-                            onCurrentIndexChanged: {
-                                if (currentIndex >= 0 && currentIndex < numberToolsVM.bitwiseWidths.length) {
-                                    var width = numberToolsVM.bitwiseWidths[currentIndex]
-                                    if (width && width !== numberToolsVM.bitwiseWidth)
-                                        numberToolsVM.setBitwiseWidth(width)
+
+                            ComboBox {
+                                width: parent.width
+                                model: numberToolsVM.bitwiseWidths
+                                scrollablePopup: true
+                                maxVisibleItems: 4
+                                currentIndex: {
+                                    var idx = numberToolsVM.bitwiseWidths.indexOf(numberToolsVM.bitwiseWidth)
+                                    return idx >= 0 ? idx : 3
+                                }
+                                onActivated: function(index) {
+                                    if (index >= 0 && index < numberToolsVM.bitwiseWidths.length)
+                                        numberToolsVM.setBitwiseWidth(numberToolsVM.bitwiseWidths[index])
+                                }
+                                onCurrentIndexChanged: {
+                                    if (currentIndex >= 0 && currentIndex < numberToolsVM.bitwiseWidths.length) {
+                                        var width = numberToolsVM.bitwiseWidths[currentIndex]
+                                        if (width && width !== numberToolsVM.bitwiseWidth)
+                                            numberToolsVM.setBitwiseWidth(width)
+                                    }
                                 }
                             }
                         }
@@ -359,7 +363,7 @@ Item {
                     }
 
                     ProgressBar {
-                        width: Math.min(parent.width, LayoutMetrics.unit * 50)
+                        width: Math.min(parent.width * 0.8, LayoutMetrics.unit * 60)
                         anchors.horizontalCenter: parent.horizontalCenter
                         visible: page.modeFactors && (numberToolsVM.computing || numberToolsVM.progress > 0)
                         value: numberToolsVM.progress

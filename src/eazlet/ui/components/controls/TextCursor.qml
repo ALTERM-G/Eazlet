@@ -7,7 +7,7 @@ Rectangle {
     property rect cursorRect: Qt.rect(0, 0, 0, 0)
     property bool overwrite: false
     property font font
-    property real heightScale: 1.2
+    property real heightScale: 1.0
 
     readonly property real thickness: Math.max(1, LayoutMetrics.border.m)
     readonly property real blockWidth: glyphMetrics.advanceWidth

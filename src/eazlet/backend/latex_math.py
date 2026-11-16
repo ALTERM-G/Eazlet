@@ -119,6 +119,20 @@ _FUNCTIONS = {
     "tanh": "tanh",
 }
 
+# \sin^{-1} is inverse sine in standard notation, not the reciprocal.
+# Only the -1 exponent is special-cased; \sin^2 x still means (sin x)^2.
+_INVERSE_FUNCTIONS = {
+    "sin": "asin",
+    "cos": "acos",
+    "tan": "atan",
+    "cot": "acot",
+    "sec": "asec",
+    "csc": "acsc",
+    "sinh": "asinh",
+    "cosh": "acosh",
+    "tanh": "atanh",
+}
+
 _BARE_NAME_HINTS = (
     set(_FUNCTIONS)
     | set(_CONSTANTS)
@@ -146,10 +160,14 @@ _UNSUPPORTED_COMMANDS = {
     "tfrac": "",
 }
 
-_DIFFERENTIAL_RE = re.compile(
+_DIFFERENTIAL_PATTERN = (
     r"(?:\\mathrm\s*\{\s*d\s*\}|\\text\s*\{\s*d\s*\}|d)"
-    r"\s*(?P<var>\\[A-Za-z]+|[A-Za-z])\s*$"
+    r"\s*(?P<var>\\[A-Za-z]+|[A-Za-z])"
 )
+_DIFFERENTIAL_RE = re.compile(_DIFFERENTIAL_PATTERN + r"\s*$")
+# Used to detect a differential that is followed by more text, which used to be
+# swallowed into the integrand and produced a silently wrong answer.
+_TRAILING_DIFFERENTIAL_RE = re.compile(_DIFFERENTIAL_PATTERN)
 _TRAILING_SPACING_RE = re.compile(r"(?:\\[,;:!]|\\quad|\\qquad)\s*$")
 
 # Leibniz notation such as \frac{d}{dx} x^2 or \frac{\mathrm{d}}{\mathrm{d}x}.
@@ -348,6 +366,15 @@ def _tokenize(source: str) -> list[tuple[str, str]]:
         raise LatexParseError(f"Unsupported character '{character}' in LaTeX input")
 
     return tokens
+
+
+def _is_minus_one(expression: str) -> bool:
+    """Return True when an exponent is exactly -1, ignoring outer brackets."""
+
+    text = expression.strip()
+    while len(text) >= 2 and text[0] == "(" and text[-1] == ")":
+        text = text[1:-1].strip()
+    return text == "-1"
 
 
 class _LatexParser:
@@ -571,6 +598,9 @@ class _LatexParser:
             self._take()
             power = self._parse_power_argument()
         argument = self._parse_function_argument()
+        inverse = _INVERSE_FUNCTIONS.get(target)
+        if inverse is not None and power is not None and _is_minus_one(power):
+            return f"{inverse}({argument})"
         base = f"{target}({argument})"
         if power is None:
             return base
@@ -716,6 +746,20 @@ def _split_differential(body: str) -> tuple[str, str | None]:
         if previous and (previous.isalnum() or previous == "\\"):
             continue
         return _strip_trailing_spacing(body[: match.start()]), match.group("var")
+
+    # A differential followed by more text is ambiguous. The old behaviour was
+    # to treat the whole remainder as the integrand, so "\int x dx + 1" became
+    # the integral of "x*d*x + 1" and returned a confidently wrong answer.
+    for match in _TRAILING_DIFFERENTIAL_RE.finditer(body):
+        previous = body[match.start() - 1] if match.start() > 0 else ""
+        if previous and (previous.isalnum() or previous == "\\"):
+            continue
+        if body[match.end() :].strip():
+            raise LatexParseError(
+                "Text after the differential is not supported. Put the whole "
+                "integrand before dx, for example \\int (x + 1) \\, dx."
+            )
+
     return _strip_trailing_spacing(body), None
 
 

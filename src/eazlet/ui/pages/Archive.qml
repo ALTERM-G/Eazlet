@@ -14,6 +14,25 @@ Item {
             archiveVM.compress()
     }
 
+    function fileBadge(item) {
+        if (!item || !item.name)
+            return "?"
+        if (item.isDir)
+            return "DIR"
+        var dot = item.name.lastIndexOf(".")
+        if (dot <= 0 || dot === item.name.length - 1)
+            return "FILE"
+        var ext = item.name.substring(dot + 1).toUpperCase()
+        return ext.length > 4 ? ext.substring(0, 4) : ext
+    }
+
+    function parentPath(path) {
+        if (!path)
+            return ""
+        var idx = path.lastIndexOf("/")
+        return idx > 0 ? path.substring(0, idx) : path
+    }
+
     Surface {
         anchors.centerIn: parent
         width: parent.width * 0.9
@@ -46,9 +65,9 @@ Item {
 
             Column {
                 id: archColumn
-                width: Math.max(0, parent.width - LayoutMetrics.unit * 1.6)
+                width: parent.width
                 x: Math.max(0, (parent.width - width) / 2)
-                spacing: LayoutMetrics.spacing.lg
+                spacing: LayoutMetrics.spacing.md
 
                 Title {
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -77,63 +96,200 @@ Item {
                     width: parent.width
                     title: "Drop files or folders here"
                     description: "Add files to compress, or an archive to extract"
-                    hint: "Drag and drop files or folders, or click to browse files"
+                    hint: "Drag and drop one or more files or folders, or click to browse files"
                     onClicked: fileDialog.open()
                     onFilesDropped: function(urls) {
-                        for (var i = 0; i < urls.length; i++)
-                            archiveVM.addFile(urls[i])
+                        archiveVM.addFiles(urls)
                     }
                 }
 
                 FileDialog {
                     id: fileDialog
-                    title: "Select files to add"
+                    title: "Select one or more files to add"
                     fileMode: FileDialog.OpenFiles
                     onAccepted: {
-                        for (var i = 0; i < selectedFiles.length; i++)
-                            archiveVM.addFile(selectedFiles[i].toString())
+                        var files = selectedFiles && selectedFiles.length > 0
+                                ? selectedFiles
+                                : (selectedFile ? [selectedFile] : [])
+                        archiveVM.addFiles(files)
                     }
                 }
 
-                Row {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: LayoutMetrics.spacing.sm
-                    Button { buttonText: "Clear"; iconPath: SVGLibrary.eraser; onPressed: archiveVM.clearFiles() }
-                    Label {
-                        bold: false
-                        text: archiveVM.files.length + " item(s)"
-                        textColor: Theme.textColor
-                        pixelSize: Typography.h6
-                    }
-                }
-
-                ListView {
+                Rectangle {
+                    id: filesCard
                     width: parent.width
-                    height: 150
-                    model: archiveVM.files
+                    // Keep the whole block out of the layout until there is
+                    // something to show; otherwise it leaves a large gap
+                    // between the drop zone and the format controls.
+                    visible: archiveVM.files.length > 0
+                    height: visible ? filesColumn.implicitHeight
+                                      + LayoutMetrics.spacing.md * 2 : 0
+                    radius: LayoutMetrics.radius.m
+                    color: Theme.inputBackgroundColor
+                    border.color: Theme.borderColor
+                    border.width: LayoutMetrics.border.l
                     clip: true
-                    delegate: Rectangle {
-                        width: parent.width
-                        height: 30
-                        color: index % 2 === 0 ? Theme.backgroundColor : Theme.inputBackgroundColor
-                        Row {
-                            anchors.fill: parent
-                            anchors.margins: LayoutMetrics.spacing.sm
+
+                    Column {
+                        id: filesColumn
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: LayoutMetrics.spacing.md
+                        spacing: LayoutMetrics.spacing.sm
+
+                        RowLayout {
+                            width: parent.width
                             spacing: LayoutMetrics.spacing.sm
+
                             Label {
-                                bold: false
-                                text: modelData.name
+                                text: "Files"
                                 textColor: Theme.textColor
-                                pixelSize: Typography.h6
-                                width: parent.width * 0.8
-                                elide: Text.ElideMiddle
+                                pixelSize: Typography.h5
                             }
+
+                            Label {
+                                Layout.fillWidth: true
+                                Layout.minimumWidth: 0
+                                bold: false
+                                text: archiveVM.files.length
+                                      + (archiveVM.files.length === 1 ? " item" : " items")
+                                textColor: Theme.dividerColor
+                                pixelSize: Typography.h6
+                                elide: Text.ElideRight
+                            }
+
                             IconButton {
-                                anchors.verticalCenter: parent.verticalCenter
+                                id: clearFilesButton
+                                Layout.alignment: Qt.AlignVCenter
                                 buttonWidth: LayoutMetrics.size.iconS
                                 buttonHeight: LayoutMetrics.size.iconS
-                                iconPath: SVGLibrary.cross
-                                onPressed: archiveVM.removeFile(index)
+                                iconPath: SVGLibrary.eraser
+                                onPressed: archiveVM.clearFiles()
+
+                                ToolTip {
+                                    text: "Clear all files"
+                                    visible: clearFilesButton.hovered
+                                    delay: 600
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            width: parent.width
+                            height: LayoutMetrics.spacing.xxs
+                            color: Theme.dividerColor
+                        }
+
+                        ListView {
+                            id: filesList
+                            readonly property real rowHeight: LayoutMetrics.unit * 6.25
+
+                            width: parent.width
+                            height: Math.min(archiveVM.files.length * rowHeight,
+                                             LayoutMetrics.unit * 25)
+                            model: archiveVM.files
+                            clip: true
+                            interactive: contentHeight > height
+                            boundsBehavior: Flickable.StopAtBounds
+                            ScrollBar.vertical: AppScrollBar {}
+
+                            delegate: Item {
+                                id: fileRow
+
+                                readonly property bool hovered: rowMouse.containsMouse
+
+                                width: ListView.view.width
+                                height: filesList.rowHeight
+
+                                MouseArea {
+                                    id: rowMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    acceptedButtons: Qt.NoButton
+                                }
+
+                                Rectangle {
+                                    anchors.fill: parent
+                                    anchors.margins: LayoutMetrics.spacing.xxs
+                                    radius: LayoutMetrics.radius.s
+                                    color: fileRow.hovered
+                                           ? Theme.backgroundColor : "transparent"
+
+                                    Behavior on color {
+                                        enabled: LayoutMetrics.animationsEnabled
+                                        ColorAnimation { duration: 120 }
+                                    }
+                                }
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: LayoutMetrics.spacing.sm
+                                    // Keep the remove button off the card edge so
+                                    // it does not look glued to the hover row.
+                                    anchors.rightMargin: LayoutMetrics.spacing.md
+                                    spacing: LayoutMetrics.spacing.sm
+
+                                    Rectangle {
+                                        Layout.alignment: Qt.AlignVCenter
+                                        Layout.preferredWidth: LayoutMetrics.unit * 4.2
+                                        Layout.preferredHeight: LayoutMetrics.unit * 3.4
+                                        radius: LayoutMetrics.radius.s
+                                        color: Theme.backgroundColor
+                                        border.color: Theme.borderColor
+                                        border.width: LayoutMetrics.border.m
+
+                                        Label {
+                                            anchors.centerIn: parent
+                                            bold: false
+                                            text: page.fileBadge(modelData)
+                                            textColor: modelData.isDir
+                                                       ? Theme.themeColor : Theme.dividerColor
+                                            pixelSize: Typography.caption
+                                        }
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        Layout.minimumWidth: 0
+                                        spacing: 0
+
+                                        Label {
+                                            Layout.fillWidth: true
+                                            Layout.minimumWidth: 0
+                                            bold: false
+                                            text: modelData.name
+                                            textColor: Theme.textColor
+                                            pixelSize: Typography.h5
+                                            elide: Text.ElideMiddle
+                                        }
+
+                                        Label {
+                                            Layout.fillWidth: true
+                                            Layout.minimumWidth: 0
+                                            bold: false
+                                            text: page.parentPath(modelData.path)
+                                            textColor: Theme.dividerColor
+                                            pixelSize: Typography.caption
+                                            elide: Text.ElideMiddle
+                                        }
+                                    }
+
+                                    IconButton {
+                                        id: removeFileButton
+                                        Layout.alignment: Qt.AlignVCenter
+                                        buttonWidth: LayoutMetrics.size.iconS
+                                        buttonHeight: LayoutMetrics.size.iconS
+                                        iconPath: SVGLibrary.cross
+                                        onPressed: archiveVM.removeFile(index)
+
+                                        ToolTip {
+                                            text: "Remove"
+                                            visible: removeFileButton.hovered
+                                            delay: 600
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -141,43 +297,51 @@ Item {
 
                 Row {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: LayoutMetrics.spacing.md
-                    Label {
-                        bold: false
-                        text: "Format:"
-                        textColor: Theme.textColor
-                        pixelSize: Typography.h6
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                    ComboBox {
-                        width: 150
-                        model: ["zip", "tar.gz", "tar.xz", "tar.bz2"]
-                        scrollablePopup: true
-                        maxVisibleItems: 10
-                        currentIndex: {
-                            var idx = model.indexOf(archiveVM.format)
-                            return idx >= 0 ? idx : 0
+                    spacing: LayoutMetrics.spacing.lg
+
+                    Column {
+                        spacing: LayoutMetrics.spacing.xxs
+
+                        Label {
+                            bold: false
+                            text: "Format"
+                            textColor: Theme.textColor
+                            pixelSize: Typography.h6
                         }
-                        onCurrentTextChanged: {
-                            if (currentText && currentText !== archiveVM.format) {
-                                archiveVM.format = currentText
+                        ComboBox {
+                            width: 150
+                            model: ["zip", "tar.gz", "tar.xz", "tar.bz2"]
+                            scrollablePopup: true
+                            maxVisibleItems: 10
+                            currentIndex: {
+                                var idx = model.indexOf(archiveVM.format)
+                                return idx >= 0 ? idx : 0
+                            }
+                            onCurrentTextChanged: {
+                                if (currentText && currentText !== archiveVM.format) {
+                                    archiveVM.format = currentText
+                                }
                             }
                         }
                     }
-                    Label {
-                        bold: false
-                        text: "Compression:"
-                        textColor: Theme.textColor
-                        pixelSize: Typography.h6
-                        anchors.verticalCenter: parent.verticalCenter
+
+                    Column {
+                        spacing: LayoutMetrics.spacing.xxs
                         visible: archiveVM.format === "zip"
-                    }
-                    SpinBox {
-                        from: 1
-                        to: 9
-                        value: archiveVM.compressionLevel
-                        visible: archiveVM.format === "zip"
-                        onValueChanged: archiveVM.compressionLevel = value
+
+                        Label {
+                            bold: false
+                            text: "Compression"
+                            textColor: Theme.textColor
+                            pixelSize: Typography.h6
+                        }
+                        SpinBox {
+                            from: 1
+                            to: 9
+                            stepSize: 1
+                            value: archiveVM.compressionLevel
+                            onValueChanged: archiveVM.compressionLevel = value
+                        }
                     }
                 }
 
@@ -222,7 +386,7 @@ Item {
                 }
 
                 ProgressBar {
-                    width: Math.min(parent.width, LayoutMetrics.unit * 50)
+                    width: Math.min(parent.width * 0.8, LayoutMetrics.unit * 60)
                     anchors.horizontalCenter: parent.horizontalCenter
                     value: archiveVM.progress
                     visible: archiveVM.compressing || archiveVM.extracting || archiveVM.progress >= 1.0

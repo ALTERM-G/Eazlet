@@ -25,6 +25,7 @@ Item {
         noRecentsLabel: "No recent fonts yet"
         nothingSelectedLabel: "No font selected"
         previewPlaceholderText: "Select a font from the list"
+        showPreview: false
         previewProvider: function(item, text) {
             return asciiArtVM.preview(item, text)
         }
@@ -68,9 +69,9 @@ Item {
 
             Column {
                 id: contentColumn
-                width: Math.max(0, parent.width - LayoutMetrics.unit * 1.6)
+                width: parent.width
                 x: Math.max(0, (parent.width - width) / 2)
-                spacing: LayoutMetrics.spacing.lg
+                spacing: LayoutMetrics.spacing.md
 
                 Title {
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -95,13 +96,12 @@ Item {
                     color: Theme.dividerColor
                 }
 
-                Row {
+                Column {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: LayoutMetrics.spacing.md
+                    spacing: LayoutMetrics.spacing.xxs
 
                     Label {
                         bold: false
-                        anchors.verticalCenter: parent.verticalCenter
                         text: "Font"
                         textColor: Theme.textColor
                         pixelSize: Typography.h6

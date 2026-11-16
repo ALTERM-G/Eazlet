@@ -37,6 +37,7 @@ Rectangle {
             case "math": return SVGLibrary.math
             case "generators": return SVGLibrary.generators
             case "dictionary": return SVGLibrary.dictionary
+            case "colors": return SVGLibrary.colors
             case "settings": return SVGLibrary.settings
             case "info": return SVGLibrary.info
             default: return ""
@@ -161,7 +162,8 @@ Rectangle {
                     { label: "Number Tools", icon: "numberTools" },
                     { label: "Math", icon: "math" },
                     { label: "Generators", icon: "generators" },
-                    { label: "Dictionary", icon: "dictionary" }
+                    { label: "Dictionary", icon: "dictionary" },
+                    { label: "Colors", icon: "colors" }
                 ]
 
                 delegate: SideBarItem {

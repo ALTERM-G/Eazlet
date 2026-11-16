@@ -32,8 +32,6 @@ _DECIMAL_RE = re.compile(r"(?:\d+\.\d*|\.\d+)")
 
 # Inputs are LaTeX. The parser converts them to the small plain expression
 # language understood by the restricted SymPy parser below.
-SAMPLE_EXPRESSION = r"\frac{x^2 - 1}{x - 1}"
-
 MATH_MODES = [
     "Simplify",
     "Expand",
@@ -45,17 +43,6 @@ MATH_MODES = [
     "LaTeX → PNG",
 ]
 LATEX_MODE = "LaTeX → PNG"
-
-SAMPLE_EXPRESSIONS = {
-    "Simplify": r"\frac{x^2 - 1}{x - 1}",
-    "Expand": r"(x + 1)^3",
-    "Factor": r"x^2 - 1",
-    "Solve": r"x^2 - 4 = 0",
-    "Derivative": r"x^3 - 3x + 2",
-    "Integral": r"\int x\sin(x) \, dx",
-    "Limit": r"\frac{\sin(x)}{x}",
-}
-SAMPLE_LATEX = r"\frac{x^2 - 1}{x - 1} = x + 1"
 
 _ACTION_LABELS = {
     "Simplify": "Simplify",
@@ -227,6 +214,9 @@ def _function_table(sympy) -> dict:
         "asin": sympy.asin,
         "acos": sympy.acos,
         "atan": sympy.atan,
+        "acot": sympy.acot,
+        "asec": sympy.asec,
+        "acsc": sympy.acsc,
         "sinh": sympy.sinh,
         "cosh": sympy.cosh,
         "tanh": sympy.tanh,
@@ -367,11 +357,27 @@ def _format_latex(sympy, expression) -> str:
     return sympy.latex(expression)
 
 
+def _factor_rational(sympy, expression):
+    """Factor the numerator and denominator of a rational expression.
+
+    ``sympy.simplify`` cancels common factors but often leaves the surviving
+    polynomials expanded. Factoring them produces the tidy form users expect
+    from Simplify, for example ``x(x^2 - 9)/(x^3 - 2x^2 - 4x + 8)`` becoming
+    ``x(x - 3)(x + 3)/((x - 2)^2 (x + 2))``. Non-rational results are returned
+    unchanged.
+    """
+
+    numerator, denominator = expression.as_numer_denom()
+    if denominator == 1:
+        return expression
+    return sympy.factor(numerator) / sympy.factor(denominator)
+
+
 def _simplify_expression(text: str) -> tuple[str, str]:
     expression = parse_latex_expression(text)
     sympy = _import_sympy()
     parsed = _parse_expression(sympy, expression)
-    simplified = sympy.simplify(parsed)
+    simplified = _factor_rational(sympy, sympy.simplify(parsed))
     return text.strip(), _format_latex(sympy, simplified)
 
 
@@ -445,6 +451,31 @@ def _integrate_expression(text: str, variable: str = "x") -> tuple[str, str]:
     return text.strip(), f"{_format_latex(sympy, result)} + C"
 
 
+def _limits_agree(sympy, left, right) -> bool:
+    if left == right:
+        return True
+    try:
+        return sympy.simplify(left - right) == 0
+    except Exception:
+        return False
+
+
+def _is_oscillating(sympy, value) -> bool:
+    accum_bounds = getattr(sympy, "AccumBounds", None)
+    return accum_bounds is not None and value.has(accum_bounds)
+
+
+def _two_sided_limit_message(sympy, symbol, point, left, right) -> str:
+    variable = sympy.latex(symbol)
+    target = sympy.latex(point)
+    return (
+        r"\text{Does not exist}\quad\left("
+        rf"\lim_{{{variable} \to {target}^-}} = {sympy.latex(left)},\; "
+        rf"\lim_{{{variable} \to {target}^+}} = {sympy.latex(right)}"
+        r"\right)"
+    )
+
+
 def _limit_expression(text: str, variable: str = "x", point: str = "0") -> tuple[str, str]:
     expression = parse_latex_expression(text)
     variable = parse_latex_variable(variable)
@@ -452,8 +483,28 @@ def _limit_expression(text: str, variable: str = "x", point: str = "0") -> tuple
     sympy = _import_sympy()
     parsed = _parse_expression(sympy, expression)
     point_expression = _parse_expression(sympy, point_text)
-    result = sympy.limit(parsed, sympy.Symbol(variable), point_expression)
-    return text.strip(), _format_latex(sympy, result)
+    symbol = sympy.Symbol(variable)
+
+    # SymPy's default direction is one-sided ("+"). At an infinite point, or
+    # when the point is symbolic, there is no "other side" to compare, so keep
+    # the single call.
+    if point_expression.is_infinite or not point_expression.is_number:
+        result = sympy.limit(parsed, symbol, point_expression)
+        return text.strip(), _format_latex(sympy, result)
+
+    # At a finite point, a two-sided limit only exists when both one-sided
+    # limits agree. \frac{1}{x} at 0 used to be reported as \infty.
+    right = sympy.limit(parsed, symbol, point_expression, "+")
+    left = sympy.limit(parsed, symbol, point_expression, "-")
+    if (
+        _is_oscillating(sympy, left)
+        or _is_oscillating(sympy, right)
+        or not _limits_agree(sympy, left, right)
+    ):
+        return text.strip(), _two_sided_limit_message(
+            sympy, symbol, point_expression, left, right
+        )
+    return text.strip(), _format_latex(sympy, left)
 
 
 def _prepare_math_input(mode: str, text: str, variable: str, point: str) -> None:
@@ -1266,22 +1317,3 @@ class MathVM(BaseVM):
         self._set_error("")
         self._set_status("Ready")
 
-    @Slot()
-    def loadExample(self) -> None:
-        if self._computing or self._latex_rendering:
-            return
-
-        if self._mode == LATEX_MODE:
-            self.latexSource = SAMPLE_LATEX
-            self._latex_png = b""
-            self._set_latex_image_source("")
-            self._set_latex_dimensions("")
-            self._set_latex_error("")
-            self._set_latex_saved_message("")
-            self._set_latex_status("Ready")
-            return
-
-        self.expression = SAMPLE_EXPRESSIONS.get(self._mode, SAMPLE_EXPRESSION)
-        self._set_result("")
-        self._set_error("")
-        self._set_status("Ready")

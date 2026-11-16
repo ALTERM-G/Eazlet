@@ -301,3 +301,59 @@ def test_txt_to_pdf_conversion(vm, tmp_path, qapp):
     assert output.read_bytes().startswith(b"%PDF")
     assert vm.status == "Done"
     assert vm.error == ""
+
+
+def test_replace_original_removes_source_and_keeps_new_file(vm, tmp_path):
+    source = tmp_path / "notes.txt"
+    source.write_text("hello", encoding="utf-8")
+    output_dir = tmp_path / "output"
+    vm.outputDir = str(output_dir)
+    vm.addFile(str(source))
+    vm.targetFormat = "html"
+    vm.replaceOriginal = True
+
+    vm.convert()
+
+    output = tmp_path / "notes.html"
+    assert not source.exists()
+    assert output.exists()
+    assert "hello" in output.read_text(encoding="utf-8")
+    assert not output_dir.exists()
+    assert vm.files[0]["path"] == str(output)
+    assert vm.files[0]["name"] == "notes.html"
+    assert vm.sourceFormat == "html"
+    assert vm.status == "Done"
+
+
+def test_replace_original_keeps_existing_file_with_the_target_name(vm, tmp_path):
+    source = tmp_path / "notes.txt"
+    source.write_text("new", encoding="utf-8")
+    existing = tmp_path / "notes.html"
+    existing.write_text("old", encoding="utf-8")
+    vm.addFile(str(source))
+    vm.targetFormat = "html"
+    vm.replaceOriginal = True
+
+    vm.convert()
+
+    assert not source.exists()
+    assert existing.read_text(encoding="utf-8") == "old"
+    converted = tmp_path / "notes (1).html"
+    assert converted.exists()
+    assert vm.files[0]["path"] == str(converted)
+    assert vm.status == "Done"
+
+
+def test_copy_mode_keeps_the_source_file(vm, tmp_path):
+    source = tmp_path / "notes.txt"
+    source.write_text("hello", encoding="utf-8")
+    output_dir = tmp_path / "output"
+    vm.outputDir = str(output_dir)
+    vm.addFile(str(source))
+    vm.targetFormat = "html"
+
+    vm.convert()
+
+    assert source.exists()
+    assert (output_dir / "notes.html").exists()
+    assert vm.files[0]["path"] == str(source)

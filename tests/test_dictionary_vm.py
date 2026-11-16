@@ -138,6 +138,21 @@ def test_vm_reports_fetch_failure(monkeypatch, qtbot):
     assert "No definitions" in vm.error
 
 
+def test_format_output_renders_a_single_selectable_block():
+    result = _parse_entries(SAMPLE_PAYLOAD)
+
+    text = dictionary_vm._format_output(
+        result["word"], result["phonetic"], result["origin"], result["entries"]
+    )
+
+    assert text.splitlines()[0] == "hello  həˈləʊ"
+    assert "Origin: early 19th century" in text
+    assert "\nnoun\n1. an utterance of hello" in text
+    assert '   \u201Cshe said hello\u201D' in text
+    assert "   Synonyms: greeting" in text
+    assert "\nverb\n1. say hello to" in text
+
+
 def test_vm_searches_in_worker(monkeypatch, qtbot):
     monkeypatch.setattr(
         dictionary_vm, "_fetch_entries", lambda word: SAMPLE_PAYLOAD
@@ -158,6 +173,8 @@ def test_vm_searches_in_worker(monkeypatch, qtbot):
     assert vm.origin == "early 19th century"
     assert vm.entries[0]["partOfSpeech"] == "noun"
     assert len(vm.entries[0]["definitions"]) == 2
+    assert vm.output.startswith("hello  həˈləʊ")
+    assert "1. an utterance of hello" in vm.output
 
 
 def test_vm_trims_the_search_word(monkeypatch, qtbot):
@@ -180,7 +197,7 @@ def test_vm_trims_the_search_word(monkeypatch, qtbot):
     assert vm.word == "hello"
 
 
-def test_vm_clear_and_example(monkeypatch, qtbot):
+def test_vm_clear(monkeypatch, qtbot):
     monkeypatch.setattr(
         dictionary_vm,
         "_fetch_entries",
@@ -188,7 +205,8 @@ def test_vm_clear_and_example(monkeypatch, qtbot):
     )
 
     vm = DictionaryVM()
-    vm.loadExample()
+    vm.setWord("serendipity")
+    vm.search()
 
     with qtbot.waitSignal(vm.hasResultChanged, timeout=5000):
         pass
@@ -203,5 +221,6 @@ def test_vm_clear_and_example(monkeypatch, qtbot):
     assert vm.hasResult is False
     assert vm.phonetic == ""
     assert vm.origin == ""
+    assert vm.output == ""
     assert vm.error == ""
     assert vm.status == "Ready"

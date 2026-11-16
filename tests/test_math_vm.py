@@ -48,6 +48,17 @@ def test_simplify_combines_fractions():
     assert _simplify_expression(r"\frac{1}{x} + \frac{1}{y}")[1] == r"\frac{x + y}{x y}"
 
 
+def test_simplify_factors_rational_result():
+    original = (
+        r"\frac{x^2-5x+6}{x^2-9}\times\frac{x^2+6x+9}{x^2-4x+4}"
+        r"\div\frac{x^2-4}{x^2-3x}"
+    )
+    assert _simplify_expression(original)[1] == (
+        r"\frac{x \left(x - 3\right) \left(x + 3\right)}"
+        r"{\left(x - 2\right)^{2} \left(x + 2\right)}"
+    )
+
+
 def test_simplify_greek_letters():
     assert _simplify_expression(r"2\alpha + \alpha")[1] == r"3 \alpha"
 
@@ -138,10 +149,9 @@ def test_vm_reports_validation_errors_without_starting_worker():
     assert vm.status == "Error"
 
 
-def test_vm_clear_and_example():
+def test_vm_clear():
     vm = MathVM()
-    vm.loadExample()
-    assert vm.expression == r"\frac{x^2 - 1}{x - 1}"
+    vm.setExpression("x^2")
     vm.clear()
     assert vm.expression == ""
     assert vm.result == ""
@@ -184,6 +194,13 @@ def test_differentiate_expression():
     assert _differentiate_expression(r"\sin(x)", "x")[1] == r"\cos{\left(x \right)}"
 
 
+def test_differentiate_inverse_sine_notation():
+    # \sin^{-1} x is arcsin x, not 1/sin x.
+    assert _differentiate_expression(r"\sin^{-1}(x)", "x")[1] == (
+        r"\frac{1}{\sqrt{1 - x^{2}}}"
+    )
+
+
 def test_integrate_expression_adds_constant():
     assert _integrate_expression(r"\int x \, dx", "x")[1] == r"\frac{x^{2}}{2} + C"
 
@@ -212,6 +229,21 @@ def test_integrate_requires_both_bounds():
 def test_limit_expression():
     assert _limit_expression(r"\frac{\sin(x)}{x}", "x", "0")[1] == "1"
     assert _limit_expression(r"\frac{1}{x}", "x", r"\infty")[1] == "0"
+
+
+def test_two_sided_limit_does_not_exist():
+    result = _limit_expression(r"\frac{1}{x}", "x", "0")[1]
+    assert result.startswith(r"\text{Does not exist}")
+    assert r"\lim_{x \to 0^-} = -\infty" in result
+    assert r"\lim_{x \to 0^+} = \infty" in result
+
+
+def test_two_sided_limit_agrees_for_even_pole():
+    assert _limit_expression(r"\frac{1}{x^2}", "x", "0")[1] == r"\infty"
+
+
+def test_two_sided_limit_agrees_at_removable_singularity():
+    assert _limit_expression(r"\frac{\sin(x)}{x}", "x", "0")[1] == "1"
 
 
 def test_compute_math_rejects_unknown_mode():

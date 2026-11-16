@@ -113,8 +113,8 @@ Item {
 
                 Column {
                     id: contentColumn
-                    width: Math.max(0, parent.width - LayoutMetrics.unit * 1.6)
-                    spacing: LayoutMetrics.spacing.lg
+                    width: parent.width
+                    spacing: LayoutMetrics.spacing.md
 
                     // Password ------------------------------------------------
                     Column {
@@ -132,32 +132,35 @@ Item {
                             wrapMode: Text.WordWrap
                         }
 
-                        Row {
+                        Column {
                             width: parent.width
-                            spacing: LayoutMetrics.spacing.md
+                            spacing: LayoutMetrics.spacing.xxs
 
                             Label {
                                 bold: false
-                                anchors.verticalCenter: parent.verticalCenter
                                 text: "Length"
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
                             }
 
-                            SpinBox {
-                                from: 8
-                                to: 128
-                                stepSize: 1
-                                value: generatorsVM.passwordLength
-                                onValueChanged: generatorsVM.passwordLength = value
-                            }
+                            Row {
+                                spacing: LayoutMetrics.spacing.md
 
-                            Label {
-                                bold: false
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: "characters"
-                                textColor: Theme.dividerColor
-                                pixelSize: Typography.h6
+                                SpinBox {
+                                    from: 8
+                                    to: 128
+                                    stepSize: 1
+                                    value: generatorsVM.passwordLength
+                                    onValueChanged: generatorsVM.passwordLength = value
+                                }
+
+                                Label {
+                                    bold: false
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: "characters"
+                                    textColor: Theme.dividerColor
+                                    pixelSize: Typography.h6
+                                }
                             }
                         }
 
@@ -279,51 +282,58 @@ Item {
                         }
 
                         Row {
-                            width: parent.width
-                            spacing: LayoutMetrics.spacing.md
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            spacing: LayoutMetrics.spacing.lg
 
-                            Label {
-                                bold: false
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: "Type"
-                                textColor: Theme.textColor
-                                pixelSize: Typography.h6
-                            }
+                            Column {
+                                width: Math.min(LayoutMetrics.unit * 22, contentColumn.width * 0.3)
+                                spacing: LayoutMetrics.spacing.xxs
 
-                            ComboBox {
-                                id: loremTypeCombo
-                                width: Math.min(LayoutMetrics.unit * 22, parent.width * 0.3)
-                                model: generatorsVM.loremTypes
-                                currentIndex: {
-                                    var idx = generatorsVM.loremTypes.indexOf(generatorsVM.loremType)
-                                    return idx >= 0 ? idx : 0
+                                Label {
+                                    bold: false
+                                    text: "Type"
+                                    textColor: Theme.textColor
+                                    pixelSize: Typography.h6
                                 }
-                                onCurrentIndexChanged: {
-                                    if (currentIndex >= 0
-                                            && currentIndex < generatorsVM.loremTypes.length) {
-                                        var type = generatorsVM.loremTypes[currentIndex]
-                                        if (type && type !== generatorsVM.loremType) {
-                                            generatorsVM.loremType = type
-                                            generatorsVM.generateLorem()
+
+                                ComboBox {
+                                    id: loremTypeCombo
+                                    width: parent.width
+                                    model: generatorsVM.loremTypes
+                                    currentIndex: {
+                                        var idx = generatorsVM.loremTypes.indexOf(generatorsVM.loremType)
+                                        return idx >= 0 ? idx : 0
+                                    }
+                                    onCurrentIndexChanged: {
+                                        if (currentIndex >= 0
+                                                && currentIndex < generatorsVM.loremTypes.length) {
+                                            var type = generatorsVM.loremTypes[currentIndex]
+                                            if (type && type !== generatorsVM.loremType) {
+                                                generatorsVM.loremType = type
+                                                generatorsVM.generateLorem()
+                                            }
                                         }
                                     }
                                 }
                             }
 
-                            Label {
-                                bold: false
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: "Amount"
-                                textColor: Theme.textColor
-                                pixelSize: Typography.h6
-                            }
+                            Column {
+                                spacing: LayoutMetrics.spacing.xxs
 
-                            SpinBox {
-                                from: 1
-                                to: generatorsVM.loremMaxAmount
-                                stepSize: 1
-                                value: generatorsVM.loremAmount
-                                onValueChanged: generatorsVM.loremAmount = value
+                                Label {
+                                    bold: false
+                                    text: "Amount"
+                                    textColor: Theme.textColor
+                                    pixelSize: Typography.h6
+                                }
+
+                                SpinBox {
+                                    from: 1
+                                    to: generatorsVM.loremMaxAmount
+                                    stepSize: 1
+                                    value: generatorsVM.loremAmount
+                                    onValueChanged: generatorsVM.loremAmount = value
+                                }
                             }
                         }
 
@@ -452,12 +462,11 @@ Item {
                             width: parent.width
                             spacing: LayoutMetrics.spacing.md
 
-                            Row {
-                                spacing: LayoutMetrics.spacing.md
+                            Column {
+                                spacing: LayoutMetrics.spacing.xxs
 
                                 Label {
                                     bold: false
-                                    anchors.verticalCenter: parent.verticalCenter
                                     text: "Minimum"
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
@@ -472,12 +481,11 @@ Item {
                                 }
                             }
 
-                            Row {
-                                spacing: LayoutMetrics.spacing.md
+                            Column {
+                                spacing: LayoutMetrics.spacing.xxs
 
                                 Label {
                                     bold: false
-                                    anchors.verticalCenter: parent.verticalCenter
                                     text: "Maximum"
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
@@ -492,12 +500,11 @@ Item {
                                 }
                             }
 
-                            Row {
-                                spacing: LayoutMetrics.spacing.md
+                            Column {
+                                spacing: LayoutMetrics.spacing.xxs
 
                                 Label {
                                     bold: false
-                                    anchors.verticalCenter: parent.verticalCenter
                                     text: "Count"
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
@@ -514,36 +521,41 @@ Item {
                         }
 
                         Row {
-                            width: parent.width
+                            anchors.horizontalCenter: parent.horizontalCenter
                             spacing: LayoutMetrics.spacing.lg
 
                             Switch {
+                                anchors.verticalCenter: parent.verticalCenter
                                 text: "Unique numbers"
                                 checked: generatorsVM.randomUnique
                                 onCheckedChanged: generatorsVM.randomUnique = checked
                             }
 
-                            Label {
-                                bold: false
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: "Order"
-                                textColor: Theme.textColor
-                                pixelSize: Typography.h6
-                            }
+                            Column {
+                                width: Math.min(LayoutMetrics.unit * 18, randomPanel.width * 0.22)
+                                spacing: LayoutMetrics.spacing.xxs
 
-                            ComboBox {
-                                width: Math.min(LayoutMetrics.unit * 18, parent.width * 0.22)
-                                model: generatorsVM.randomSorts
-                                currentIndex: {
-                                    var idx = generatorsVM.randomSorts.indexOf(generatorsVM.randomSort)
-                                    return idx >= 0 ? idx : 0
+                                Label {
+                                    bold: false
+                                    text: "Order"
+                                    textColor: Theme.textColor
+                                    pixelSize: Typography.h6
                                 }
-                                onCurrentIndexChanged: {
-                                    if (currentIndex >= 0
-                                            && currentIndex < generatorsVM.randomSorts.length) {
-                                        var sort = generatorsVM.randomSorts[currentIndex]
-                                        if (sort && sort !== generatorsVM.randomSort)
-                                            generatorsVM.randomSort = sort
+
+                                ComboBox {
+                                    width: parent.width
+                                    model: generatorsVM.randomSorts
+                                    currentIndex: {
+                                        var idx = generatorsVM.randomSorts.indexOf(generatorsVM.randomSort)
+                                        return idx >= 0 ? idx : 0
+                                    }
+                                    onCurrentIndexChanged: {
+                                        if (currentIndex >= 0
+                                                && currentIndex < generatorsVM.randomSorts.length) {
+                                            var sort = generatorsVM.randomSorts[currentIndex]
+                                            if (sort && sort !== generatorsVM.randomSort)
+                                                generatorsVM.randomSort = sort
+                                        }
                                     }
                                 }
                             }
@@ -615,40 +627,42 @@ Item {
                             width: parent.width
                             spacing: LayoutMetrics.spacing.md
 
-                            Row {
-                                spacing: LayoutMetrics.spacing.md
+                            Column {
+                                spacing: LayoutMetrics.spacing.xxs
 
                                 Label {
                                     bold: false
-                                    anchors.verticalCenter: parent.verticalCenter
                                     text: "Length"
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
                                 }
 
-                                SpinBox {
-                                    from: 1
-                                    to: 256
-                                    stepSize: 1
-                                    value: generatorsVM.randomStringLength
-                                    onValueChanged: generatorsVM.randomStringLength = value
-                                }
+                                Row {
+                                    spacing: LayoutMetrics.spacing.md
 
-                                Label {
-                                    bold: false
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: "characters"
-                                    textColor: Theme.dividerColor
-                                    pixelSize: Typography.h6
+                                    SpinBox {
+                                        from: 1
+                                        to: 256
+                                        stepSize: 1
+                                        value: generatorsVM.randomStringLength
+                                        onValueChanged: generatorsVM.randomStringLength = value
+                                    }
+
+                                    Label {
+                                        bold: false
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: "characters"
+                                        textColor: Theme.dividerColor
+                                        pixelSize: Typography.h6
+                                    }
                                 }
                             }
 
-                            Row {
-                                spacing: LayoutMetrics.spacing.md
+                            Column {
+                                spacing: LayoutMetrics.spacing.xxs
 
                                 Label {
                                     bold: false
-                                    anchors.verticalCenter: parent.verticalCenter
                                     text: "Count"
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
@@ -792,12 +806,11 @@ Item {
                             width: parent.width
                             spacing: LayoutMetrics.spacing.md
 
-                            Row {
-                                spacing: LayoutMetrics.spacing.md
+                            Column {
+                                spacing: LayoutMetrics.spacing.xxs
 
                                 Label {
                                     bold: false
-                                    anchors.verticalCenter: parent.verticalCenter
                                     text: "Count"
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
@@ -897,12 +910,11 @@ Item {
                             width: parent.width
                             spacing: LayoutMetrics.spacing.md
 
-                            Row {
-                                spacing: LayoutMetrics.spacing.md
+                            Column {
+                                spacing: LayoutMetrics.spacing.xxs
 
                                 Label {
                                     bold: false
-                                    anchors.verticalCenter: parent.verticalCenter
                                     text: "Count"
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
@@ -917,32 +929,35 @@ Item {
                                 }
                             }
 
-                            Row {
-                                spacing: LayoutMetrics.spacing.md
+                            Column {
+                                spacing: LayoutMetrics.spacing.xxs
                                 visible: generatorsVM.randomIdFormat !== "UUID v4"
 
                                 Label {
                                     bold: false
-                                    anchors.verticalCenter: parent.verticalCenter
                                     text: generatorsVM.randomIdFormat === "Numeric" ? "Digits" : "Length"
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
                                 }
 
-                                SpinBox {
-                                    from: 4
-                                    to: 64
-                                    stepSize: 1
-                                    value: generatorsVM.randomIdLength
-                                    onValueChanged: generatorsVM.randomIdLength = value
-                                }
+                                Row {
+                                    spacing: LayoutMetrics.spacing.md
 
-                                Label {
-                                    bold: false
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: generatorsVM.randomIdFormat === "Numeric" ? "digits" : "characters"
-                                    textColor: Theme.dividerColor
-                                    pixelSize: Typography.h6
+                                    SpinBox {
+                                        from: 4
+                                        to: 64
+                                        stepSize: 1
+                                        value: generatorsVM.randomIdLength
+                                        onValueChanged: generatorsVM.randomIdLength = value
+                                    }
+
+                                    Label {
+                                        bold: false
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: generatorsVM.randomIdFormat === "Numeric" ? "digits" : "characters"
+                                        textColor: Theme.dividerColor
+                                        pixelSize: Typography.h6
+                                    }
                                 }
                             }
                         }
@@ -1011,12 +1026,11 @@ Item {
                             width: parent.width
                             spacing: LayoutMetrics.spacing.md
 
-                            Row {
-                                spacing: LayoutMetrics.spacing.md
+                            Column {
+                                spacing: LayoutMetrics.spacing.xxs
 
                                 Label {
                                     bold: false
-                                    anchors.verticalCenter: parent.verticalCenter
                                     text: "Count"
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
@@ -1181,41 +1195,47 @@ Item {
                                     }
                                 }
 
-                                Row {
+                                Column {
+                                    id: qrResolutionColumn
                                     width: parent.width
-                                    spacing: LayoutMetrics.spacing.md
+                                    spacing: LayoutMetrics.spacing.xxs
 
                                     Label {
                                         bold: false
-                                        anchors.verticalCenter: parent.verticalCenter
                                         text: "Resolution"
                                         textColor: Theme.textColor
                                         pixelSize: Typography.h6
                                     }
 
-                                    ComboBox {
-                                        width: Math.min(LayoutMetrics.unit * 12, parent.width * 0.24)
-                                        model: generatorsVM.qrResolutions
-                                        currentIndex: {
-                                            var idx = generatorsVM.qrResolutions.indexOf(generatorsVM.qrResolution)
-                                            return idx >= 0 ? idx : 0
-                                        }
-                                        onCurrentIndexChanged: {
-                                            if (currentIndex >= 0
-                                                    && currentIndex < generatorsVM.qrResolutions.length) {
-                                                var resolution = generatorsVM.qrResolutions[currentIndex]
-                                                if (resolution && resolution !== generatorsVM.qrResolution)
-                                                    generatorsVM.qrResolution = resolution
+                                    Row {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        spacing: LayoutMetrics.spacing.md
+
+                                        ComboBox {
+                                            width: Math.min(LayoutMetrics.unit * 12,
+                                                            qrResolutionColumn.width * 0.24)
+                                            model: generatorsVM.qrResolutions
+                                            currentIndex: {
+                                                var idx = generatorsVM.qrResolutions.indexOf(generatorsVM.qrResolution)
+                                                return idx >= 0 ? idx : 0
+                                            }
+                                            onCurrentIndexChanged: {
+                                                if (currentIndex >= 0
+                                                        && currentIndex < generatorsVM.qrResolutions.length) {
+                                                    var resolution = generatorsVM.qrResolutions[currentIndex]
+                                                    if (resolution && resolution !== generatorsVM.qrResolution)
+                                                        generatorsVM.qrResolution = resolution
+                                                }
                                             }
                                         }
-                                    }
 
-                                    Label {
-                                        bold: false
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        text: "px"
-                                        textColor: Theme.dividerColor
-                                        pixelSize: Typography.h6
+                                        Label {
+                                            bold: false
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: "px"
+                                            textColor: Theme.dividerColor
+                                            pixelSize: Typography.h6
+                                        }
                                     }
                                 }
 

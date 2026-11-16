@@ -66,9 +66,9 @@ Item {
 
             Column {
                 id: contentColumn
-                width: Math.max(0, parent.width - LayoutMetrics.unit * 1.6)
+                width: parent.width
                 x: Math.max(0, (parent.width - width) / 2)
-                spacing: LayoutMetrics.spacing.lg
+                spacing: LayoutMetrics.spacing.md
 
                 Title {
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -120,20 +120,20 @@ Item {
                     }
                 }
 
-                Row {
+                Column {
                     width: parent.width
-                    spacing: LayoutMetrics.spacing.md
+                    spacing: LayoutMetrics.spacing.xxs
+
                     Label {
-                        id: downloaderLabel
                         bold: false
-                        text: "Downloader:"
+                        text: "Downloader"
                         textColor: Theme.textColor
                         pixelSize: Typography.h6
-                        anchors.verticalCenter: parent.verticalCenter
                     }
+
                     ComboBox {
                         id: downloaderCombo
-                        width: Math.max(0, parent.width - downloaderLabel.width - parent.spacing)
+                        width: parent.width
                         model: unifiedDownloadVM.downloaders
                         textRole: "label"
                         valueRole: "id"
@@ -163,20 +163,20 @@ Item {
                         }
                     }
 
-                    Row {
+                    Column {
                         width: parent.width
-                        spacing: LayoutMetrics.spacing.md
+                        spacing: LayoutMetrics.spacing.xxs
                         visible: !unifiedDownloadVM.audioOnly
+
                         Label {
-                            id: formatLabel
                             bold: false
-                            text: "Format:"
+                            text: "Format"
                             textColor: Theme.textColor
                             pixelSize: Typography.h6
-                            anchors.verticalCenter: parent.verticalCenter
                         }
+
                         ComboBox {
-                            width: Math.max(0, parent.width - formatLabel.width - parent.spacing)
+                            width: parent.width
                             model: unifiedDownloadVM.formats.length > 0 ? unifiedDownloadVM.formats : []
                             textRole: "label"
                             displayText: unifiedDownloadVM.formats.length > 0 ? currentText : "Best available"
@@ -217,7 +217,7 @@ Item {
                 }
 
                 ProgressBar {
-                    width: Math.min(parent.width, LayoutMetrics.unit * 50)
+                    width: Math.min(parent.width * 0.8, LayoutMetrics.unit * 60)
                     anchors.horizontalCenter: parent.horizontalCenter
                     value: unifiedDownloadVM.progress
                     visible: unifiedDownloadVM.downloading || unifiedDownloadVM.progress >= 1.0

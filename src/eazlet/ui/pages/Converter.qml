@@ -72,9 +72,9 @@ Item {
 
             Column {
                 id: convColumn
-                width: Math.max(0, parent.width - LayoutMetrics.unit * 1.6)
+                width: parent.width
                 x: Math.max(0, (parent.width - width) / 2)
-                spacing: LayoutMetrics.spacing.lg
+                spacing: LayoutMetrics.spacing.md
 
                 Title {
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -190,16 +190,15 @@ Item {
                     }
                 }
 
-                Row {
+                Column {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: LayoutMetrics.spacing.md
+                    spacing: LayoutMetrics.spacing.xxs
                     visible: converterVM.files.length > 0 && converterVM.validTargetFormats.length > 0
                     Label {
                         bold: false
-                        text: "Convert to:"
+                        text: "Convert to"
                         textColor: Theme.textColor
                         pixelSize: Typography.h6
-                        anchors.verticalCenter: parent.verticalCenter
                     }
                     ComboBox {
                         width: 200
@@ -242,8 +241,35 @@ Item {
                     label: Lang.labels.outputFolder
                     path: converterVM.outputDir
                     defaultPath: controller.get_converter_default_dir()
+                    enabled: !converterVM.replaceOriginal && !converterVM.converting
                     onPathAccepted: function(newPath) {
                         controller.save_converter_dir(newPath)
+                    }
+                }
+
+                Column {
+                    width: parent.width
+                    spacing: LayoutMetrics.spacing.xxs
+                    visible: converterVM.files.length > 0
+
+                    Switch {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: "Replace original file"
+                        checked: converterVM.replaceOriginal
+                        enabled: !converterVM.converting
+                        onCheckedChanged: converterVM.replaceOriginal = checked
+                    }
+
+                    Label {
+                        width: parent.width
+                        horizontalAlignment: Text.AlignHCenter
+                        bold: false
+                        text: converterVM.replaceOriginal
+                              ? "The source is deleted after conversion — only the new file stays on disk."
+                              : "A new converted copy is saved; the source stays untouched."
+                        textColor: Theme.dividerColor
+                        pixelSize: Typography.caption
+                        wrapMode: Text.WordWrap
                     }
                 }
 
@@ -281,7 +307,7 @@ Item {
                 }
 
                 ProgressBar {
-                    width: Math.min(parent.width, LayoutMetrics.unit * 50)
+                    width: Math.min(parent.width * 0.8, LayoutMetrics.unit * 60)
                     anchors.horizontalCenter: parent.horizontalCenter
                     value: converterVM.progress
                     visible: converterVM.converting || converterVM.progress >= 1.0

@@ -3,8 +3,9 @@ import shutil
 import zipfile
 import tarfile
 from pathlib import Path
+from urllib.parse import unquote
 
-from PySide6.QtCore import Property, QObject, QProcess, Signal, Slot
+from PySide6.QtCore import Property, QObject, QProcess, QUrl, Signal, Slot
 from PySide6.QtGui import QDesktopServices
 
 from .base_vm import BaseVM
@@ -96,15 +97,38 @@ class ArchiveVM(BaseVM):
             self._compression_level = v
             self.compressionLevelChanged.emit()
 
+    @staticmethod
+    def _normalize_path(path):
+        if path is None:
+            return ""
+        if isinstance(path, QUrl):
+            local = path.toLocalFile()
+            return local if local else path.toString()
+        text = str(path).strip()
+        if text.startswith("file://"):
+            text = unquote(text[len("file://"):])
+        return text
+
     @Slot(str)
     def addFile(self, path):
-        if not path:
+        self.addFiles([path])
+
+    @Slot(list)
+    def addFiles(self, paths):
+        if not paths:
             return
-        p = path.replace("file://", "").strip()
-        if not p:
-            return
-        if p not in [f["path"] for f in self._files]:
-            self._files.append({"path": p, "name": Path(p).name, "isDir": Path(p).is_dir()})
+        existing = {f["path"] for f in self._files}
+        added = False
+        for path in paths:
+            p = self._normalize_path(path)
+            if not p or p in existing:
+                continue
+            self._files.append(
+                {"path": p, "name": Path(p).name, "isDir": Path(p).is_dir()}
+            )
+            existing.add(p)
+            added = True
+        if added:
             self.filesChanged.emit()
 
     @Slot(int)

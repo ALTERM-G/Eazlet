@@ -46,9 +46,9 @@ Item {
 
             Column {
                 id: orgColumn
-                width: Math.max(0, parent.width - LayoutMetrics.unit * 1.6)
+                width: parent.width
                 x: Math.max(0, (parent.width - width) / 2)
-                spacing: LayoutMetrics.spacing.lg
+                spacing: LayoutMetrics.spacing.md
 
                 Title {
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -122,7 +122,7 @@ Item {
                 }
 
                 ProgressBar {
-                    width: Math.min(parent.width, LayoutMetrics.unit * 50)
+                    width: Math.min(parent.width * 0.8, LayoutMetrics.unit * 60)
                     anchors.horizontalCenter: parent.horizontalCenter
                     value: organizerVM.progress
                     visible: organizerVM.scanning

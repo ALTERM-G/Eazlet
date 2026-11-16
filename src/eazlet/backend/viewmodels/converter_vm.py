@@ -32,6 +32,7 @@ class ConverterVM(BaseVM):
     targetFormatChanged = Signal()
     validTargetFormatsChanged = Signal()
     sourceChanged = Signal()
+    replaceOriginalChanged = Signal()
 
     VIDEO_FORMATS = ["mp4", "webm", "mkv", "avi", "mov", "flv", "wmv", "gif"]
     AUDIO_FORMATS = ["mp3", "aac", "flac", "wav", "ogg", "m4a", "opus", "aiff", "wma"]
@@ -124,6 +125,8 @@ class ConverterVM(BaseVM):
         self._error = ""
         self._target_format = ""
         self._valid_target_formats = []
+        self._replace_original = False
+        self._pending_replace = None
         self._available_encoders = set()
         self._available_decoders = set()
         self._probe_encoders()
@@ -209,6 +212,17 @@ class ConverterVM(BaseVM):
     @Property(list, notify=validTargetFormatsChanged)
     def validTargetFormats(self):
         return self._valid_target_formats
+
+    @Property(bool, notify=replaceOriginalChanged)
+    def replaceOriginal(self):
+        return self._replace_original
+
+    @replaceOriginal.setter
+    def replaceOriginal(self, value):
+        if value == self._replace_original:
+            return
+        self._replace_original = bool(value)
+        self.replaceOriginalChanged.emit()
 
     @Property(str, notify=sourceChanged)
     def sourceFormat(self):
@@ -336,7 +350,10 @@ class ConverterVM(BaseVM):
     @Slot()
     def openOutputDir(self):
         try:
-            QDesktopServices.openUrl(QUrl.fromLocalFile(os.path.abspath(self._output_dir)))
+            directory = self._output_dir
+            if self._replace_original and self._files:
+                directory = str(Path(self._files[0]["path"]).parent)
+            QDesktopServices.openUrl(QUrl.fromLocalFile(os.path.abspath(directory)))
         except Exception:
             pass
 
@@ -347,6 +364,53 @@ class ConverterVM(BaseVM):
             except OSError:
                 pass
         self._temp_files = []
+        self._pending_replace = None
+
+    def _finish_output(self):
+        """Move a finished in-place conversion over the original file."""
+        pending = self._pending_replace
+        self._pending_replace = None
+        if pending is None:
+            return True
+        temp_path = pending["temp"]
+        final_path = pending["final"]
+        source_path = pending["source"]
+        try:
+            mode = os.stat(source_path).st_mode
+            os.chmod(temp_path, mode)
+        except OSError:
+            pass
+        try:
+            os.replace(temp_path, final_path)
+        except OSError as exc:
+            self._error = f"Could not replace original: {exc}"[:240]
+            self.errorChanged.emit()
+            self._failed_files.append(source_path)
+            return False
+        try:
+            self._temp_files.remove(temp_path)
+        except ValueError:
+            pass
+        if os.path.abspath(final_path) != os.path.abspath(source_path):
+            try:
+                os.unlink(source_path)
+            except OSError:
+                pass
+
+        for entry in self._files:
+            if os.path.abspath(entry.get("path", "")) != os.path.abspath(source_path):
+                continue
+            ext = Path(final_path).suffix.lower().lstrip(".")
+            entry["path"] = final_path
+            entry["name"] = Path(final_path).name
+            entry["ext"] = ext
+            entry["format"] = self.canonical_format(ext)
+            entry["category"] = self.category_for(ext)
+            break
+        self.filesChanged.emit()
+        self.sourceChanged.emit()
+        self._refresh_targets()
+        return True
 
     def _rasterize_svg(self, path):
         if QGuiApplication.instance() is None:
@@ -416,7 +480,8 @@ class ConverterVM(BaseVM):
             self._error = "ffmpeg not found in PATH"
             self.errorChanged.emit()
             return
-        Path(self._output_dir).mkdir(parents=True, exist_ok=True)
+        if not self._replace_original:
+            Path(self._output_dir).mkdir(parents=True, exist_ok=True)
         self._error = ""
         self._progress = 0.0
         self._converting = True
@@ -451,26 +516,53 @@ class ConverterVM(BaseVM):
         self._status = f"Converting {f['name']}..."
         self.statusChanged.emit()
         src_ext = self.canonical_format(f.get("ext", ""))
-        base = Path(f["path"]).stem
-        out_path = os.path.join(self._output_dir, base + "." + self._target_format)
-        if out_path == f["path"]:
+        src_path = f["path"]
+        source_dir = str(Path(src_path).parent)
+        base = Path(src_path).stem
+        target_dir = source_dir if self._replace_original else self._output_dir
+        out_path = os.path.join(target_dir, base + "." + self._target_format)
+        if out_path == src_path:
             self._current_index += 1
             self._convert_next()
             return
         if os.path.exists(out_path):
             i = 1
             while True:
-                candidate = os.path.join(self._output_dir, f"{base} ({i}).{self._target_format}")
+                candidate = os.path.join(target_dir, f"{base} ({i}).{self._target_format}")
                 if not os.path.exists(candidate):
                     out_path = candidate
                     break
                 i += 1
                 if i > 1000:
                     break
+        write_path = out_path
+        if self._replace_original:
+            try:
+                handle, write_path = tempfile.mkstemp(
+                    prefix=".eazlet-convert-",
+                    suffix="." + self._target_format,
+                    dir=source_dir,
+                )
+                os.close(handle)
+                os.unlink(write_path)
+            except OSError as exc:
+                self._error = f"Could not write next to the source: {exc}"[:240]
+                self._failed_files.append(src_path)
+                self._converting = False
+                self._status = "Conversion failed"
+                self.errorChanged.emit()
+                self.statusChanged.emit()
+                self.convertingChanged.emit()
+                return
+            self._temp_files.append(write_path)
+            self._pending_replace = {
+                "temp": write_path,
+                "final": out_path,
+                "source": src_path,
+            }
         if self.category_for(src_ext) == "document":
-            self._convert_doc(f["path"], out_path)
+            self._convert_doc(src_path, write_path)
             return
-        src_path = f["path"]
         if src_ext == "svg":
             try:
                 src_path = self._rasterize_svg(src_path)
@@ -544,7 +636,7 @@ class ConverterVM(BaseVM):
             args.extend(["-c:v", v, "-preset", "medium", "-crf", "23", "-c:a", a, "-b:a", "192k"])
         elif self._target_format == "wmv":
             args.extend(["-c:v", "wmv2", "-c:a", "wmav2"])
-        args.append(out_path)
+        args.append(write_path)
         proc = QProcess(self)
         proc.setProgram("ffmpeg")
         proc.setArguments(args)
@@ -774,6 +866,7 @@ class ConverterVM(BaseVM):
                 with open(dst, "w", encoding="utf-8") as handle:
                     handle.write(output)
 
+            self._finish_output()
             self._current_index += 1
             self._convert_next()
             return
@@ -832,6 +925,7 @@ class ConverterVM(BaseVM):
             if self._error:
                 self._error = ""
                 self.errorChanged.emit()
+            self._finish_output()
             self._current_index += 1
             self._convert_next()
             return

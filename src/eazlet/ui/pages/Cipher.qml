@@ -99,8 +99,8 @@ Item {
 
                 Column {
                     id: toolContent
-                    width: Math.max(0, parent.width - LayoutMetrics.unit * 1.6)
-                    spacing: LayoutMetrics.spacing.lg
+                    width: parent.width
+                    spacing: LayoutMetrics.spacing.md
 
                     // Encoding -----------------------------------------
                     Column {
@@ -118,37 +118,40 @@ Item {
                             pixelSize: Typography.h6
                         }
 
-                        Row {
-                            spacing: LayoutMetrics.spacing.md
+                        Column {
+                            spacing: LayoutMetrics.spacing.xxs
 
                             Label {
                                 bold: false
-                                text: "Encoding:"
+                                text: "Encoding"
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
-                                anchors.verticalCenter: parent.verticalCenter
                             }
 
-                            ComboBox {
-                                id: encodingCombo
-                                width: 260
-                                model: cipherVM.encodings
-                                scrollablePopup: true
-                                maxVisibleItems: 10
-                                currentIndex: {
-                                    var idx = model.indexOf(cipherVM.encodingAlgorithm)
-                                    return idx >= 0 ? idx : 0
-                                }
-                                onCurrentTextChanged: {
-                                    if (currentText && currentText !== cipherVM.encodingAlgorithm)
-                                        cipherVM.encodingAlgorithm = currentText
-                                }
-                            }
+                            Row {
+                                spacing: LayoutMetrics.spacing.md
 
-                            Switch {
-                                text: "Decode"
-                                checked: cipherVM.mode === "decode"
-                                onCheckedChanged: cipherVM.mode = checked ? "decode" : "encode"
+                                ComboBox {
+                                    id: encodingCombo
+                                    width: 260
+                                    model: cipherVM.encodings
+                                    scrollablePopup: true
+                                    maxVisibleItems: 10
+                                    currentIndex: {
+                                        var idx = model.indexOf(cipherVM.encodingAlgorithm)
+                                        return idx >= 0 ? idx : 0
+                                    }
+                                    onCurrentTextChanged: {
+                                        if (currentText && currentText !== cipherVM.encodingAlgorithm)
+                                            cipherVM.encodingAlgorithm = currentText
+                                    }
+                                }
+
+                                Switch {
+                                    text: "Decode"
+                                    checked: cipherVM.mode === "decode"
+                                    onCheckedChanged: cipherVM.mode = checked ? "decode" : "encode"
+                                }
                             }
                         }
 
@@ -186,50 +189,52 @@ Item {
                             pixelSize: Typography.h6
                         }
 
-                        Row {
-                            spacing: LayoutMetrics.spacing.md
+                        Column {
+                            spacing: LayoutMetrics.spacing.xxs
 
                             Label {
                                 bold: false
-                                text: "Cipher:"
+                                text: "Cipher"
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
-                                anchors.verticalCenter: parent.verticalCenter
                             }
 
-                            ComboBox {
-                                id: cipherCombo
-                                width: 260
-                                model: cipherVM.classicalCiphers
-                                scrollablePopup: true
-                                maxVisibleItems: 10
-                                currentIndex: {
-                                    var idx = model.indexOf(cipherVM.cipherAlgorithm)
-                                    return idx >= 0 ? idx : 0
-                                }
-                                onCurrentTextChanged: {
-                                    if (currentText && currentText !== cipherVM.cipherAlgorithm)
-                                        cipherVM.cipherAlgorithm = currentText
-                                }
-                            }
+                            Row {
+                                spacing: LayoutMetrics.spacing.md
 
-                            Switch {
-                                text: "Decode"
-                                checked: cipherVM.mode === "decode"
-                                onCheckedChanged: cipherVM.mode = checked ? "decode" : "encode"
+                                ComboBox {
+                                    id: cipherCombo
+                                    width: 260
+                                    model: cipherVM.classicalCiphers
+                                    scrollablePopup: true
+                                    maxVisibleItems: 10
+                                    currentIndex: {
+                                        var idx = model.indexOf(cipherVM.cipherAlgorithm)
+                                        return idx >= 0 ? idx : 0
+                                    }
+                                    onCurrentTextChanged: {
+                                        if (currentText && currentText !== cipherVM.cipherAlgorithm)
+                                            cipherVM.cipherAlgorithm = currentText
+                                    }
+                                }
+
+                                Switch {
+                                    text: "Decode"
+                                    checked: cipherVM.mode === "decode"
+                                    onCheckedChanged: cipherVM.mode = checked ? "decode" : "encode"
+                                }
                             }
                         }
 
-                        Row {
-                            spacing: LayoutMetrics.spacing.md
+                        Column {
+                            spacing: LayoutMetrics.spacing.xxs
                             visible: cipherVM.usesKey
 
                             Label {
                                 bold: false
-                                text: "Key:"
+                                text: "Key"
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
-                                anchors.verticalCenter: parent.verticalCenter
                             }
 
                             LineEdit {
@@ -241,16 +246,15 @@ Item {
                             }
                         }
 
-                        Row {
-                            spacing: LayoutMetrics.spacing.md
+                        Column {
+                            spacing: LayoutMetrics.spacing.xxs
                             visible: cipherVM.usesShift
 
                             Label {
                                 bold: false
-                                text: "Shift:"
+                                text: "Shift"
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
-                                anchors.verticalCenter: parent.verticalCenter
                             }
 
                             SpinBox {
@@ -262,16 +266,15 @@ Item {
                             }
                         }
 
-                        Row {
-                            spacing: LayoutMetrics.spacing.md
+                        Column {
+                            spacing: LayoutMetrics.spacing.xxs
                             visible: cipherVM.usesRails
 
                             Label {
                                 bold: false
-                                text: "Rails:"
+                                text: "Rails"
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
-                                anchors.verticalCenter: parent.verticalCenter
                             }
 
                             SpinBox {
@@ -283,16 +286,15 @@ Item {
                             }
                         }
 
-                        Row {
-                            spacing: LayoutMetrics.spacing.md
+                        Column {
+                            spacing: LayoutMetrics.spacing.xxs
                             visible: cipherVM.usesTurns
 
                             Label {
                                 bold: false
-                                text: "Turns:"
+                                text: "Turns"
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
-                                anchors.verticalCenter: parent.verticalCenter
                             }
 
                             SpinBox {
@@ -304,16 +306,15 @@ Item {
                             }
                         }
 
-                        Row {
-                            spacing: LayoutMetrics.spacing.md
+                        Column {
+                            spacing: LayoutMetrics.spacing.xxs
                             visible: cipherVM.usesPeriod
 
                             Label {
                                 bold: false
-                                text: "Period:"
+                                text: "Period"
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
-                                anchors.verticalCenter: parent.verticalCenter
                             }
 
                             SpinBox {
@@ -369,15 +370,14 @@ Item {
                             wrapMode: Text.WordWrap
                         }
 
-                        Row {
-                            spacing: LayoutMetrics.spacing.md
+                        Column {
+                            spacing: LayoutMetrics.spacing.xxs
 
                             Label {
                                 bold: false
-                                text: "Algorithm:"
+                                text: "Algorithm"
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
-                                anchors.verticalCenter: parent.verticalCenter
                             }
 
                             ComboBox {
@@ -395,29 +395,32 @@ Item {
                             }
                         }
 
-                        Row {
-                            spacing: LayoutMetrics.spacing.md
+                        Column {
+                            spacing: LayoutMetrics.spacing.xxs
 
                             Label {
                                 bold: false
-                                text: "Passphrase:"
+                                text: "Passphrase"
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
-                                anchors.verticalCenter: parent.verticalCenter
                             }
 
-                            LineEdit {
-                                id: passphraseInput
-                                width: 260
-                                text: cipherVM.passphrase
-                                placeholderText: "Enter a passphrase"
-                                echoMode: revealPassphrase.checked ? TextInput.Normal : TextInput.Password
-                                onTextChanged: cipherVM.passphrase = text
-                            }
+                            Row {
+                                spacing: LayoutMetrics.spacing.md
 
-                            Switch {
-                                id: revealPassphrase
-                                text: "Show passphrase"
+                                LineEdit {
+                                    id: passphraseInput
+                                    width: 260
+                                    text: cipherVM.passphrase
+                                    placeholderText: "Enter a passphrase"
+                                    echoMode: revealPassphrase.checked ? TextInput.Normal : TextInput.Password
+                                    onTextChanged: cipherVM.passphrase = text
+                                }
+
+                                Switch {
+                                    id: revealPassphrase
+                                    text: "Show passphrase"
+                                }
                             }
                         }
 
@@ -464,15 +467,14 @@ Item {
                             pixelSize: Typography.h6
                         }
 
-                        Row {
-                            spacing: LayoutMetrics.spacing.md
+                        Column {
+                            spacing: LayoutMetrics.spacing.xxs
 
                             Label {
                                 bold: false
-                                text: "Hash:"
+                                text: "Hash"
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
-                                anchors.verticalCenter: parent.verticalCenter
                             }
 
                             ComboBox {

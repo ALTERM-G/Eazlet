@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Dialogs
+import QtQuick.Layouts
 import components
 
 Item {
@@ -77,7 +78,8 @@ Item {
             return "Write \\int ... dx for an antiderivative, or \\int_{a}^{b} ... dx "
                     + "for a definite integral."
         case "Limit":
-            return "Evaluates the limit at the point."
+            return "Evaluates the two-sided limit at the point; when the two "
+                    + "sides differ, their one-sided values are shown."
         case "Factor":
             return "Factors polynomials and integer expressions."
         case "Expand":
@@ -194,7 +196,7 @@ Item {
 
                 Column {
                     id: contentColumn
-                    width: Math.max(0, parent.width - LayoutMetrics.unit * 1.6)
+                    width: parent.width
                     spacing: LayoutMetrics.spacing.md
 
                     // Algebra tools ------------------------------------------------
@@ -204,14 +206,13 @@ Item {
                         spacing: LayoutMetrics.spacing.md
                         visible: !page.latexMode
 
-                        Row {
+                        Column {
                             width: parent.width
-                            spacing: LayoutMetrics.spacing.md
+                            spacing: LayoutMetrics.spacing.xxs
                             visible: page.showOperationPicker
 
                             Label {
                                 bold: false
-                                anchors.verticalCenter: parent.verticalCenter
                                 text: "Operation"
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
@@ -267,39 +268,44 @@ Item {
 
                         Row {
                             width: parent.width
-                            spacing: LayoutMetrics.spacing.md
+                            spacing: LayoutMetrics.spacing.lg
                             visible: mathVM.requiresVariable
 
-                            Label {
-                                bold: false
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: "Variable"
-                                textColor: Theme.textColor
-                                pixelSize: Typography.h6
+                            Column {
+                                spacing: LayoutMetrics.spacing.xxs
+
+                                Label {
+                                    bold: false
+                                    text: "Variable"
+                                    textColor: Theme.textColor
+                                    pixelSize: Typography.h6
+                                }
+
+                                LineEdit {
+                                    width: LayoutMetrics.unit * 14
+                                    text: mathVM.variable
+                                    placeholderText: "x"
+                                    onTextEdited: mathVM.setVariable(text)
+                                }
                             }
 
-                            LineEdit {
-                                width: Math.min(LayoutMetrics.unit * 14, parent.width * 0.2)
-                                text: mathVM.variable
-                                placeholderText: "x"
-                                onTextEdited: mathVM.setVariable(text)
-                            }
-
-                            Label {
-                                bold: false
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: "Point"
-                                textColor: Theme.textColor
-                                pixelSize: Typography.h6
+                            Column {
+                                spacing: LayoutMetrics.spacing.xxs
                                 visible: mathVM.requiresPoint
-                            }
 
-                            LineEdit {
-                                width: Math.min(LayoutMetrics.unit * 14, parent.width * 0.2)
-                                text: mathVM.point
-                                placeholderText: "0"
-                                visible: mathVM.requiresPoint
-                                onTextEdited: mathVM.setPoint(text)
+                                Label {
+                                    bold: false
+                                    text: "Point"
+                                    textColor: Theme.textColor
+                                    pixelSize: Typography.h6
+                                }
+
+                                LineEdit {
+                                    width: LayoutMetrics.unit * 14
+                                    text: mathVM.point
+                                    placeholderText: "0"
+                                    onTextEdited: mathVM.setPoint(text)
+                                }
                             }
                         }
 
@@ -314,11 +320,6 @@ Item {
                                 heightMultiplier: 1.3
                                 enabled: !mathVM.computing
                                 onPressed: mathVM.process()
-                            }
-                            Button {
-                                buttonText: "Example"
-                                enabled: !mathVM.computing
-                                onPressed: mathVM.loadExample()
                             }
                             Button {
                                 buttonText: "Clear"
@@ -446,53 +447,58 @@ Item {
                             }
                         }
 
-                        Row {
+                        Column {
+                            id: latexResolutionColumn
                             width: parent.width
-                            spacing: LayoutMetrics.spacing.md
+                            spacing: LayoutMetrics.spacing.xxs
 
                             Label {
                                 bold: false
-                                anchors.verticalCenter: parent.verticalCenter
                                 text: "Resolution"
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
                             }
 
-                            ComboBox {
-                                width: Math.min(LayoutMetrics.unit * 16, parent.width * 0.3)
-                                model: mathVM.latexResolutions
-                                scrollablePopup: true
-                                maxVisibleItems: 8
-                                currentIndex: {
-                                    var idx =
-                                        mathVM.latexResolutions.indexOf(
-                                            mathVM.latexResolution)
-                                    return idx >= 0 ? idx : 0
-                                }
-                                onActivated: function(index) {
-                                    if (index >= 0
-                                            && index < mathVM.latexResolutions.length)
-                                        mathVM.setLatexResolution(
-                                            mathVM.latexResolutions[index])
-                                }
-                                onCurrentIndexChanged: {
-                                    if (currentIndex >= 0
-                                            && currentIndex
-                                               < mathVM.latexResolutions.length) {
-                                        var value =
-                                            mathVM.latexResolutions[currentIndex]
-                                        if (value && value !== mathVM.latexResolution)
-                                            mathVM.setLatexResolution(value)
+                            Row {
+                                spacing: LayoutMetrics.spacing.sm
+
+                                ComboBox {
+                                    width: Math.min(LayoutMetrics.unit * 16,
+                                                    latexResolutionColumn.width * 0.3)
+                                    model: mathVM.latexResolutions
+                                    scrollablePopup: true
+                                    maxVisibleItems: 8
+                                    currentIndex: {
+                                        var idx =
+                                            mathVM.latexResolutions.indexOf(
+                                                mathVM.latexResolution)
+                                        return idx >= 0 ? idx : 0
+                                    }
+                                    onActivated: function(index) {
+                                        if (index >= 0
+                                                && index < mathVM.latexResolutions.length)
+                                            mathVM.setLatexResolution(
+                                                mathVM.latexResolutions[index])
+                                    }
+                                    onCurrentIndexChanged: {
+                                        if (currentIndex >= 0
+                                                && currentIndex
+                                                   < mathVM.latexResolutions.length) {
+                                            var value =
+                                                mathVM.latexResolutions[currentIndex]
+                                            if (value && value !== mathVM.latexResolution)
+                                                mathVM.setLatexResolution(value)
+                                        }
                                     }
                                 }
-                            }
 
-                            Label {
-                                bold: false
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: "DPI"
-                                textColor: Theme.dividerColor
-                                pixelSize: Typography.h6
+                                Label {
+                                    bold: false
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: "DPI"
+                                    textColor: Theme.dividerColor
+                                    pixelSize: Typography.h6
+                                }
                             }
                         }
 
@@ -500,87 +506,103 @@ Item {
                             width: parent.width
                             spacing: LayoutMetrics.spacing.xl
 
-                            Row {
-                                spacing: LayoutMetrics.spacing.sm
+                            ColumnLayout {
+                                spacing: LayoutMetrics.spacing.xxs
 
                                 Label {
                                     bold: false
-                                    anchors.verticalCenter: parent.verticalCenter
                                     text: "Background"
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
                                 }
 
-                                Rectangle {
-                                    width: LayoutMetrics.size.controlHeight
-                                    height: width
-                                    radius: LayoutMetrics.radius.m
-                                    color: page.previewColor(mathVM.latexBackground)
-                                    border.color: Theme.borderColor
-                                    border.width: LayoutMetrics.border.m
+                                RowLayout {
+                                    spacing: LayoutMetrics.spacing.sm
 
-                                    Label {
-                                        anchors.centerIn: parent
-                                        visible: page.isTransparent(
-                                                     mathVM.latexBackground)
-                                        text: "T"
-                                        textColor: Theme.textColor
-                                        pixelSize: Typography.caption
+                                    Rectangle {
+                                        Layout.alignment: Qt.AlignVCenter
+                                        Layout.preferredWidth: LayoutMetrics.size.lineEditHeight
+                                        Layout.preferredHeight: LayoutMetrics.size.lineEditHeight
+                                        radius: LayoutMetrics.radius.m
+                                        color: page.previewColor(mathVM.latexBackground)
+                                        border.color: Theme.borderColor
+                                        border.width: LayoutMetrics.border.m
+
+                                        Label {
+                                            anchors.centerIn: parent
+                                            visible: page.isTransparent(
+                                                         mathVM.latexBackground)
+                                            text: "T"
+                                            textColor: Theme.textColor
+                                            pixelSize: Typography.body
+                                        }
                                     }
-                                }
 
-                                LineEdit {
-                                    id: backgroundField
-                                    width: LayoutMetrics.unit * 18
-                                    text: mathVM.latexBackground
-                                    placeholderText: "#FFFFFF"
-                                    onTextEdited: mathVM.setLatexBackground(text)
-                                }
+                                    LineEdit {
+                                        id: backgroundField
+                                        Layout.alignment: Qt.AlignVCenter
+                                        Layout.preferredWidth: LayoutMetrics.unit * 18
+                                        Layout.preferredHeight: LayoutMetrics.size.lineEditHeight
+                                        text: mathVM.latexBackground
+                                        placeholderText: "#FFFFFF"
+                                        onTextEdited: mathVM.setLatexBackground(text)
+                                    }
 
-                                Button {
-                                    buttonText: "Pick"
-                                    onPressed: {
-                                        backgroundDialog.selectedColor =
-                                            page.previewColor(mathVM.latexBackground)
-                                        backgroundDialog.open()
+                                    Button {
+                                        Layout.alignment: Qt.AlignVCenter
+                                        Layout.preferredHeight: LayoutMetrics.size.controlHeight * 1.15
+                                        buttonText: "Pick"
+                                        onPressed: {
+                                            backgroundDialog.selectedColor =
+                                                page.previewColor(mathVM.latexBackground)
+                                            backgroundDialog.open()
+                                        }
                                     }
                                 }
                             }
 
-                            Row {
-                                spacing: LayoutMetrics.spacing.sm
+                            ColumnLayout {
+                                spacing: LayoutMetrics.spacing.xxs
 
                                 Label {
                                     bold: false
-                                    anchors.verticalCenter: parent.verticalCenter
                                     text: "Text colour"
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
                                 }
 
-                                Rectangle {
-                                    width: LayoutMetrics.size.controlHeight
-                                    height: width
-                                    radius: LayoutMetrics.radius.m
-                                    color: page.previewColor(mathVM.latexForeground)
-                                    border.color: Theme.borderColor
-                                    border.width: LayoutMetrics.border.m
-                                }
+                                RowLayout {
+                                    spacing: LayoutMetrics.spacing.sm
 
-                                LineEdit {
-                                    id: foregroundField
-                                    width: LayoutMetrics.unit * 18
-                                    text: mathVM.latexForeground
-                                    placeholderText: "#000000"
-                                    onTextEdited: mathVM.setLatexForeground(text)
-                                }
+                                    Rectangle {
+                                        Layout.alignment: Qt.AlignVCenter
+                                        Layout.preferredWidth: LayoutMetrics.size.lineEditHeight
+                                        Layout.preferredHeight: LayoutMetrics.size.lineEditHeight
+                                        radius: LayoutMetrics.radius.m
+                                        color: page.previewColor(mathVM.latexForeground)
+                                        border.color: Theme.borderColor
+                                        border.width: LayoutMetrics.border.m
+                                    }
 
-                                Button {
-                                    buttonText: "Pick"
-                                    onPressed: {
-                                        foregroundDialog.selectedColor =
-                                            page.previewColor(mathVM.latexForeground)
-                                        foregroundDialog.open()
+                                    LineEdit {
+                                        id: foregroundField
+                                        Layout.alignment: Qt.AlignVCenter
+                                        Layout.preferredWidth: LayoutMetrics.unit * 18
+                                        Layout.preferredHeight: LayoutMetrics.size.lineEditHeight
+                                        text: mathVM.latexForeground
+                                        placeholderText: "#000000"
+                                        onTextEdited: mathVM.setLatexForeground(text)
+                                    }
+
+                                    Button {
+                                        Layout.alignment: Qt.AlignVCenter
+                                        Layout.preferredHeight: LayoutMetrics.size.controlHeight * 1.15
+                                        buttonText: "Pick"
+                                        onPressed: {
+                                            foregroundDialog.selectedColor =
+                                                page.previewColor(mathVM.latexForeground)
+                                            foregroundDialog.open()
+                                        }
                                     }
                                 }
                             }
@@ -598,11 +620,6 @@ Item {
                                 enabled: mathVM.latexAvailable
                                          && !mathVM.latexRendering
                                 onPressed: mathVM.renderLatex()
-                            }
-                            Button {
-                                buttonText: "Example"
-                                enabled: !mathVM.latexRendering
-                                onPressed: mathVM.loadExample()
                             }
                             Button {
                                 buttonText: "Clear"
@@ -662,13 +679,14 @@ Item {
                             // to the image so there is no empty framed box.
                             readonly property real naturalWidth: latexPreviewImage.sourceSize.width
                             readonly property real naturalHeight: latexPreviewImage.sourceSize.height
+                            readonly property real frame: border.width
                             readonly property real fitScale: naturalWidth > 0
-                                ? Math.min(1, latexPanel.width / naturalWidth) : 1
+                                ? Math.min(1, (latexPanel.width - 2 * frame) / naturalWidth) : 1
 
                             visible: mathVM.latexImageSource !== ""
                                      && naturalWidth > 0 && naturalHeight > 0
-                            width: Math.max(1, Math.floor(naturalWidth * fitScale))
-                            height: Math.max(1, Math.floor(naturalHeight * fitScale))
+                            width: Math.max(1, Math.ceil(naturalWidth * fitScale) + 2 * frame)
+                            height: Math.max(1, Math.ceil(naturalHeight * fitScale) + 2 * frame)
                             x: Math.round((parent.width - width) / 2)
                             radius: LayoutMetrics.radius.m
                             color: Theme.inputBackgroundColor
@@ -678,7 +696,10 @@ Item {
                             clip: true
 
                             Canvas {
+                                // Inset so the image and the checkerboard do not
+                                // paint over the frame.
                                 anchors.fill: parent
+                                anchors.margins: latexPreview.frame
                                 visible: page.isTransparent(mathVM.latexBackground)
                                 onVisibleChanged: if (visible) requestPaint()
                                 onWidthChanged: requestPaint()
@@ -709,6 +730,7 @@ Item {
                             Image {
                                 id: latexPreviewImage
                                 anchors.fill: parent
+                                anchors.margins: latexPreview.frame
                                 source: mathVM.latexImageSource
                                 fillMode: Image.Stretch
                                 smooth: true

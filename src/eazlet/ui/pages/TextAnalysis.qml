@@ -108,48 +108,42 @@ Item {
                 color: Theme.dividerColor
             }
 
-            Column {
+            RowLayout {
                 Layout.alignment: Qt.AlignHCenter
                 spacing: LayoutMetrics.spacing.sm
 
-                Row {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: LayoutMetrics.spacing.sm
-
-                    Switch {
-                        text: "Code / unusual"
-                        checked: textAnalysisVM.mode === "code"
-                        onCheckedChanged: {
-                            var nextMode = checked ? "code" : "text"
-                            if (nextMode !== textAnalysisVM.mode)
-                                textAnalysisVM.setMode(nextMode)
-                        }
+                Switch {
+                    Layout.alignment: Qt.AlignVCenter
+                    text: "Code / unusual"
+                    checked: textAnalysisVM.mode === "code"
+                    onCheckedChanged: {
+                        var nextMode = checked ? "code" : "text"
+                        if (nextMode !== textAnalysisVM.mode)
+                            textAnalysisVM.setMode(nextMode)
                     }
                 }
 
-                Row {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: LayoutMetrics.spacing.sm
+                Button {
+                    Layout.alignment: Qt.AlignVCenter
+                    buttonText: "Open file"
+                    iconPath: SVGLibrary.browse
+                    onPressed: analysisFileDialog.open()
+                }
 
-                    Button {
-                        buttonText: "Open file"
-                        iconPath: SVGLibrary.browse
-                        onPressed: analysisFileDialog.open()
-                    }
+                Button {
+                    Layout.alignment: Qt.AlignVCenter
+                    buttonText: "Process"
+                    primary: true
+                    isometric: true
+                    heightMultiplier: 1.3
+                    onPressed: textAnalysisVM.process()
+                }
 
-                    Button {
-                        buttonText: "Process"
-                        primary: true
-                        isometric: true
-                        heightMultiplier: 1.3
-                        onPressed: textAnalysisVM.process()
-                    }
-
-                    Button {
-                        buttonText: "Clear"
-                        iconPath: SVGLibrary.eraser
-                        onPressed: textAnalysisVM.clear()
-                    }
+                Button {
+                    Layout.alignment: Qt.AlignVCenter
+                    buttonText: "Clear"
+                    iconPath: SVGLibrary.eraser
+                    onPressed: textAnalysisVM.clear()
                 }
             }
 
@@ -157,7 +151,7 @@ Item {
                 id: analysisInput
                 Layout.fillWidth: true
                 Layout.minimumWidth: 0
-                Layout.preferredHeight: LayoutMetrics.unit * 13
+                Layout.preferredHeight: LayoutMetrics.unit * 10
                 text: textAnalysisVM.input
                 placeholderText: textAnalysisVM.mode === "code"
                     ? "Paste code, a random string, or other unusual text, then press Process..."
@@ -228,10 +222,8 @@ Item {
                 Layout.minimumWidth: 0
                 Layout.topMargin: LayoutMetrics.spacing.xs
                 Layout.bottomMargin: LayoutMetrics.spacing.xs
-                height: LayoutMetrics.border.m
-                radius: height / 2
+                Layout.preferredHeight: LayoutMetrics.spacing.xxs
                 color: Theme.dividerColor
-                opacity: 0.6
             }
 
             Item {
@@ -294,7 +286,7 @@ Item {
 
                 Column {
                     id: resultsColumn
-                    width: Math.max(0, resultsFlick.width - LayoutMetrics.unit * 1.6)
+                    width: resultsFlick.width
                     spacing: LayoutMetrics.spacing.md
 
                     readonly property real cardGap: LayoutMetrics.spacing.md

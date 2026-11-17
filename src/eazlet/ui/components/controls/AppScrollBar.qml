@@ -1,46 +1,72 @@
 import QtQuick
 import QtQuick.Controls
 
-// Shared vertical scroll bar. Flush with the flickable's right edge so its
-// rounded corners are never clipped, and revealed only while the pointer is
-// over it (or while it is being dragged).
+// Shared scroll bar, styled like the ASCII font chooser's item grid bar.
+//
+// The bar is moved into the nearest ancestor gutter with room to spare, so it
+// sits beside the flickable instead of on top of its widgets. When no such
+// ancestor exists it stays attached to the flickable's right edge as a normal
+// overlay bar.
 ScrollBar {
     id: control
+
+    property Item flick: null
+    property Item gutterHost: null
+    property real gutterGap: LayoutMetrics.spacing.xs
 
     policy: ScrollBar.AsNeeded
     visible: size < 1.0
     padding: 0
-    // Wider than the thumb itself so the bar is easy to find with the pointer.
-    implicitWidth: LayoutMetrics.unit * 2.2
+    implicitWidth: LayoutMetrics.unit * 1.2
     minimumSize: 0.14
     hoverEnabled: true
 
-    x: parent ? parent.width - width : 0
-
-    opacity: (hovered || pressed || active) ? 1.0 : 0.0
-
-    Behavior on opacity {
-        enabled: LayoutMetrics.animationsEnabled
-        NumberAnimation { duration: 120 }
+    function gutterX() {
+        return gutterHost
+             ? flick.mapToItem(gutterHost, flick.width, 0).x + gutterGap
+             : flick.width - width
     }
 
-    contentItem: Item {
-        Rectangle {
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            width: LayoutMetrics.unit
-            radius: LayoutMetrics.radius.s
-            color: control.pressed
-                   ? Qt.rgba(Theme.themeColor.r, Theme.themeColor.g, Theme.themeColor.b, 0.85)
-                   : control.hovered
-                     ? Qt.rgba(Theme.themeColor.r, Theme.themeColor.g, Theme.themeColor.b, 0.55)
-                     : Theme.dividerColor
-
-            Behavior on color {
-                enabled: LayoutMetrics.animationsEnabled
-                ColorAnimation { duration: 120 }
+    Component.onCompleted: {
+        flick = parent
+        var node = flick ? flick.parent : null
+        while (node) {
+            if (node.objectName === "workplaceSurface") {
+                var needed = flick.mapToItem(node, flick.width, 0).x
+                             + gutterGap + implicitWidth
+                if (node.width >= needed)
+                    gutterHost = node
+                break
             }
+            node = node.parent
+        }
+        if (gutterHost)
+            parent = gutterHost
+        // Qt Quick Controls assigns geometry while attaching the bar, which
+        // destroys declarative bindings on x/y. Re-establish them here.
+        x = Qt.binding(gutterX)
+        y = Qt.binding(function () {
+            return gutterHost ? flick.mapToItem(gutterHost, 0, 0).y : 0
+        })
+        height = Qt.binding(function () { return flick.height })
+    }
+
+    contentItem: Rectangle {
+        implicitWidth: LayoutMetrics.unit * 1.2
+        radius: Math.min(width / 2, LayoutMetrics.radius.m)
+        color: control.pressed ? Theme.themeColor
+             : control.hovered ? Theme.borderColor
+             : Theme.dividerColor
+        opacity: (control.active || control.hovered) ? 1.0 : 0.55
+
+        Behavior on color {
+            enabled: LayoutMetrics.animationsEnabled
+            ColorAnimation { duration: 120 }
+        }
+
+        Behavior on opacity {
+            enabled: LayoutMetrics.animationsEnabled
+            NumberAnimation { duration: 120 }
         }
     }
 }

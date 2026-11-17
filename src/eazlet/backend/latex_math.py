@@ -19,8 +19,6 @@ MAX_LATEX_MATH_LENGTH = 500
 
 _CONTROL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
-# Commands that only change typography or spacing. They are dropped before
-# parsing; none of them can affect the meaning of an expression.
 _SKIP_COMMANDS = frozenset(
     {
         "displaystyle",
@@ -105,9 +103,6 @@ _FUNCTIONS = {
     "csc": "csc",
     "csch": "csch",
     "exp": "exp",
-    # Uppercase Gamma is the gamma function, not a variable named Gamma. It is
-    # also listed in _GREEK so it can still name a variable in the variable
-    # field, but function parsing wins inside expressions.
     "Gamma": "gamma",
     "ln": "log",
     "log": "log",
@@ -119,8 +114,6 @@ _FUNCTIONS = {
     "tanh": "tanh",
 }
 
-# \sin^{-1} is inverse sine in standard notation, not the reciprocal.
-# Only the -1 exponent is special-cased; \sin^2 x still means (sin x)^2.
 _INVERSE_FUNCTIONS = {
     "sin": "asin",
     "cos": "acos",
@@ -165,14 +158,9 @@ _DIFFERENTIAL_PATTERN = (
     r"\s*(?P<var>\\[A-Za-z]+|[A-Za-z])"
 )
 _DIFFERENTIAL_RE = re.compile(_DIFFERENTIAL_PATTERN + r"\s*$")
-# Used to detect a differential that is followed by more text, which used to be
-# swallowed into the integrand and produced a silently wrong answer.
 _TRAILING_DIFFERENTIAL_RE = re.compile(_DIFFERENTIAL_PATTERN)
 _TRAILING_SPACING_RE = re.compile(r"(?:\\[,;:!]|\\quad|\\qquad)\s*$")
 
-# Leibniz notation such as \frac{d}{dx} x^2 or \frac{\mathrm{d}}{\mathrm{d}x}.
-# The parser would otherwise read it as an ordinary fraction and return a
-# confidently wrong answer.
 _GAP = r"(?:\s|\\[,;:!])*"
 _D = r"(?:\\(?:mathrm|text)\s*\{\s*d\s*\}|d)"
 _DERIVATIVE_NOTATION_RE = re.compile(
@@ -511,17 +499,11 @@ class _LatexParser:
             found = f"'{value}'" if value is not None else "the end of the input"
             raise LatexParseError(f"Expected an argument but found {found}")
         kind, value = self._peek()
-        # A braced or parenthesised argument ends at its closing delimiter, so a
-        # following '^' belongs to the function: \sin(x)^2 is (sin x)^2.
         if kind == "char" and value in "({|":
             return self._parse_primary()
-        # A bare argument keeps its own exponent: \sin x^2 is sin(x^2).
         return self._parse_bare_function_argument()
 
     def _parse_bare_function_argument(self) -> str:
-        # So that \sin 2x is sin(2x) and \sin 2(x + 1) is sin(2(x + 1)).
-        # A following function starts a new factor instead, so
-        # \sin x \cos x stays sin(x) cos(x).
         node = self._parse_power()
         while self._starts_factor():
             kind, value = self._peek()
@@ -607,7 +589,6 @@ class _LatexParser:
         return f"({base})^({power})"
 
     def _parse_power_argument(self) -> str:
-        # ``\sin^2 x``: the exponent belongs to the function, not its argument.
         kind, value = self._peek()
         if kind == "char" and value == "{":
             self._take()
@@ -747,9 +728,6 @@ def _split_differential(body: str) -> tuple[str, str | None]:
             continue
         return _strip_trailing_spacing(body[: match.start()]), match.group("var")
 
-    # A differential followed by more text is ambiguous. The old behaviour was
-    # to treat the whole remainder as the integrand, so "\int x dx + 1" became
-    # the integral of "x*d*x + 1" and returned a confidently wrong answer.
     for match in _TRAILING_DIFFERENTIAL_RE.finditer(body):
         previous = body[match.start() - 1] if match.start() > 0 else ""
         if previous and (previous.isalnum() or previous == "\\"):

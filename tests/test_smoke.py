@@ -27,3 +27,9 @@ def test_colors_page_loads(qapp):
     engine = run.build_engine()
     engine.load(QUrl.fromLocalFile(str(MAIN_QML.parent / "pages" / "Colors.qml")))
     assert engine.rootObjects(), "Colors.qml failed to load"
+
+
+def test_tier_list_page_loads(qapp):
+    engine = run.build_engine()
+    engine.load(QUrl.fromLocalFile(str(MAIN_QML.parent / "pages" / "TierList.qml")))
+    assert engine.rootObjects(), "TierList.qml failed to load"

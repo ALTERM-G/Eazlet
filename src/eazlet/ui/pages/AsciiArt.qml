@@ -19,7 +19,7 @@ Item {
         favorites: asciiArtVM.favorites
         recents: asciiArtVM.recents
         sampleText: asciiArtVM.input
-        tileSampleLength: 4
+        itemSampleLength: 4
         itemNameSingular: "font"
         itemNamePlural: "fonts"
         noRecentsLabel: "No recent fonts yet"

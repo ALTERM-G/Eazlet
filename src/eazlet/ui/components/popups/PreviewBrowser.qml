@@ -49,9 +49,9 @@ Controls.Popup {
     property var favorites: []
     property var recents: []
     property string sampleText: ""
-    // Thumbnails use a shorter sample so very wide text stays legible in a
-    // tile. The full selected preview below still shows the complete sample.
-    property int tileSampleLength: 8
+    // Rows use a shorter sample so the FIGlet art stays legible at a glance.
+    // The full selected preview below still shows the complete sample.
+    property int itemSampleLength: 8
 
     // itemLabel and previewProvider make this component reusable for any
     // searchable collection. previewProvider returns the text shown in a tile.
@@ -73,8 +73,8 @@ Controls.Popup {
         var cleaned = String(browser.sampleText || "").replace(/\s+/g, " ").trim()
         return cleaned.length > 0 ? cleaned.substring(0, 32) : "Abc"
     }
-    readonly property string tileSample: {
-        var length = Math.max(1, browser.tileSampleLength)
+    readonly property string itemSample: {
+        var length = Math.max(1, browser.itemSampleLength)
         return browser.effectiveSample.substring(0, length)
     }
     readonly property var filteredItems: {
@@ -108,7 +108,7 @@ Controls.Popup {
                                                    && browser.favorites.indexOf(browser.selectedItem) !== -1
 
     function previewFor(item) {
-        return browser.previewProvider ? browser.previewProvider(item, browser.tileSample) : ""
+        return browser.previewProvider ? browser.previewProvider(item, browser.itemSample) : ""
     }
 
     function setFilter(mode) {
@@ -125,7 +125,7 @@ Controls.Popup {
     function revealSelection() {
         var index = browser.filteredItems.indexOf(browser.selectedItem)
         if (index >= 0)
-            grid.positionViewAtIndex(index, GridView.Contain)
+            itemList.positionViewAtIndex(index, ListView.Contain)
     }
 
     function applySelected() {
@@ -336,15 +336,15 @@ Controls.Popup {
             anchors.rightMargin: LayoutMetrics.spacing.xl
 
             Item {
-                id: gridPane
+                id: listPane
                 anchors.top: parent.top
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: browser.showPreview ? previewPane.top : parent.bottom
                 anchors.bottomMargin: browser.showPreview ? LayoutMetrics.spacing.md : 0
 
-                GridView {
-                    id: grid
+                ListView {
+                    id: itemList
                     anchors.fill: parent
                     clip: true
                     focus: true
@@ -352,34 +352,34 @@ Controls.Popup {
                     boundsBehavior: Flickable.StopAtBounds
                     reuseItems: true
                     cacheBuffer: LayoutMetrics.unit * 8
-                    readonly property int columns: Math.max(2, Math.floor(width / (LayoutMetrics.unit * 18)))
-                    cellWidth: Math.floor(width / columns)
-                    // Keep each tile a landscape rectangle instead of letting it
-                    // collapse into a square as the window gets wider.
-                    cellHeight: Math.max(LayoutMetrics.unit * 10,
-                                         Math.round(cellWidth * 0.72))
+                    spacing: LayoutMetrics.spacing.xs
                     model: browser.filteredItems
+
+                    // Tall enough for the FIGlet sample to render at a
+                    // readable size instead of being squeezed into a tile.
+                    readonly property real rowHeight: LayoutMetrics.unit * 18
 
                     Keys.onReturnPressed: browser.applySelected()
                     Keys.onEnterPressed: browser.applySelected()
 
                     ScrollBar.vertical: ScrollBar {
-                        id: gridBar
+                        id: itemListBar
                         parent: content
-                        x: gridPane.width + LayoutMetrics.spacing.xs
+                        x: listPane.width + LayoutMetrics.spacing.xs
                         y: LayoutMetrics.spacing.xs
-                        height: Math.max(0, gridPane.height - LayoutMetrics.spacing.xs * 2)
+                        height: Math.max(0, listPane.height - LayoutMetrics.spacing.xs * 2)
                         policy: ScrollBar.AsNeeded
                         padding: 0
                         implicitWidth: LayoutMetrics.unit * 1.2
+                        minimumSize: 0.14
 
                         contentItem: Rectangle {
                             implicitWidth: LayoutMetrics.unit * 1.2
                             radius: Math.min(width / 2, LayoutMetrics.radius.m)
-                            color: gridBar.pressed ? Theme.themeColor
-                                 : gridBar.hovered ? Theme.borderColor
+                            color: itemListBar.pressed ? Theme.themeColor
+                                 : itemListBar.hovered ? Theme.borderColor
                                  : Theme.dividerColor
-                            opacity: (gridBar.active || gridBar.hovered) ? 1.0 : 0.55
+                            opacity: (itemListBar.active || itemListBar.hovered) ? 1.0 : 0.55
 
                             Behavior on color {
                                 enabled: LayoutMetrics.animationsEnabled
@@ -394,22 +394,22 @@ Controls.Popup {
                     }
 
                     delegate: Rectangle {
-                        id: tile
-                        width: grid.cellWidth
-                        height: grid.cellHeight
+                        id: row
+                        width: itemList.width
+                        height: itemList.rowHeight
                         radius: LayoutMetrics.radius.m
-                        color: tile.selected || tileMouse.containsMouse
+                        color: row.selected || rowMouse.containsMouse
                                ? Theme.hoverBackgroundColor
                                : "transparent"
-                        border.width: tile.selected
+                        border.width: row.selected
                                       ? LayoutMetrics.border.l
                                       : LayoutMetrics.border.s
-                        border.color: tile.selected
+                        border.color: row.selected
                                       ? Theme.hoverTextColor
                                       : Theme.dividerColor
 
                         readonly property bool selected: browser.selectedItem === modelData
-                        readonly property bool highlighted: selected || tileMouse.containsMouse
+                        readonly property bool highlighted: selected || rowMouse.containsMouse
                         readonly property bool favorite: browser.favorites
                                                          && browser.favorites.indexOf(modelData) !== -1
                         readonly property string previewText: browser.previewFor(modelData)
@@ -420,7 +420,7 @@ Controls.Popup {
                         }
 
                         MouseArea {
-                            id: tileMouse
+                            id: rowMouse
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
@@ -431,25 +431,25 @@ Controls.Popup {
                             }
                         }
 
-                        Column {
+                        Row {
                             anchors.fill: parent
                             anchors.margins: LayoutMetrics.spacing.sm
-                            spacing: LayoutMetrics.spacing.xxs
+                            spacing: LayoutMetrics.spacing.md
 
                             Item {
-                                id: previewFrame
-                                width: parent.width
-                                height: Math.max(0, parent.height - tileLabel.implicitHeight - parent.spacing)
+                                id: artBox
+                                width: Math.round(parent.width * 0.5)
+                                height: parent.height
                                 clip: true
 
-                                // FIGlet art is a fixed grid of characters. Render
-                                // it at the size that actually fits the tile instead
-                                // of rasterising it at a huge size and scaling it
-                                // down, which turned large fonts into a smudge.
+                                // FIGlet art is a fixed grid of characters. Measure
+                                // it at a reference size, then render at the largest
+                                // size that fits the row instead of rasterising at a
+                                // huge size and scaling down into a smudge.
                                 Text {
-                                    id: previewMeasure
+                                    id: artMeasure
                                     visible: false
-                                    text: tile.previewText
+                                    text: row.previewText
                                     textFormat: Text.PlainText
                                     wrapMode: Text.NoWrap
                                     font.family: "JetBrains Mono"
@@ -458,32 +458,37 @@ Controls.Popup {
                                 }
 
                                 readonly property real artPixelSize: {
-                                    if (previewMeasure.contentWidth <= 0
-                                            || previewMeasure.contentHeight <= 0)
+                                    if (artMeasure.contentWidth <= 0
+                                            || artMeasure.contentHeight <= 0)
                                         return 0
                                     var availableWidth = Math.max(1, width
                                                                   - LayoutMetrics.spacing.xxs * 2)
                                     var availableHeight = Math.max(1, height
                                                                    - LayoutMetrics.spacing.xxs * 2)
                                     return Math.max(0.5, 12 * Math.min(
-                                        availableWidth / previewMeasure.contentWidth,
-                                        availableHeight / previewMeasure.contentHeight))
+                                        availableWidth / artMeasure.contentWidth,
+                                        availableHeight / artMeasure.contentHeight))
                                 }
 
                                 Text {
-                                    id: previewArt
+                                    id: art
                                     anchors.centerIn: parent
-                                    text: tile.previewText
+                                    text: row.previewText
                                     textFormat: Text.PlainText
                                     wrapMode: Text.NoWrap
-                                    color: tile.highlighted ? Theme.hoverTextColor : Theme.textColor
+                                    color: row.highlighted ? Theme.hoverTextColor : Theme.textColor
                                     font.family: "JetBrains Mono"
                                     lineHeight: 1.0
-                                    horizontalAlignment: Text.AlignHCenter
+                                    // ASCII art is a left-aligned character grid.
+                                    // Centring each line independently scrambles
+                                    // fonts whose rows have different lengths.
+                                    // The whole Text item is centred in artBox,
+                                    // so the block still appears centred.
+                                    horizontalAlignment: Text.AlignLeft
                                     verticalAlignment: Text.AlignVCenter
-                                    font.pixelSize: Math.max(1, Math.floor(previewFrame.artPixelSize))
-                                    scale: previewFrame.artPixelSize
-                                           / Math.max(1, Math.floor(previewFrame.artPixelSize))
+                                    font.pixelSize: Math.max(1, Math.floor(artBox.artPixelSize))
+                                    scale: artBox.artPixelSize
+                                           / Math.max(1, Math.floor(artBox.artPixelSize))
 
                                     Behavior on color {
                                         enabled: LayoutMetrics.animationsEnabled
@@ -492,20 +497,35 @@ Controls.Popup {
                                 }
                             }
 
-                            Text {
-                                id: tileLabel
-                                width: parent.width
-                                text: browser.itemLabel(modelData)
-                                textFormat: Text.PlainText
-                                elide: Text.ElideRight
-                                color: tile.highlighted ? Theme.hoverTextColor : Theme.textColor
-                                font.family: Typography.fontBold
-                                font.weight: Font.Bold
-                                font.pixelSize: Typography.caption
+                            Column {
+                                width: parent.width - artBox.width - parent.spacing
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: LayoutMetrics.spacing.xxs
 
-                                Behavior on color {
-                                    enabled: LayoutMetrics.animationsEnabled
-                                    ColorAnimation { duration: 120 }
+                                Text {
+                                    width: parent.width
+                                    text: browser.itemLabel(modelData)
+                                    textFormat: Text.PlainText
+                                    elide: Text.ElideRight
+                                    color: row.highlighted ? Theme.hoverTextColor : Theme.textColor
+                                    font.family: Typography.fontBold
+                                    font.weight: Font.Bold
+                                    font.pixelSize: Typography.h5
+
+                                    Behavior on color {
+                                        enabled: LayoutMetrics.animationsEnabled
+                                        ColorAnimation { duration: 120 }
+                                    }
+                                }
+
+                                Text {
+                                    width: parent.width
+                                    text: browser.itemSample
+                                    textFormat: Text.PlainText
+                                    elide: Text.ElideRight
+                                    color: Theme.dividerColor
+                                    font.family: Typography.fontFamily
+                                    font.pixelSize: Typography.caption
                                 }
                             }
                         }
@@ -517,7 +537,7 @@ Controls.Popup {
                             anchors.rightMargin: LayoutMetrics.spacing.xs
                             width: LayoutMetrics.size.iconS * 0.72
                             height: width
-                            visible: tile.favorite
+                            visible: row.favorite
                             path: SVGLibrary.star
                             color: Theme.themeColor
                         }

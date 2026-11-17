@@ -206,8 +206,29 @@ ComboBox {
                     interactive: false
                     boundsBehavior: Flickable.StopAtBounds
                     ScrollBar.vertical: ScrollBar {
+                        id: popupScrollBar
                         policy: control.scrollablePopup ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
+                        padding: 0
+                        hoverEnabled: true
                         implicitWidth: LayoutMetrics.unit * 1.2
+                        contentItem: Rectangle {
+                            implicitWidth: LayoutMetrics.unit * 1.2
+                            radius: Math.min(width / 2, LayoutMetrics.radius.m)
+                            color: popupScrollBar.pressed ? Theme.themeColor
+                                 : popupScrollBar.hovered ? Theme.borderColor
+                                 : Theme.dividerColor
+                            opacity: (popupScrollBar.active || popupScrollBar.hovered) ? 1.0 : 0.55
+
+                            Behavior on color {
+                                enabled: LayoutMetrics.animationsEnabled
+                                ColorAnimation { duration: 120 }
+                            }
+
+                            Behavior on opacity {
+                                enabled: LayoutMetrics.animationsEnabled
+                                NumberAnimation { duration: 120 }
+                            }
+                        }
                     }
 
                     MouseArea {

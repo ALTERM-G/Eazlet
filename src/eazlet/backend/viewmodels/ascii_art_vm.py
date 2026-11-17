@@ -43,9 +43,10 @@ class AsciiArtVM(BaseVM):
     MAX_RECENTS = 24
     MAX_PREVIEWS = 256
     PREVIEW_TEXT_LENGTH = 32
-    # FIGlet's default width is 80 columns, which wraps tall/wide fonts into
-    # several stacked blocks. Previews render on one line instead.
-    PREVIEW_WIDTH = 1000
+    # FIGlet's default width is 80 columns, which wraps output into stacked
+    # blocks long before the wide result box is full. A generous width lets
+    # art flow across the box so the horizontal scroll bar is actually useful.
+    FIGLET_WIDTH = 1000
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -153,14 +154,14 @@ class AsciiArtVM(BaseVM):
     def _figure(self, font: str):
         figure = self._figures.get(font)
         if figure is None:
-            figure = pyfiglet.Figlet(font=font)
+            figure = pyfiglet.Figlet(font=font, width=self.FIGLET_WIDTH)
             self._figures[font] = figure
         return figure
 
     def _preview_figure(self, font: str):
         figure = self._preview_figures.get(font)
         if figure is None:
-            figure = pyfiglet.Figlet(font=font, width=self.PREVIEW_WIDTH)
+            figure = pyfiglet.Figlet(font=font, width=self.FIGLET_WIDTH)
             self._preview_figures[font] = figure
         return figure
 

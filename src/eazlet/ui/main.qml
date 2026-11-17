@@ -152,7 +152,8 @@ Window {
                     { source: "pages/Mathematics.qml" },
                     { source: "pages/Generators.qml" },
                     { source: "pages/Dictionary.qml" },
-                    { source: "pages/Colors.qml" }
+                    { source: "pages/Colors.qml" },
+                    { source: "pages/TierList.qml" }
                 ]
 
                 delegate: Loader {

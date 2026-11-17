@@ -147,3 +147,15 @@ def test_applying_font_updates_output(isolated_controller):
     assert vm.output
     assert vm.font == "banner"
     assert vm.recents[0] == "banner"
+
+
+def test_output_is_not_wrapped_at_figlets_default_80_columns(isolated_controller):
+    vm = AsciiArtVM(isolated_controller)
+    vm.setInput("Hello World this is a longer piece of text")
+    vm.process()
+
+    lines = [line for line in vm.output.splitlines() if line.strip()]
+    # FIGlet's default 80-column width wraps this into ~20 stacked blocks.
+    # The wide render flows across the result box instead.
+    assert len(lines) < 10
+    assert max(len(line) for line in lines) > 100

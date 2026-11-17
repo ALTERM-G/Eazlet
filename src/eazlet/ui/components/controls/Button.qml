@@ -22,6 +22,10 @@ Item {
     width: Math.max(LayoutMetrics.size.buttonWidth, contentRow.implicitWidth + horizontalPadding * 2)
     height: LayoutMetrics.size.controlHeight * 1.15 * heightMultiplier + depth
     implicitWidth: Math.max(LayoutMetrics.size.buttonWidth, contentRow.implicitWidth + horizontalPadding * 2)
+    // Qt Quick Layouts write to children's height, which destroys the binding
+    // above and freezes the button at one size when the app scale changes.
+    // Giving the layout a live implicit height keeps it in sync.
+    implicitHeight: LayoutMetrics.size.controlHeight * 1.15 * heightMultiplier + depth
 
     activeFocusOnTab: true
 

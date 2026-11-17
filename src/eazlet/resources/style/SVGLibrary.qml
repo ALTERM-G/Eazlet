@@ -30,6 +30,7 @@ QtObject {
     readonly property url generators: Qt.resolvedUrl("../assets/icons/labels/Generators.svg")
     readonly property url dictionary: Qt.resolvedUrl("../assets/icons/labels/Dictionary.svg")
     readonly property url colors: Qt.resolvedUrl("../assets/icons/labels/Colors.svg")
+    readonly property url tierList: Qt.resolvedUrl("../assets/icons/labels/Tier_list.svg")
 
     readonly property url checkMark: Qt.resolvedUrl("../assets/icons/labels/check_mark.svg")
     readonly property url cross: Qt.resolvedUrl("../assets/icons/labels/cross.svg")

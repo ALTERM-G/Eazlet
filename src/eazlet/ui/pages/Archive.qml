@@ -118,9 +118,6 @@ Item {
                 Rectangle {
                     id: filesCard
                     width: parent.width
-                    // Keep the whole block out of the layout until there is
-                    // something to show; otherwise it leaves a large gap
-                    // between the drop zone and the format controls.
                     visible: archiveVM.files.length > 0
                     height: visible ? filesColumn.implicitHeight
                                       + LayoutMetrics.spacing.md * 2 : 0
@@ -225,8 +222,6 @@ Item {
                                 RowLayout {
                                     anchors.fill: parent
                                     anchors.leftMargin: LayoutMetrics.spacing.sm
-                                    // Keep the remove button off the card edge so
-                                    // it does not look glued to the hover row.
                                     anchors.rightMargin: LayoutMetrics.spacing.md
                                     spacing: LayoutMetrics.spacing.sm
 

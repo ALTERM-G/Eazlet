@@ -109,7 +109,6 @@ Item {
                             y: LayoutMetrics.spacing.lg
                             spacing: LayoutMetrics.spacing.sm
 
-                            // Current color preview
                             Rectangle {
                                 width: parent.width
                                 height: LayoutMetrics.unit * 7
@@ -144,119 +143,83 @@ Item {
                                 }
                             }
 
-                            // Color wheel
                             Item {
                                 id: wheelArea
-                                width: Math.min(LayoutMetrics.unit * 30,
-                                                pickerColumn.width)
+                                width: Math.round(Math.min(LayoutMetrics.unit * 30,
+                                                           pickerColumn.width))
                                 height: width
                                 anchors.horizontalCenter: parent.horizontalCenter
 
-                                Canvas {
+                                Image {
                                     id: wheel
                                     anchors.fill: parent
-                                    property real brightness: colorsVM.value
-
-                                    onBrightnessChanged: requestPaint()
-                                    Component.onCompleted: requestPaint()
-
-                                    onPaint: {
-                                        var ctx = getContext("2d")
-                                        var size = Math.floor(Math.min(width, height))
-                                        if (size <= 0)
-                                            return
-
-                                        ctx.reset()
-                                        ctx.clearRect(0, 0, width, height)
-
-                                        var centerX = width / 2
-                                        var centerY = height / 2
-                                        var radius = size / 2 - 1
-                                        var step = Math.PI / 180
-
-                                        // Full-saturation hue ring. The white
-                                        // radial wash below fades it towards the
-                                        // center to create the saturation axis.
-                                        for (var hue = 0; hue < 360; hue++) {
-                                            ctx.beginPath()
-                                            ctx.moveTo(centerX, centerY)
-                                            ctx.arc(centerX, centerY, radius,
-                                                    hue * step, (hue + 1) * step)
-                                            ctx.closePath()
-                                            ctx.fillStyle = Qt.hsla(hue / 360, 1, 0.5, 1)
-                                            ctx.fill()
-                                        }
-
-                                        var wash = ctx.createRadialGradient(
-                                            centerX, centerY, 0,
-                                            centerX, centerY, radius)
-                                        wash.addColorStop(0, "rgba(255, 255, 255, 1)")
-                                        wash.addColorStop(1, "rgba(255, 255, 255, 0)")
-                                        ctx.fillStyle = wash
-                                        ctx.beginPath()
-                                        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2)
-                                        ctx.fill()
-
-                                        // Brightness is a black overlay, so the
-                                        // wheel dims without losing hue/saturation.
-                                        var darkness = 1 - Math.max(
-                                            0, Math.min(1, brightness / 100))
-                                        if (darkness > 0) {
-                                            ctx.fillStyle = "rgba(0, 0, 0, " + darkness + ")"
-                                            ctx.beginPath()
-                                            ctx.arc(centerX, centerY, radius,
-                                                    0, Math.PI * 2)
-                                            ctx.fill()
-                                        }
-
-                                        ctx.beginPath()
-                                        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2)
-                                        ctx.strokeStyle = Theme.borderColor
-                                        ctx.lineWidth = Math.max(1, LayoutMetrics.border.l)
-                                        ctx.stroke()
-                                    }
+                                    source: "image://colorwheel/wheel"
+                                    sourceSize.width: Math.max(
+                                        1, Math.round(width))
+                                    sourceSize.height: Math.max(
+                                        1, Math.round(height))
+                                    fillMode: Image.PreserveAspectFit
+                                    smooth: true
+                                    mipmap: true
                                 }
 
-                                // Marker kept outside the Canvas so choosing a
-                                // color only moves it instead of repainting the
-                                // whole wheel.
+                                Rectangle {
+                                    width: wheel.paintedWidth
+                                    height: wheel.paintedHeight
+                                    x: (wheel.paintedWidth - width) / 2
+                                    y: (wheel.paintedHeight - height) / 2
+                                    radius: width / 2
+                                    color: "#000000"
+                                    antialiasing: true
+                                    opacity: 1 - Math.max(
+                                        0, Math.min(1, colorsVM.value / 100))
+                                    visible: opacity > 0
+                                }
+
+                                Rectangle {
+                                    readonly property real thickness: Math.max(
+                                        2, Math.round(LayoutMetrics.border.l))
+
+                                    width: wheel.paintedWidth
+                                           + Math.max(0, thickness - 1) * 2
+                                    height: wheel.paintedHeight
+                                            + Math.max(0, thickness - 1) * 2
+                                    x: (wheel.paintedWidth - width) / 2
+                                    y: (wheel.paintedHeight - height) / 2
+                                    radius: width / 2
+                                    color: "transparent"
+                                    antialiasing: true
+                                    border.width: thickness
+                                    border.color: Theme.borderColor
+                                }
+
                                 Item {
                                     id: wheelMarker
                                     readonly property real angle: colorsVM.hue * Math.PI / 180
                                     readonly property real markerSize: Math.max(
-                                        LayoutMetrics.unit * 1.8, 10)
+                                        LayoutMetrics.unit * 2, 11)
+                                    readonly property real outlineWidth: Math.max(
+                                        1, LayoutMetrics.unit * 0.12)
 
                                     readonly property real radius: colorsVM.saturation
                                                                   / 100
                                                                   * (wheelArea.width / 2
                                                                      - markerSize / 2 - 1)
 
-                                    width: markerSize + 2
+                                    width: markerSize
                                     height: width
                                     x: wheelArea.width / 2
                                        + Math.cos(angle) * radius - width / 2
                                     y: wheelArea.height / 2
                                        + Math.sin(angle) * radius - height / 2
 
-                                    // Dark halo keeps the marker readable on
-                                    // both bright and dark parts of the wheel.
                                     Rectangle {
                                         anchors.fill: parent
                                         radius: width / 2
-                                        color: "transparent"
-                                        border.width: Math.max(1, LayoutMetrics.border.m)
-                                        border.color: "#000000"
-                                        opacity: 0.5
-                                    }
-
-                                    Rectangle {
-                                        anchors.centerIn: parent
-                                        width: wheelMarker.markerSize
-                                        height: width
-                                        radius: width / 2
-                                        color: "transparent"
-                                        border.width: Math.max(2, LayoutMetrics.border.m * 3)
-                                        border.color: "#FFFFFF"
+                                        color: "#FFFFFF"
+                                        border.width: wheelMarker.outlineWidth
+                                        border.color: "#99000000"
+                                        antialiasing: true
                                     }
                                 }
 
@@ -273,7 +236,6 @@ Item {
                                 }
                             }
 
-                            // Brightness
                             Column {
                                 width: parent.width
                                 spacing: LayoutMetrics.spacing.xxs
@@ -306,7 +268,6 @@ Item {
                                 }
                             }
 
-                            // Hex input
                             Column {
                                 width: parent.width
                                 spacing: LayoutMetrics.spacing.xxs
@@ -424,149 +385,149 @@ Item {
                                 }
                             }
                         }
-                    }
-                }
 
-                // Harmony ---------------------------------------------------
-                Rectangle {
-                    width: parent.width
-                    implicitHeight: harmonyColumn.implicitHeight
-                                    + LayoutMetrics.spacing.lg * 2
-                    radius: LayoutMetrics.radius.m
-                    color: Theme.inputBackgroundColor
-                    border.width: LayoutMetrics.border.l
-                    border.color: Theme.borderColor
-
-                    Column {
-                        id: harmonyColumn
-                        width: Math.max(0, parent.width - LayoutMetrics.spacing.lg * 2)
-                        x: LayoutMetrics.spacing.lg
-                        y: LayoutMetrics.spacing.lg
-                        spacing: LayoutMetrics.spacing.md
-
-                        Row {
-                            spacing: LayoutMetrics.spacing.md
+                        // Harmony ---------------------------------------------------
+                        Rectangle {
+                            Layout.fillWidth: true
+                            implicitHeight: harmonyColumn.implicitHeight
+                                            + LayoutMetrics.spacing.lg * 2
+                            radius: LayoutMetrics.radius.m
+                            color: Theme.inputBackgroundColor
+                            border.width: LayoutMetrics.border.l
+                            border.color: Theme.borderColor
 
                             Column {
-                                spacing: LayoutMetrics.spacing.xxs
+                                id: harmonyColumn
+                                width: Math.max(0, parent.width - LayoutMetrics.spacing.lg * 2)
+                                x: LayoutMetrics.spacing.lg
+                                y: LayoutMetrics.spacing.lg
+                                spacing: LayoutMetrics.spacing.md
 
-                                Label {
-                                    bold: false
-                                    text: "Harmony"
-                                    textColor: Theme.textColor
-                                    pixelSize: Typography.h6
-                                }
-
-                                ComboBox {
-                                    width: LayoutMetrics.size.comboBoxWidth
-                                    model: colorsVM.harmonyTypes
-                                    currentIndex: {
-                                        var index = colorsVM.harmonyTypes.indexOf(colorsVM.harmonyType)
-                                        return index >= 0 ? index : 0
-                                    }
-                                    onCurrentIndexChanged: {
-                                        if (currentIndex >= 0
-                                                && currentIndex < colorsVM.harmonyTypes.length) {
-                                            var type = colorsVM.harmonyTypes[currentIndex]
-                                            if (type && type !== colorsVM.harmonyType)
-                                                colorsVM.harmonyType = type
-                                        }
-                                    }
-                                }
-                            }
-
-                            Column {
-                                spacing: LayoutMetrics.spacing.xxs
-
-                                Label {
-                                    bold: false
-                                    text: "Colors"
-                                    textColor: Theme.textColor
-                                    pixelSize: Typography.h6
-                                }
-
-                                SpinBox {
-                                    from: 2
-                                    to: colorsVM.maxHarmonyCount
-                                    stepSize: 1
-                                    value: colorsVM.harmonyCount
-                                    onValueChanged: colorsVM.harmonyCount = value
-                                }
-                            }
-                        }
-
-                        Flow {
-                            id: harmonyFlow
-                            readonly property int itemCount: colorsVM.harmony.length
-                            readonly property real availableWidth: parent ? parent.width : 0
-                            readonly property real swatchWidth: Math.max(
-                                LayoutMetrics.unit * 12,
-                                Math.min(LayoutMetrics.unit * 20,
-                                         (availableWidth
-                                          - spacing * (itemCount - 1))
-                                         / Math.max(1, itemCount)))
-
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            width: Math.min(availableWidth,
-                                            itemCount * swatchWidth
-                                            + spacing * Math.max(0, itemCount - 1))
-                            spacing: LayoutMetrics.spacing.md
-
-                            Repeater {
-                                model: colorsVM.harmony
-
-                                Item {
-                                    width: harmonyFlow.swatchWidth
-                                    height: swatchColumn.implicitHeight
+                                Row {
+                                    spacing: LayoutMetrics.spacing.md
 
                                     Column {
-                                        id: swatchColumn
-                                        width: parent.width
                                         spacing: LayoutMetrics.spacing.xxs
 
-                                        Rectangle {
-                                            width: parent.width
-                                            height: LayoutMetrics.unit * 9
-                                            radius: LayoutMetrics.radius.s
-                                            color: modelData.hex
-                                            border.width: LayoutMetrics.border.l
-                                            border.color: Theme.borderColor
-
-                                            MouseArea {
-                                                anchors.fill: parent
-                                                hoverEnabled: true
-                                                cursorShape: Qt.PointingHandCursor
-                                                onClicked: colorsVM.copyText(modelData.hex)
-                                            }
-                                        }
-
                                         Label {
-                                            width: parent.width
-                                            horizontalAlignment: Text.AlignHCenter
                                             bold: false
-                                            text: modelData.label
-                                            textColor: Theme.dividerColor
-                                            pixelSize: Typography.caption
-                                        }
-
-                                        Label {
-                                            width: parent.width
-                                            horizontalAlignment: Text.AlignHCenter
-                                            text: modelData.hex
+                                            text: "Harmony"
                                             textColor: Theme.textColor
                                             pixelSize: Typography.h6
                                         }
+
+                                        ComboBox {
+                                            width: LayoutMetrics.size.comboBoxWidth
+                                            model: colorsVM.harmonyTypes
+                                            currentIndex: {
+                                                var index = colorsVM.harmonyTypes.indexOf(colorsVM.harmonyType)
+                                                return index >= 0 ? index : 0
+                                            }
+                                            onCurrentIndexChanged: {
+                                                if (currentIndex >= 0
+                                                        && currentIndex < colorsVM.harmonyTypes.length) {
+                                                    var type = colorsVM.harmonyTypes[currentIndex]
+                                                    if (type && type !== colorsVM.harmonyType)
+                                                        colorsVM.harmonyType = type
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    Column {
+                                        spacing: LayoutMetrics.spacing.xxs
+
+                                        Label {
+                                            bold: false
+                                            text: "Colors"
+                                            textColor: Theme.textColor
+                                            pixelSize: Typography.h6
+                                        }
+
+                                        SpinBox {
+                                            from: 2
+                                            to: colorsVM.maxHarmonyCount
+                                            stepSize: 1
+                                            value: colorsVM.harmonyCount
+                                            onValueChanged: colorsVM.harmonyCount = value
+                                        }
                                     }
                                 }
-                            }
-                        }
 
-                        Label {
-                            width: parent.width
-                            bold: false
-                            text: "Click a swatch to copy its hex value."
-                            textColor: Theme.dividerColor
-                            pixelSize: Typography.caption
+                                Flow {
+                                    id: harmonyFlow
+                                    readonly property int itemCount: colorsVM.harmony.length
+                                    readonly property real availableWidth: parent ? parent.width : 0
+                                    readonly property real swatchWidth: Math.max(
+                                        LayoutMetrics.unit * 8,
+                                        Math.min(LayoutMetrics.unit * 20,
+                                                 (availableWidth
+                                                  - spacing * (itemCount - 1))
+                                                 / Math.max(1, itemCount)))
+
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    width: Math.min(availableWidth,
+                                                    itemCount * swatchWidth
+                                                    + spacing * Math.max(0, itemCount - 1))
+                                    spacing: LayoutMetrics.spacing.md
+
+                                    Repeater {
+                                        model: colorsVM.harmony
+
+                                        Item {
+                                            width: harmonyFlow.swatchWidth
+                                            height: swatchColumn.implicitHeight
+
+                                            Column {
+                                                id: swatchColumn
+                                                width: parent.width
+                                                spacing: LayoutMetrics.spacing.xxs
+
+                                                Rectangle {
+                                                    width: parent.width
+                                                    height: LayoutMetrics.unit * 9
+                                                    radius: LayoutMetrics.radius.s
+                                                    color: modelData.hex
+                                                    border.width: LayoutMetrics.border.l
+                                                    border.color: Theme.borderColor
+
+                                                    MouseArea {
+                                                        anchors.fill: parent
+                                                        hoverEnabled: true
+                                                        cursorShape: Qt.PointingHandCursor
+                                                        onClicked: colorsVM.copyText(modelData.hex)
+                                                    }
+                                                }
+
+                                                Label {
+                                                    width: parent.width
+                                                    horizontalAlignment: Text.AlignHCenter
+                                                    bold: false
+                                                    text: modelData.label
+                                                    textColor: Theme.dividerColor
+                                                    pixelSize: Typography.caption
+                                                }
+
+                                                Label {
+                                                    width: parent.width
+                                                    horizontalAlignment: Text.AlignHCenter
+                                                    text: modelData.hex
+                                                    textColor: Theme.textColor
+                                                    pixelSize: Typography.h6
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Label {
+                                    width: parent.width
+                                    bold: false
+                                    text: "Click a swatch to copy its hex value."
+                                    textColor: Theme.dividerColor
+                                    pixelSize: Typography.caption
+                                }
+                            }
                         }
                     }
                 }

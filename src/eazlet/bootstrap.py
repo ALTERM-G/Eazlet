@@ -9,6 +9,7 @@ from PySide6.QtCore import Property, QEvent, QObject, Qt, QUrl, Signal
 from PySide6.QtGui import QFont, QFontDatabase, QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine, QQmlComponent
 
+from .backend.color_wheel_provider import ColorWheelImageProvider
 from .backend.controller import Controller
 from .backend.language_manager import LanguageManager
 
@@ -129,6 +130,7 @@ def build_engine(src_path: Path | None = None) -> QQmlApplicationEngine:
         src_path = Path(__file__).resolve().parent
 
     engine = QQmlApplicationEngine()
+    engine.addImageProvider("colorwheel", ColorWheelImageProvider())
     engine.addImportPath(str(src_path / "ui"))
 
     app = QGuiApplication.instance()
@@ -157,6 +159,7 @@ def build_engine(src_path: Path | None = None) -> QQmlApplicationEngine:
     engine.rootContext().setContextProperty("organizerVM", controller.organizerVM)
     engine.rootContext().setContextProperty("cipherVM", controller.cipherVM)
     engine.rootContext().setContextProperty("colorsVM", controller.colorsVM)
+    engine.rootContext().setContextProperty("tierListVM", controller.tierListVM)
     engine.rootContext().setContextProperty("textAnalysisVM", controller.textAnalysisVM)
     engine.rootContext().setContextProperty("asciiArtVM", controller.asciiArtVM)
     engine.rootContext().setContextProperty("numberToolsVM", controller.numberToolsVM)

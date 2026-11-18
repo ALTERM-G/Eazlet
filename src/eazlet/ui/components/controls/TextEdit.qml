@@ -59,24 +59,9 @@ Item {
             visible: control.horizontalScroll && hbar.size < 1.0
             padding: 0
 
-            contentItem: Rectangle {
-                implicitHeight: LayoutMetrics.unit * 1.2
-                implicitWidth: LayoutMetrics.spacing.sm
-                radius: height / 2
-                color: hbar.pressed ? Theme.themeColor
-                     : hbar.hovered ? Theme.borderColor
-                     : Theme.dividerColor
-                opacity: (hbar.active || hbar.hovered) ? 1.0 : 0.55
-
-                Behavior on color {
-                    enabled: LayoutMetrics.animationsEnabled
-                    ColorAnimation { duration: 120 }
-                }
-
-                Behavior on opacity {
-                    enabled: LayoutMetrics.animationsEnabled
-                    NumberAnimation { duration: 120 }
-                }
+            contentItem: ScrollBarThumb {
+                bar: hbar
+                orientation: Qt.Horizontal
             }
         }
 
@@ -101,24 +86,9 @@ Item {
             visible: vbar.size < 1.0
             padding: 0
 
-            contentItem: Rectangle {
-                implicitWidth: LayoutMetrics.unit * 1.2
-                implicitHeight: LayoutMetrics.spacing.sm
-                radius: width / 2
-                color: vbar.pressed ? Theme.themeColor
-                     : vbar.hovered ? Theme.borderColor
-                     : Theme.dividerColor
-                opacity: (vbar.active || vbar.hovered) ? 1.0 : 0.55
-
-                Behavior on color {
-                    enabled: LayoutMetrics.animationsEnabled
-                    ColorAnimation { duration: 120 }
-                }
-
-                Behavior on opacity {
-                    enabled: LayoutMetrics.animationsEnabled
-                    NumberAnimation { duration: 120 }
-                }
+            contentItem: ScrollBarThumb {
+                bar: vbar
+                orientation: Qt.Vertical
             }
         }
 
@@ -213,34 +183,13 @@ Item {
         return item
     }
 
-    // Scrolling over the editor should scroll its text when it is scrollable,
-    // otherwise it should scroll the page. At the text's top or bottom the
-    // remaining wheel delta is handed to the page.
-    MouseArea {
-        anchors.fill: parent
-        acceptedButtons: Qt.NoButton
-        cursorShape: Qt.IBeamCursor
-        z: 1
-        onWheel: function(wheel) {
-            var delta = wheel.pixelDelta.y !== 0
-                ? wheel.pixelDelta.y * 2
-                : wheel.angleDelta.y / 120 * LayoutMetrics.unit * 24
-
-            var inner = view.contentItem
-            if (inner && inner.contentHeight > inner.height + 1) {
-                var maxInner = inner.contentHeight - inner.height
-                var target = Math.max(0, Math.min(maxInner, inner.contentY - delta))
-                delta += target - inner.contentY
-                inner.contentY = target
-            }
-
-            var flick = control.pageFlickable()
-            if (flick && Math.abs(delta) > 0.5) {
-                var maxY = Math.max(0, flick.contentHeight - flick.height)
-                flick.contentY = Math.max(0, Math.min(maxY, flick.contentY - delta))
-            }
-            wheel.accepted = true
-        }
+    // Scrolling over the editor scrolls its text first; leftover delta is
+    // handed to the surrounding page, so the page keeps scrolling at the
+    // text's top or bottom.
+    WheelScrollArea {
+        target: view.contentItem
+        fallback: control.pageFlickable()
+        cursor: Qt.IBeamCursor
     }
 
     IconButton {

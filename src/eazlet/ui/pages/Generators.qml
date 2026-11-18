@@ -88,19 +88,10 @@ Item {
                 contentHeight: contentColumn.implicitHeight
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
-                interactive: false
+                acceptedButtons: Qt.NoButton
 
-                MouseArea {
-                    anchors.fill: parent
-                    acceptedButtons: Qt.NoButton
-                    onWheel: function(wheel) {
-                        var step = wheel.pixelDelta.y !== 0
-                                   ? wheel.pixelDelta.y * 2
-                                   : wheel.angleDelta.y / 120 * LayoutMetrics.unit * 24
-                        var maxY = Math.max(0, pageFlickable.contentHeight - pageFlickable.height)
-                        pageFlickable.contentY = Math.max(0, Math.min(maxY, pageFlickable.contentY - step))
-                        wheel.accepted = true
-                    }
+                WheelScrollArea {
+                    target: pageFlickable
                 }
 
                 ScrollBar.vertical: AppScrollBar {}

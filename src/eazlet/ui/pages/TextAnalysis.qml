@@ -266,22 +266,13 @@ Item {
                 visible: textAnalysisVM.hasResults
                 contentHeight: resultsColumn.implicitHeight
                 clip: true
-                interactive: false
+                acceptedButtons: Qt.NoButton
                 flickableDirection: Flickable.VerticalFlick
                 boundsBehavior: Flickable.StopAtBounds
                 ScrollBar.vertical: AppScrollBar {}
 
-                MouseArea {
-                    anchors.fill: parent
-                    acceptedButtons: Qt.NoButton
-                    onWheel: function(wheel) {
-                        var delta = wheel.pixelDelta.y !== 0
-                            ? wheel.pixelDelta.y * 2
-                            : wheel.angleDelta.y / 120 * LayoutMetrics.unit * 24
-                        var maxY = Math.max(0, resultsFlick.contentHeight - resultsFlick.height)
-                        resultsFlick.contentY = Math.max(0, Math.min(maxY, resultsFlick.contentY - delta))
-                        wheel.accepted = true
-                    }
+                WheelScrollArea {
+                    target: resultsFlick
                 }
 
                 Column {

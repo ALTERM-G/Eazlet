@@ -76,19 +76,10 @@ Item {
                 flickableDirection: Flickable.VerticalFlick
                 boundsBehavior: Flickable.StopAtBounds
                 ScrollBar.vertical: AppScrollBar {}
-                interactive: false
+                acceptedButtons: Qt.NoButton
 
-                MouseArea {
-                    anchors.fill: parent
-                    acceptedButtons: Qt.NoButton
-                    onWheel: function(wheel) {
-                        var delta = wheel.pixelDelta.y !== 0
-                            ? wheel.pixelDelta.y * 2
-                            : wheel.angleDelta.y / 120 * LayoutMetrics.unit * 24
-                        var maxY = Math.max(0, toolScroll.contentHeight - toolScroll.height)
-                        toolScroll.contentY = Math.max(0, Math.min(maxY, toolScroll.contentY - delta))
-                        wheel.accepted = true
-                    }
+                WheelScrollArea {
+                    target: toolScroll
                 }
 
                 TabSlide {

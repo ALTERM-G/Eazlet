@@ -14,6 +14,7 @@ from .organizer_vm import OrganizerVM
 from .settings_vm import SettingsVM
 from .social_media_vm import SocialMediaVM
 from .text_analysis_vm import TextAnalysisVM
+from .text_tools_vm import TextToolsVM
 from .tier_list_vm import TierListVM
 from .unified_download_vm import UnifiedDownloadVM
 
@@ -34,6 +35,7 @@ __all__ = [
     "SettingsVM",
     "SocialMediaVM",
     "TextAnalysisVM",
+    "TextToolsVM",
     "TierListVM",
     "UnifiedDownloadVM",
 ]

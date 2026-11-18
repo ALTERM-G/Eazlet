@@ -170,20 +170,10 @@ Item {
                 contentHeight: contentColumn.implicitHeight
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
-                interactive: false
+                acceptedButtons: Qt.NoButton
 
-                MouseArea {
-                    anchors.fill: parent
-                    acceptedButtons: Qt.NoButton
-                    onWheel: function(wheel) {
-                        var step = wheel.pixelDelta.y !== 0
-                                   ? wheel.pixelDelta.y * 2
-                                   : wheel.angleDelta.y / 120 * LayoutMetrics.unit * 24
-                        var maxY = Math.max(0, pageFlickable.contentHeight - pageFlickable.height)
-                        pageFlickable.contentY = Math.max(0, Math.min(maxY,
-                                                                    pageFlickable.contentY - step))
-                        wheel.accepted = true
-                    }
+                WheelScrollArea {
+                    target: pageFlickable
                 }
 
                 ScrollBar.vertical: AppScrollBar {}
@@ -688,7 +678,9 @@ Item {
                             width: Math.max(1, Math.ceil(naturalWidth * fitScale) + 2 * frame)
                             height: Math.max(1, Math.ceil(naturalHeight * fitScale) + 2 * frame)
                             x: Math.round((parent.width - width) / 2)
-                            radius: LayoutMetrics.radius.m
+                            // The rendered PNG is the content; keep its frame
+                            // square so it does not soften the image corners.
+                            radius: 0
                             color: Theme.inputBackgroundColor
                             border.color: Qt.rgba(Theme.textColor.r, Theme.textColor.g,
                                                   Theme.textColor.b, 0.35)

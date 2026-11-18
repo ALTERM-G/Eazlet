@@ -23,6 +23,7 @@ Title 1.0 indicators/Title.qml
 LineEdit 1.0 controls/LineEdit.qml
 PathPicker 1.0 controls/PathPicker.qml
 TextEdit 1.0 controls/TextEdit.qml
+RegexTextEdit 1.0 controls/RegexTextEdit.qml
 DropZone 1.0 controls/DropZone.qml
 TextCursor 1.0 controls/TextCursor.qml
 TextContextMenu 1.0 popups/TextContextMenu.qml
@@ -31,3 +32,5 @@ FontCrossfade 1.0 effects/FontCrossfade.qml
 TabSlide 1.0 effects/TabSlide.qml
 CipherIO 1.0 controls/CipherIO.qml
 AppScrollBar 1.0 controls/AppScrollBar.qml
+ScrollBarThumb 1.0 controls/ScrollBarThumb.qml
+WheelScrollArea 1.0 controls/WheelScrollArea.qml

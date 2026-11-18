@@ -341,26 +341,14 @@ import "tabs"
 
                 Binding {
                     target: scrollView.contentItem
-                    property: "interactive"
-                    value: false
+                    property: "acceptedButtons"
+                    value: Qt.NoButton
                     when: scrollView.contentItem !== null
                     restoreMode: Binding.RestoreNone
                 }
 
-                MouseArea {
-                    anchors.fill: parent
-                    acceptedButtons: Qt.NoButton
-                    onWheel: function(wheel) {
-                        var flick = scrollView.contentItem
-                        if (!flick)
-                            return
-                        var delta = wheel.pixelDelta.y !== 0
-                            ? wheel.pixelDelta.y * 2
-                            : wheel.angleDelta.y / 120 * LayoutMetrics.unit * 24
-                        var maxY = Math.max(0, flick.contentHeight - flick.height)
-                        flick.contentY = Math.max(0, Math.min(maxY, flick.contentY - delta))
-                        wheel.accepted = true
-                    }
+                WheelScrollArea {
+                    target: scrollView.contentItem
                 }
 
                 Item {

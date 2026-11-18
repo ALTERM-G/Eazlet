@@ -161,6 +161,7 @@ def build_engine(src_path: Path | None = None) -> QQmlApplicationEngine:
     engine.rootContext().setContextProperty("colorsVM", controller.colorsVM)
     engine.rootContext().setContextProperty("tierListVM", controller.tierListVM)
     engine.rootContext().setContextProperty("textAnalysisVM", controller.textAnalysisVM)
+    engine.rootContext().setContextProperty("textToolsVM", controller.textToolsVM)
     engine.rootContext().setContextProperty("asciiArtVM", controller.asciiArtVM)
     engine.rootContext().setContextProperty("numberToolsVM", controller.numberToolsVM)
     engine.rootContext().setContextProperty("mathVM", controller.mathVM)

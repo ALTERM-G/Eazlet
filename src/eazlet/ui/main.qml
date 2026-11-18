@@ -153,7 +153,8 @@ Window {
                     { source: "pages/Generators.qml" },
                     { source: "pages/Dictionary.qml" },
                     { source: "pages/Colors.qml" },
-                    { source: "pages/TierList.qml" }
+                    { source: "pages/TierList.qml" },
+                    { source: "pages/TextTools.qml" }
                 ]
 
                 delegate: Loader {

@@ -24,6 +24,7 @@ QtObject {
     readonly property url organizer: Qt.resolvedUrl("../assets/icons/labels/Organizer.svg")
     readonly property url codeTools: Qt.resolvedUrl("../assets/icons/labels/Code_tools.svg")
     readonly property url textAnalysis: Qt.resolvedUrl("../assets/icons/labels/Text_analyzer.svg")
+    readonly property url textTools: Qt.resolvedUrl("../assets/icons/labels/Text_tools.svg")
     readonly property url asciiArt: Qt.resolvedUrl("../assets/icons/labels/Ascii_art.svg")
     readonly property url numberTools: Qt.resolvedUrl("../assets/icons/labels/Numbers.svg")
     readonly property url math: Qt.resolvedUrl("../assets/icons/labels/Math.svg")

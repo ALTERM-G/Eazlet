@@ -203,7 +203,7 @@ ComboBox {
                     anchors.fill: parent
                     clip: true
                     contentHeight: column.implicitHeight
-                    interactive: false
+                    acceptedButtons: Qt.NoButton
                     boundsBehavior: Flickable.StopAtBounds
                     ScrollBar.vertical: ScrollBar {
                         id: popupScrollBar
@@ -211,38 +211,15 @@ ComboBox {
                         padding: 0
                         hoverEnabled: true
                         implicitWidth: LayoutMetrics.unit * 1.2
-                        contentItem: Rectangle {
-                            implicitWidth: LayoutMetrics.unit * 1.2
-                            radius: Math.min(width / 2, LayoutMetrics.radius.m)
-                            color: popupScrollBar.pressed ? Theme.themeColor
-                                 : popupScrollBar.hovered ? Theme.borderColor
-                                 : Theme.dividerColor
-                            opacity: (popupScrollBar.active || popupScrollBar.hovered) ? 1.0 : 0.55
-
-                            Behavior on color {
-                                enabled: LayoutMetrics.animationsEnabled
-                                ColorAnimation { duration: 120 }
-                            }
-
-                            Behavior on opacity {
-                                enabled: LayoutMetrics.animationsEnabled
-                                NumberAnimation { duration: 120 }
-                            }
+                        contentItem: Components.ScrollBarThumb {
+                            bar: popupScrollBar
+                            orientation: Qt.Vertical
                         }
                     }
 
-                    MouseArea {
-                        anchors.fill: parent
-                        acceptedButtons: Qt.NoButton
+                    Components.WheelScrollArea {
+                        target: popupFlick
                         enabled: control.scrollablePopup
-                        onWheel: function(wheel) {
-                            var delta = wheel.pixelDelta.y !== 0
-                                ? wheel.pixelDelta.y * 2
-                                : wheel.angleDelta.y / 120 * LayoutMetrics.unit * 24
-                            var maxY = Math.max(0, popupFlick.contentHeight - popupFlick.height)
-                            popupFlick.contentY = Math.max(0, Math.min(maxY, popupFlick.contentY - delta))
-                            wheel.accepted = true
-                        }
                     }
 
                     Column {

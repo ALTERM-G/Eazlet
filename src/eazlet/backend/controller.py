@@ -20,6 +20,7 @@ from .viewmodels import (
     SettingsVM,
     SocialMediaVM,
     TextAnalysisVM,
+    TextToolsVM,
     TierListVM,
     UnifiedDownloadVM,
 )
@@ -59,6 +60,7 @@ class Controller(QObject):
         self._colors_vm = ColorsVM(self)
         self._tier_list_vm = TierListVM(self)
         self._text_analysis_vm = TextAnalysisVM(self)
+        self._text_tools_vm = TextToolsVM(self)
         self._ascii_art_vm = AsciiArtVM(self)
         self._number_tools_vm = NumberToolsVM(self)
         self._math_vm = MathVM(self)
@@ -408,6 +410,10 @@ class Controller(QObject):
     @Property(QObject, constant=True)
     def textAnalysisVM(self) -> TextAnalysisVM:
         return self._text_analysis_vm
+
+    @Property(QObject, constant=True)
+    def textToolsVM(self) -> TextToolsVM:
+        return self._text_tools_vm
 
     @Property(QObject, constant=True)
     def asciiArtVM(self) -> AsciiArtVM:

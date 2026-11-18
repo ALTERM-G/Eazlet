@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import components
 
 // Shared scroll bar, styled like the ASCII font chooser's item grid bar.
 //
@@ -13,6 +14,10 @@ ScrollBar {
     property Item flick: null
     property Item gutterHost: null
     property real gutterGap: LayoutMetrics.spacing.xs
+    // Set to false when the flickable reserves its own right-hand gutter
+    // (for example a two-column page where the surface gutter would land on
+    // top of the neighbouring panel).
+    property bool autoGutter: true
 
     policy: ScrollBar.AsNeeded
     visible: size < 1.0
@@ -29,16 +34,18 @@ ScrollBar {
 
     Component.onCompleted: {
         flick = parent
-        var node = flick ? flick.parent : null
-        while (node) {
-            if (node.objectName === "workplaceSurface") {
-                var needed = flick.mapToItem(node, flick.width, 0).x
-                             + gutterGap + implicitWidth
-                if (node.width >= needed)
-                    gutterHost = node
-                break
+        if (autoGutter && !gutterHost) {
+            var node = flick ? flick.parent : null
+            while (node) {
+                if (node.objectName === "workplaceSurface") {
+                    var needed = flick.mapToItem(node, flick.width, 0).x
+                                 + gutterGap + implicitWidth
+                    if (node.width >= needed)
+                        gutterHost = node
+                    break
+                }
+                node = node.parent
             }
-            node = node.parent
         }
         if (gutterHost)
             parent = gutterHost
@@ -51,22 +58,8 @@ ScrollBar {
         height = Qt.binding(function () { return flick.height })
     }
 
-    contentItem: Rectangle {
-        implicitWidth: LayoutMetrics.unit * 1.2
-        radius: Math.min(width / 2, LayoutMetrics.radius.m)
-        color: control.pressed ? Theme.themeColor
-             : control.hovered ? Theme.borderColor
-             : Theme.dividerColor
-        opacity: (control.active || control.hovered) ? 1.0 : 0.55
-
-        Behavior on color {
-            enabled: LayoutMetrics.animationsEnabled
-            ColorAnimation { duration: 120 }
-        }
-
-        Behavior on opacity {
-            enabled: LayoutMetrics.animationsEnabled
-            NumberAnimation { duration: 120 }
-        }
+    contentItem: ScrollBarThumb {
+        bar: control
+        orientation: Qt.Vertical
     }
 }

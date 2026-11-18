@@ -32,6 +32,7 @@ Rectangle {
             case "organizer": return SVGLibrary.organizer
             case "codeTools": return SVGLibrary.codeTools
             case "textAnalysis": return SVGLibrary.textAnalysis
+            case "textTools": return SVGLibrary.textTools
             case "asciiArt": return SVGLibrary.asciiArt
             case "numberTools": return SVGLibrary.numberTools
             case "math": return SVGLibrary.math
@@ -165,7 +166,8 @@ Rectangle {
                     { label: "Generators", icon: "generators" },
                     { label: "Dictionary", icon: "dictionary" },
                     { label: "Colors", icon: "colors" },
-                    { label: "Tier List", icon: "tierList" }
+                    { label: "Tier List", icon: "tierList" },
+                    { label: "Text Tools", icon: "textTools" }
                 ]
 
                 delegate: SideBarItem {

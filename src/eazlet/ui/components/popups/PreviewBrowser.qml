@@ -373,23 +373,9 @@ Controls.Popup {
                         implicitWidth: LayoutMetrics.unit * 1.2
                         minimumSize: 0.14
 
-                        contentItem: Rectangle {
-                            implicitWidth: LayoutMetrics.unit * 1.2
-                            radius: Math.min(width / 2, LayoutMetrics.radius.m)
-                            color: itemListBar.pressed ? Theme.themeColor
-                                 : itemListBar.hovered ? Theme.borderColor
-                                 : Theme.dividerColor
-                            opacity: (itemListBar.active || itemListBar.hovered) ? 1.0 : 0.55
-
-                            Behavior on color {
-                                enabled: LayoutMetrics.animationsEnabled
-                                ColorAnimation { duration: 120 }
-                            }
-
-                            Behavior on opacity {
-                                enabled: LayoutMetrics.animationsEnabled
-                                NumberAnimation { duration: 120 }
-                            }
+                        contentItem: ScrollBarThumb {
+                            bar: itemListBar
+                            orientation: Qt.Vertical
                         }
                     }
 

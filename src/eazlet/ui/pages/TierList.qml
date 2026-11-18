@@ -159,7 +159,7 @@ Item {
             id: flick
             objectName: "boardFlick"
             ScrollBar.vertical: AppScrollBar {}
-            interactive: false
+            acceptedButtons: Qt.NoButton
 
             anchors.top: parent.top
             anchors.left: parent.left
@@ -174,17 +174,8 @@ Item {
             flickableDirection: Flickable.VerticalFlick
             boundsBehavior: Flickable.StopAtBounds
 
-            MouseArea {
-                anchors.fill: parent
-                acceptedButtons: Qt.NoButton
-                onWheel: function(wheelEvent) {
-                    var delta = wheelEvent.pixelDelta.y !== 0
-                        ? wheelEvent.pixelDelta.y * 2
-                        : wheelEvent.angleDelta.y / 120 * LayoutMetrics.unit * 24
-                    var maxY = Math.max(0, flick.contentHeight - flick.height)
-                    flick.contentY = Math.max(0, Math.min(maxY, flick.contentY - delta))
-                    wheelEvent.accepted = true
-                }
+            WheelScrollArea {
+                target: flick
             }
 
             Column {
@@ -681,7 +672,7 @@ Item {
                         anchors.fill: parent
                         contentHeight: poolFlow.implicitHeight
                         clip: true
-                        interactive: false
+                        acceptedButtons: Qt.NoButton
                         flickableDirection: Flickable.VerticalFlick
                         boundsBehavior: Flickable.StopAtBounds
 
@@ -697,20 +688,9 @@ Item {
                             }
                         }
 
-                        MouseArea {
-                            anchors.fill: parent
-                            acceptedButtons: Qt.NoButton
-                            onWheel: function(wheelEvent) {
-                                var delta = wheelEvent.pixelDelta.y !== 0
-                                    ? wheelEvent.pixelDelta.y * 2
-                                    : wheelEvent.angleDelta.y / 120
-                                      * LayoutMetrics.unit * 12
-                                var maxY = Math.max(0, poolFlick.contentHeight
-                                                       - poolFlick.height)
-                                poolFlick.contentY = Math.max(0, Math.min(
-                                    maxY, poolFlick.contentY - delta))
-                                wheelEvent.accepted = true
-                            }
+                        WheelScrollArea {
+                            target: poolFlick
+                            step: LayoutMetrics.unit * 12
                         }
                     }
 

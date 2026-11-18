@@ -37,7 +37,7 @@ Item {
         Flickable {
             id: flick
             ScrollBar.vertical: AppScrollBar {}
-            interactive: false
+            acceptedButtons: Qt.NoButton
 
             anchors.fill: parent
             anchors.margins: LayoutMetrics.spacing.lg
@@ -46,17 +46,8 @@ Item {
             flickableDirection: Flickable.VerticalFlick
             boundsBehavior: Flickable.StopAtBounds
 
-            MouseArea {
-                anchors.fill: parent
-                acceptedButtons: Qt.NoButton
-                onWheel: function(wheelEvent) {
-                    var delta = wheelEvent.pixelDelta.y !== 0
-                        ? wheelEvent.pixelDelta.y * 2
-                        : wheelEvent.angleDelta.y / 120 * LayoutMetrics.unit * 24
-                    var maxY = Math.max(0, flick.contentHeight - flick.height)
-                    flick.contentY = Math.max(0, Math.min(maxY, flick.contentY - delta))
-                    wheelEvent.accepted = true
-                }
+            WheelScrollArea {
+                target: flick
             }
 
             Column {

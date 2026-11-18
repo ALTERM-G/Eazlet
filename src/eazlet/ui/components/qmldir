@@ -34,3 +34,4 @@ CipherIO 1.0 controls/CipherIO.qml
 AppScrollBar 1.0 controls/AppScrollBar.qml
 ScrollBarThumb 1.0 controls/ScrollBarThumb.qml
 WheelScrollArea 1.0 controls/WheelScrollArea.qml
+EazletBanner 1.0 brand/EazletBanner.qml

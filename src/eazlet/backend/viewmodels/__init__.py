@@ -11,6 +11,7 @@ from .main_vm import MainVM
 from .math_vm import MathVM
 from .number_tools_vm import NumberToolsVM
 from .organizer_vm import OrganizerVM
+from .repl_vm import ReplVM
 from .settings_vm import SettingsVM
 from .social_media_vm import SocialMediaVM
 from .text_analysis_vm import TextAnalysisVM
@@ -32,6 +33,7 @@ __all__ = [
     "MathVM",
     "NumberToolsVM",
     "OrganizerVM",
+    "ReplVM",
     "SettingsVM",
     "SocialMediaVM",
     "TextAnalysisVM",

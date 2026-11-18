@@ -7,7 +7,10 @@ import components
 Window {
     id: window
     visible: true
-    color: Theme.backgroundColor
+    // Home is a single flat surface with no card, so use the text field colour
+    // across the whole content area while it is active.
+    readonly property bool homeActive: stackLayout && stackLayout.currentIndex === 0
+    color: homeActive ? Theme.inputBackgroundColor : Theme.backgroundColor
     width: 1280
     height: 720
     readonly property bool animationsEnabled: LayoutMetrics.animationsEnabled
@@ -43,6 +46,7 @@ Window {
 
     TopBar {
         id: topBar
+        showAppTitle: !window.homeActive
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right

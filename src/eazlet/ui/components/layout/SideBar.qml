@@ -15,6 +15,27 @@ Rectangle {
     property real resizeRatio: 1.0
     property real resizableWidth: LayoutMetrics.size.sideBarWidth * resizeRatio
 
+    // Display order is grouped by purpose; `page` is the workspace index in
+    // the stack layout. Keeping them separate lets us reorder the sidebar
+    // without touching any page indices or saved-workspace behaviour.
+    property var navItems: [
+        { label: "Home", icon: "home", page: 0 },
+        { label: "Code Tools", icon: "codeTools", page: 5, separator: true },
+        { label: "Text Tools", icon: "textTools", page: 14 },
+        { label: "Text Analysis", icon: "textAnalysis", page: 6 },
+        { label: "Dictionary", icon: "dictionary", page: 11 },
+        { label: "Downloader", icon: "downloader", page: 1, separator: true },
+        { label: "Converter", icon: "converter", page: 2 },
+        { label: "Archive", icon: "archive", page: 3 },
+        { label: "Organizer", icon: "organizer", page: 4 },
+        { label: "Math", icon: "math", page: 9, separator: true },
+        { label: "Number Tools", icon: "numberTools", page: 8 },
+        { label: "Tier List", icon: "tierList", page: 13, separator: true },
+        { label: "Colors", icon: "colors", page: 12 },
+        { label: "Generators", icon: "generators", page: 10 },
+        { label: "ASCII Art", icon: "asciiArt", page: 7 }
+    ]
+
     signal navigationClicked(int index)
     signal tabForwardExited()
     signal tabBackwardExited()
@@ -67,6 +88,14 @@ Rectangle {
                                              - sidebarScroll.height + margin)
     }
 
+    function navIndexForPage(page) {
+        for (var i = 0; i < navItems.length; i++) {
+            if (navItems[i].page === page)
+                return i
+        }
+        return -1
+    }
+
     function releaseItemFocus() {
         for (var i = 0; i < navRepeater.count; i++) {
             var item = navRepeater.itemAt(i)
@@ -77,9 +106,10 @@ Rectangle {
 
     function updateItemFocus() {
         keyboardNavigated = false
-        if (expanded && !collapsed)
-            focusItemAt(currentIndex >= 0 ? currentIndex : 0)
-        else
+        if (expanded && !collapsed) {
+            var index = navIndexForPage(currentIndex)
+            focusItemAt(index >= 0 ? index : 0)
+        } else
             releaseItemFocus()
     }
 
@@ -152,31 +182,16 @@ Rectangle {
 
             Repeater {
                 id: navRepeater
-                model: [
-                    { label: "Home", icon: "home" },
-                    { label: "Downloader", icon: "downloader" },
-                    { label: "Converter", icon: "converter" },
-                    { label: "Archive", icon: "archive" },
-                    { label: "Organizer", icon: "organizer" },
-                    { label: "Code Tools", icon: "codeTools" },
-                    { label: "Text Analysis", icon: "textAnalysis" },
-                    { label: "ASCII Art", icon: "asciiArt" },
-                    { label: "Number Tools", icon: "numberTools" },
-                    { label: "Math", icon: "math" },
-                    { label: "Generators", icon: "generators" },
-                    { label: "Dictionary", icon: "dictionary" },
-                    { label: "Colors", icon: "colors" },
-                    { label: "Tier List", icon: "tierList" },
-                    { label: "Text Tools", icon: "textTools" }
-                ]
+                model: sidebar.navItems
 
                 delegate: SideBarItem {
                     id: sidebarItemDelegate
                     itemText: modelData.label
                     itemIcon: sidebar.getIconUrl(modelData.icon)
-                    isActive: sidebar.currentIndex === index
+                    isActive: sidebar.currentIndex === modelData.page
                     collapsed: sidebar.collapsed
                     showFocusRing: sidebar.keyboardNavigated
+                    separatorBefore: modelData.separator === true
 
                     Keys.onPressed: (event) => {
                         if (event.key === Qt.Key_Down) {
@@ -227,8 +242,8 @@ Rectangle {
                                    || event.key === Qt.Key_Enter
                                    || event.key === Qt.Key_Space) {
                             sidebar.keyboardNavigated = true
-                            sidebar.currentIndex = index
-                            sidebar.navigationClicked(index)
+                            sidebar.currentIndex = modelData.page
+                            sidebar.navigationClicked(modelData.page)
                             event.accepted = true
                         }
                     }
@@ -236,8 +251,8 @@ Rectangle {
                     onClicked: {
                         sidebar.keyboardNavigated = false
                         sidebar.focusItemAt(index)
-                        sidebar.currentIndex = index
-                        sidebar.navigationClicked(index)
+                        sidebar.currentIndex = modelData.page
+                        sidebar.navigationClicked(modelData.page)
                     }
                 }
             }

@@ -12,6 +12,7 @@ from PySide6.QtQml import QQmlApplicationEngine, QQmlComponent
 from .backend.color_wheel_provider import ColorWheelImageProvider
 from .backend.controller import Controller
 from .backend.language_manager import LanguageManager
+from .backend.svg_assets import svg_text
 
 
 class InputTracker(QObject):
@@ -143,6 +144,20 @@ def build_engine(src_path: Path | None = None) -> QQmlApplicationEngine:
     engine.rootContext().setContextProperty("LoadedFonts", loaded_fonts)
     engine.rootContext().setContextProperty("FontFamilies", list(all_families))
 
+    try:
+        banner_svg = svg_text(
+            src_path
+            / "resources"
+            / "assets"
+            / "icons"
+            / "labels"
+            / "Eazlet_ASCII_art.svg"
+        )
+    except OSError as error:
+        print(f"Could not load the Eazlet banner artwork: {error}", file=sys.stderr)
+        banner_svg = ""
+    engine.rootContext().setContextProperty("EazletBannerSvg", banner_svg)
+
     app.setWindowIcon(
         QIcon(str(src_path / "resources" / "assets" / "icons" / "icon.svg"))
     )
@@ -167,6 +182,7 @@ def build_engine(src_path: Path | None = None) -> QQmlApplicationEngine:
     engine.rootContext().setContextProperty("mathVM", controller.mathVM)
     engine.rootContext().setContextProperty("generatorsVM", controller.generatorsVM)
     engine.rootContext().setContextProperty("dictionaryVM", controller.dictionaryVM)
+    engine.rootContext().setContextProperty("replVM", controller.replVM)
 
     saved_family = controller.get_font_family()
     if saved_family and saved_family in all_families:

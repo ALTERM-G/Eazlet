@@ -5,6 +5,7 @@ import components
 
 Rectangle {
     id: topBar
+    property bool showAppTitle: true
     implicitHeight: LayoutMetrics.size.topBarHeight
     Layout.fillWidth: true
     color: Theme.topBarColor
@@ -35,10 +36,10 @@ Rectangle {
         }
     }
 
-    signal sidebarToggleClicked()
-
     Text {
         id: app_title
+        objectName: "app_title"
+        visible: topBar.showAppTitle
         color: Theme.themeColor
         anchors.left: parent.left
         anchors.leftMargin: LayoutMetrics.spacing.xxl * 1.5
@@ -49,4 +50,6 @@ Rectangle {
         font.weight: Font.Bold
         verticalAlignment: Text.AlignVCenter
     }
+
+    signal sidebarToggleClicked()
 }

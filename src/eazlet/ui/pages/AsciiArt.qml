@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Dialogs
 import QtQuick.Layouts
 import components
 
@@ -111,6 +112,15 @@ Item {
                     spacing: LayoutMetrics.spacing.sm
 
                     Button {
+                        objectName: "exportSvgButton"
+                        buttonText: "Export SVG"
+                        primary: true
+                        isometric: true
+                        heightMultiplier: 1.2
+                        enabled: asciiArtVM.output !== ""
+                        onPressed: svgFileDialog.open()
+                    }
+                    Button {
                         buttonText: "Copy"
                         iconPath: SVGLibrary.copy
                         enabled: asciiArtVM.output !== ""
@@ -163,6 +173,7 @@ Item {
                         path: SVGLibrary.checkMark
                         color: Theme.textColor
                         visible: asciiArtVM.status === "Copied"
+                                 || asciiArtVM.status.indexOf("Saved") === 0
                     }
                     Label {
                         bold: false
@@ -225,5 +236,16 @@ Item {
                 }
             }
         }
+    }
+
+    FileDialog {
+        id: svgFileDialog
+        title: "Export ASCII art as SVG"
+        fileMode: FileDialog.SaveFile
+        defaultSuffix: "svg"
+        nameFilters: ["SVG images (*.svg)"]
+        onAccepted: asciiArtVM.exportSvg(
+            selectedFile.toString(), Theme.textColor.toString()
+        )
     }
 }

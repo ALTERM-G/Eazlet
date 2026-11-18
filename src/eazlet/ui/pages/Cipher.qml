@@ -120,6 +120,7 @@ Item {
                             }
 
                             Row {
+                                anchors.horizontalCenter: parent.horizontalCenter
                                 spacing: LayoutMetrics.spacing.md
 
                                 ComboBox {
@@ -151,7 +152,7 @@ Item {
                             spacing: LayoutMetrics.spacing.xs
                             Button { buttonText: "Process"; primary: true; isometric: true; heightMultiplier: 1.3; onPressed: cipherVM.processEncoding() }
                             Button { buttonText: "Detect"; onPressed: cipherVM.detect() }
-                            Button { buttonText: "Swap"; onPressed: cipherVM.swapEncoding() }
+                            Button { buttonText: "Swap"; iconPath: SVGLibrary.swap; onPressed: cipherVM.swapEncoding() }
                             Button { buttonText: "Clear"; iconPath: SVGLibrary.eraser; onPressed: cipherVM.clearEncoding() }
                         }
 
@@ -191,6 +192,7 @@ Item {
                             }
 
                             Row {
+                                anchors.horizontalCenter: parent.horizontalCenter
                                 spacing: LayoutMetrics.spacing.md
 
                                 ComboBox {
@@ -331,7 +333,7 @@ Item {
                             anchors.horizontalCenter: parent.horizontalCenter
                             spacing: LayoutMetrics.spacing.sm
                             Button { buttonText: "Process"; primary: true; isometric: true; heightMultiplier: 1.3; onPressed: cipherVM.processCipher() }
-                            Button { buttonText: "Swap"; onPressed: cipherVM.swapCipher() }
+                            Button { buttonText: "Swap"; iconPath: SVGLibrary.swap; onPressed: cipherVM.swapCipher() }
                             Button { buttonText: "Clear"; iconPath: SVGLibrary.eraser; onPressed: cipherVM.clearCipher() }
                         }
 
@@ -373,6 +375,7 @@ Item {
 
                             ComboBox {
                                 id: encryptionCombo
+                                anchors.horizontalCenter: parent.horizontalCenter
                                 width: 260
                                 model: cipherVM.encryptionAlgorithms
                                 currentIndex: {
@@ -397,6 +400,7 @@ Item {
                             }
 
                             Row {
+                                anchors.horizontalCenter: parent.horizontalCenter
                                 spacing: LayoutMetrics.spacing.md
 
                                 LineEdit {
@@ -470,6 +474,7 @@ Item {
 
                             ComboBox {
                                 id: hashCombo
+                                anchors.horizontalCenter: parent.horizontalCenter
                                 width: 260
                                 model: cipherVM.hashAlgorithms
                                 currentIndex: {

@@ -1,13 +1,15 @@
 from collections import OrderedDict
+from pathlib import Path
 
 try:
     import pyfiglet
 except Exception:
     pyfiglet = None
 
-from PySide6.QtCore import Property, Signal, Slot
+from PySide6.QtCore import Property, QUrl, Signal, Slot
 from PySide6.QtGui import QGuiApplication
 
+from ..ascii_svg import render_ascii_svg
 from .base_vm import BaseVM
 
 
@@ -281,3 +283,31 @@ class AsciiArtVM(BaseVM):
             self._set_status("Copied")
         except Exception as e:
             self._set_error(str(e))
+
+    @Slot(str, str)
+    def exportSvg(self, path: str, color: str) -> None:
+        self._set_error("")
+        self._set_status("")
+        if not self._output:
+            self._set_error("Generate ASCII art before exporting SVG.")
+            return
+
+        target = str(path or "").strip()
+        if target.startswith("file://"):
+            target = QUrl(target).toLocalFile()
+        if not target:
+            self._set_error("Choose where to save the SVG.")
+            return
+
+        target_path = Path(target).expanduser()
+        if target_path.suffix.lower() != ".svg":
+            target_path = target_path.with_suffix(".svg")
+
+        try:
+            svg = render_ascii_svg(self._output, color)
+            target_path.write_text(svg, encoding="utf-8")
+        except Exception as e:
+            self._set_error(f"Could not save the SVG: {e}")
+            return
+
+        self._set_status(f"Saved {target_path.name}")

@@ -1,11 +1,32 @@
 import pytest
 
+from eazlet.backend.viewmodels import colors_vm
 from eazlet.backend.viewmodels.colors_vm import ColorsVM
 
 
 @pytest.fixture
 def vm():
     return ColorsVM()
+
+
+def test_screen_pick_updates_color_and_clears_flag(vm, monkeypatch, qtbot):
+    monkeypatch.setattr(colors_vm, "pick_screen_color", lambda: "#123456")
+
+    vm.pickScreenColor()
+    assert vm.picking is True
+
+    qtbot.waitUntil(lambda: vm.hex == "#123456", timeout=3000)
+    assert vm.picking is False
+    assert vm.inputError == ""
+
+
+def test_screen_pick_failure_is_reported(vm, monkeypatch, qtbot):
+    monkeypatch.setattr(colors_vm, "pick_screen_color", lambda: None)
+
+    vm.pickScreenColor()
+    qtbot.waitUntil(lambda: vm.picking is False, timeout=3000)
+
+    assert "cancelled or unavailable" in vm.inputError
 
 
 def test_initial_color(vm):

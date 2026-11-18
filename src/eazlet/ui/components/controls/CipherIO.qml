@@ -71,23 +71,10 @@ Column {
         onTextChanged: root.setInput(text)
     }
 
-    Row {
-        width: parent.width
-        spacing: LayoutMetrics.spacing.sm
-
-        Label {
-            text: "Output"
-            textColor: Theme.textColor
-            pixelSize: Typography.h4
-            anchors.verticalCenter: parent.verticalCenter
-        }
-
-        Button {
-            buttonText: "Copy"
-            iconPath: SVGLibrary.copy
-            enabled: root.outputText.length > 0
-            onPressed: root.copyOutput()
-        }
+    Label {
+        text: "Output"
+        textColor: Theme.textColor
+        pixelSize: Typography.h4
     }
 
     TextEdit {

@@ -2,9 +2,10 @@ import colorsys
 import re
 import secrets
 
-from PySide6.QtCore import Property, QObject, Signal, Slot
+from PySide6.QtCore import Property, QObject, QThread, Signal, Slot
 from PySide6.QtGui import QGuiApplication
 
+from ..screen_color import ScreenColorWorker, pick_screen_color
 from .base_vm import BaseVM
 
 COLOR_NAMES = (
@@ -58,6 +59,7 @@ class ColorsVM(BaseVM):
     harmonyTypeChanged = Signal()
     harmonyCountChanged = Signal()
     inputErrorChanged = Signal()
+    pickingChanged = Signal()
 
     HARMONY_TYPES = [
         "Complementary",
@@ -84,6 +86,8 @@ class ColorsVM(BaseVM):
         self._harmony_type = self.HARMONY_TYPES[0]
         self._harmony_count = self.MAX_HARMONY_COUNT
         self._input_error = ""
+        self._picking = False
+        self._pick_jobs: dict[QThread, ScreenColorWorker] = {}
         self._rgb = (74, 144, 226)
         self._hsv = self._hsv_from_rgb(self._rgb)
         self._hsl = self._hsl_from_rgb(self._rgb)
@@ -369,9 +373,6 @@ class ColorsVM(BaseVM):
             for offset, label in pattern
         ]
 
-        # A pattern can be shorter than the requested palette. Fill the
-        # remaining slots with a tint, then a shade, of the first hues so the
-        # harmony keeps its original hue relationships.
         for extra in range(count - len(pattern)):
             offset, label = pattern[extra % len(pattern)]
             cycle = extra // len(pattern)
@@ -389,6 +390,49 @@ class ColorsVM(BaseVM):
     @Property(str, notify=inputErrorChanged)
     def inputError(self) -> str:
         return self._input_error
+
+    @Property(bool, notify=pickingChanged)
+    def picking(self) -> bool:
+        return self._picking
+
+    def _set_picking(self, value: bool) -> None:
+        if value == self._picking:
+            return
+        self._picking = value
+        self.pickingChanged.emit()
+
+    @Slot()
+    def pickScreenColor(self) -> None:
+        if self._picking:
+            return
+        self._set_picking(True)
+        self._set_input_error("Click any pixel on screen to pick its color.")
+
+        worker = ScreenColorWorker(pick_screen_color)
+        thread = QThread(self)
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.picked.connect(self._onScreenColorPicked)
+        worker.failed.connect(self._onScreenColorFailed)
+        worker.done.connect(thread.quit)
+        worker.done.connect(worker.deleteLater)
+        thread.finished.connect(thread.deleteLater)
+        thread.finished.connect(
+            lambda finished=thread: self._pick_jobs.pop(finished, None)
+        )
+        self._pick_jobs[thread] = worker
+        thread.start()
+
+    @Slot(str)
+    def _onScreenColorPicked(self, color: str) -> None:
+        self.setColor(color)
+        self._set_input_error("")
+        self._set_picking(False)
+
+    @Slot(str)
+    def _onScreenColorFailed(self, message: str) -> None:
+        self._set_input_error(message)
+        self._set_picking(False)
 
     @Slot(str, result=bool)
     def setColor(self, value: str) -> bool:

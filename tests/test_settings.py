@@ -62,7 +62,10 @@ def test_theme_defaults(isolated_controller):
 def test_all_known_themes_registered():
     controller = Controller()
     colors = controller.get_theme_colors()
-    for theme in ['Alterm', 'Carbon Amber', 'Catppuccin Mocha', 'Dracula', 'Everforest', 'Github Dark', 'Gruvbox', 'Monokai', 'Vanilla Light']:
+    for theme in [
+        'Alterm', 'Carbon Amber', 'Catppuccin Mocha', 'Dracula', 'Everforest',
+        'Github Dark', 'Gruvbox', 'Monokai', 'Vanilla Light',
+    ]:
         assert theme in colors, f"missing theme {theme}"
 
 

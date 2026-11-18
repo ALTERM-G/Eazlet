@@ -1,15 +1,3 @@
-"""Convert the LaTeX subset used by the Math workplace into SymPy syntax.
-
-The Math tools accept LaTeX only. This module turns that LaTeX into the small,
-plain expression language that :mod:`sympy.parsing.sympy_parser` already
-understands, and it rejects everything it cannot represent with a targeted
-error instead of guessing.
-
-The parser is deliberately small: scalar, single-variable algebra and calculus
-notation. Matrices, sums, products and text commands are reported as
-unsupported rather than being parsed into something surprising.
-"""
-
 from __future__ import annotations
 
 import re

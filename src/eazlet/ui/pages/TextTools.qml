@@ -18,6 +18,7 @@ Item {
     property var replaceRules: []
 
     readonly property real panelGap: LayoutMetrics.spacing.xl
+    readonly property real controlHeight: LayoutMetrics.size.controlHeight * 2.3
 
     function applyResult(response, message) {
         outputEdit.text = response.ok ? response.text : ""
@@ -134,14 +135,6 @@ Item {
                                             prefixField.text, suffixField.text,
                                             numberLinesSwitch.checked, startSpin.value),
                     "Line operation applied")
-    }
-
-    function runLiteralReplace() {
-        applyResult(textToolsVM.replaceLiteral(inputEdit.text, literalFindField.text,
-                                               literalReplaceField.text,
-                                               literalCaseSwitch.checked,
-                                               literalAllSwitch.checked),
-                    "Literal replacement applied")
     }
 
     function runBatchReplace() {
@@ -334,7 +327,10 @@ Item {
                             spacing: LayoutMetrics.spacing.xs
 
                             Button {
+                                height: page.controlHeight
+                                Layout.preferredHeight: page.controlHeight
                                 buttonText: "Paste"
+                                iconPath: SVGLibrary.paste
                                 onPressed: {
                                     inputEdit.paste()
                                     page.refreshMatches()
@@ -342,7 +338,10 @@ Item {
                             }
 
                             Button {
+                                height: page.controlHeight
+                                Layout.preferredHeight: page.controlHeight
                                 buttonText: "Clear"
+                                iconPath: SVGLibrary.eraser
                                 onPressed: {
                                     inputEdit.text = ""
                                     page.refreshMatches()
@@ -430,15 +429,20 @@ Item {
                                         spacing: LayoutMetrics.spacing.sm
                                         ComboBox {
                                             id: caseCombo
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.preferredWidth: toolContent.fieldWidth
                                             Layout.alignment: Qt.AlignVCenter
                                             model: textToolsVM.caseModes
                                             scrollablePopup: true
                                         }
                                         Button {
+                                            primary: true
+                                            isometric: true
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.alignment: Qt.AlignVCenter
                                             buttonText: "Change case"
-                                            primary: true
                                             onPressed: page.runCase()
                                         }
                                     }
@@ -477,6 +481,10 @@ Item {
                                             onToggled: page.updateWhitespace()
                                         }
                                         Button {
+                                            primary: true
+                                            isometric: true
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.alignment: Qt.AlignVCenter
                                             buttonText: "Clean whitespace"
                                             onPressed: page.runWhitespace()
@@ -503,11 +511,17 @@ Item {
                                         spacing: LayoutMetrics.spacing.sm
                                         ComboBox {
                                             id: reverseCombo
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.preferredWidth: toolContent.fieldWidth
                                             Layout.alignment: Qt.AlignVCenter
                                             model: textToolsVM.reverseUnits
                                         }
                                         Button {
+                                            primary: true
+                                            isometric: true
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.alignment: Qt.AlignVCenter
                                             buttonText: "Reverse text"
                                             onPressed: page.runReverse()
@@ -523,7 +537,7 @@ Item {
 
                                 Column {
                                     width: parent.width
-                                    spacing: LayoutMetrics.spacing.xxs
+                                    spacing: LayoutMetrics.spacing.sm
                                     Label {
                                         anchors.horizontalCenter: parent.horizontalCenter
                                         text: "Line operation"
@@ -531,6 +545,8 @@ Item {
                                     }
                                     ComboBox {
                                         id: lineOpCombo
+                                        height: page.controlHeight
+                                        Layout.preferredHeight: page.controlHeight
                                         anchors.horizontalCenter: parent.horizontalCenter
                                         width: toolContent.fieldWidth
                                         model: textToolsVM.lineOperations
@@ -541,12 +557,16 @@ Item {
                                         spacing: LayoutMetrics.spacing.sm
                                         LineEdit {
                                             id: prefixField
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.preferredWidth: toolContent.textWidth
                                             Layout.alignment: Qt.AlignVCenter
                                             placeholderText: "Prefix"
                                         }
                                         LineEdit {
                                             id: suffixField
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.preferredWidth: toolContent.textWidth
                                             Layout.alignment: Qt.AlignVCenter
                                             placeholderText: "Suffix"
@@ -557,6 +577,8 @@ Item {
                                         }
                                         SpinBox {
                                             id: startSpin
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.preferredWidth: LayoutMetrics.size.spinBoxWidth
                                             Layout.alignment: Qt.AlignVCenter
                                             from: 0
@@ -565,62 +587,16 @@ Item {
                                         }
                                     }
                                     Button {
+                                        primary: true
+                                        isometric: true
+                                        height: page.controlHeight
+                                        Layout.preferredHeight: page.controlHeight
                                         anchors.horizontalCenter: parent.horizontalCenter
                                         buttonText: "Apply to lines"
                                         onPressed: page.runLineOp()
                                     }
                                 }
 
-                                Rectangle {
-                                    width: parent.width
-                                    height: LayoutMetrics.border.s
-                                    color: Theme.dividerColor
-                                }
-
-                                Column {
-                                    width: parent.width
-                                    spacing: LayoutMetrics.spacing.xxs
-                                    Label {
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        text: "Literal find and replace"
-                                        style_2: true
-                                    }
-                                    RowLayout {
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        spacing: LayoutMetrics.spacing.sm
-                                        LineEdit {
-                                            id: literalFindField
-                                            Layout.preferredWidth: toolContent.textWidth
-                                            Layout.alignment: Qt.AlignVCenter
-                                            placeholderText: "Find"
-                                        }
-                                        LineEdit {
-                                            id: literalReplaceField
-                                            Layout.preferredWidth: toolContent.textWidth
-                                            Layout.alignment: Qt.AlignVCenter
-                                            placeholderText: "Replace with"
-                                        }
-                                    }
-                                    RowLayout {
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        spacing: LayoutMetrics.spacing.md
-                                        Switch {
-                                            id: literalCaseSwitch
-                                            text: "Case sensitive"
-                                            checked: true
-                                        }
-                                        Switch {
-                                            id: literalAllSwitch
-                                            text: "Replace all"
-                                            checked: true
-                                        }
-                                        Button {
-                                            Layout.alignment: Qt.AlignVCenter
-                                            buttonText: "Replace literal text"
-                                            onPressed: page.runLiteralReplace()
-                                        }
-                                    }
-                                }
                             }
 
                             // Regex & patterns -------------------------------
@@ -649,6 +625,8 @@ Item {
                                     }
                                     ComboBox {
                                         id: presetCombo
+                                        height: page.controlHeight
+                                        Layout.preferredHeight: page.controlHeight
                                         anchors.horizontalCenter: parent.horizontalCenter
                                         width: toolContent.fieldWidth
                                         model: textToolsVM.regexPresets
@@ -686,7 +664,11 @@ Item {
                                     }
                                     LineEdit {
                                         id: patternField
-                                        width: parent.width
+                                        height: page.controlHeight
+                                        Layout.preferredHeight: page.controlHeight
+                                        width: Math.min(parent.width * 0.85,
+                                                        LayoutMetrics.size.lineEditWidth)
+                                        anchors.horizontalCenter: parent.horizontalCenter
                                         placeholderText: "Regular expression, e.g. \\b\\w+@\\w+\\.\\w+\\b"
                                         onTextChanged: page.refreshMatches()
                                     }
@@ -709,18 +691,27 @@ Item {
                                         anchors.horizontalCenter: parent.horizontalCenter
                                         spacing: LayoutMetrics.spacing.xs
                                         Button {
+                                            primary: true
+                                            isometric: true
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.alignment: Qt.AlignVCenter
                                             buttonText: "Show matches"
-                                            primary: true
                                             onPressed: page.runFind()
                                         }
                                         Button {
+                                            primary: true
+                                            isometric: true
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.alignment: Qt.AlignVCenter
                                             buttonText: "Split by pattern"
                                             onPressed: page.runSplit()
                                         }
                                         SpinBox {
                                             id: splitSpin
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.preferredWidth: LayoutMetrics.size.spinBoxWidth
                                             Layout.alignment: Qt.AlignVCenter
                                             from: 0
@@ -746,17 +737,29 @@ Item {
                                     }
                                     LineEdit {
                                         id: regexReplaceField
-                                        width: parent.width
+                                        height: page.controlHeight
+                                        Layout.preferredHeight: page.controlHeight
+                                        width: Math.min(parent.width * 0.85,
+                                                        LayoutMetrics.size.lineEditWidth)
+                                        anchors.horizontalCenter: parent.horizontalCenter
                                         placeholderText: "Use \\1 or $1 to reference a capture group"
                                     }
                                     RowLayout {
                                         anchors.horizontalCenter: parent.horizontalCenter
                                         spacing: LayoutMetrics.spacing.xs
                                         Button {
+                                            primary: true
+                                            isometric: true
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             buttonText: "Replace all matches"
                                             onPressed: page.runRegexReplace(true)
                                         }
                                         Button {
+                                            primary: true
+                                            isometric: true
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             buttonText: "Replace first match"
                                             onPressed: page.runRegexReplace(false)
                                         }
@@ -829,18 +832,24 @@ Item {
                                         spacing: LayoutMetrics.spacing.sm
                                         ComboBox {
                                             id: sortUnitCombo
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.preferredWidth: toolContent.fieldWidth
                                             Layout.alignment: Qt.AlignVCenter
                                             model: textToolsVM.sortUnits
                                         }
                                         ComboBox {
                                             id: sortKeyCombo
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.preferredWidth: toolContent.fieldWidth
                                             Layout.alignment: Qt.AlignVCenter
                                             model: textToolsVM.sortKeys
                                         }
                                         ComboBox {
                                             id: sortOrderCombo
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.preferredWidth: toolContent.fieldWidth
                                             Layout.alignment: Qt.AlignVCenter
                                             model: textToolsVM.sortOrders
@@ -890,6 +899,8 @@ Item {
                                         spacing: LayoutMetrics.spacing.sm
                                         SpinBox {
                                             id: sortColumnSpin
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.preferredWidth: LayoutMetrics.size.spinBoxWidth
                                             Layout.alignment: Qt.AlignVCenter
                                             from: 0
@@ -898,6 +909,8 @@ Item {
                                         }
                                         SpinBox {
                                             id: secondaryColumnSpin
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.preferredWidth: LayoutMetrics.size.spinBoxWidth
                                             Layout.alignment: Qt.AlignVCenter
                                             from: -1
@@ -906,6 +919,8 @@ Item {
                                         }
                                         ComboBox {
                                             id: secondaryOrderCombo
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.preferredWidth: toolContent.fieldWidth
                                             Layout.alignment: Qt.AlignVCenter
                                             model: textToolsVM.sortOrders
@@ -938,9 +953,12 @@ Item {
                                         style_2: true
                                     }
                                     Button {
+                                        primary: true
+                                        isometric: true
+                                        height: page.controlHeight
+                                        Layout.preferredHeight: page.controlHeight
                                         anchors.horizontalCenter: parent.horizontalCenter
                                         buttonText: "Sort input"
-                                        primary: true
                                         onPressed: page.runSort()
                                     }
                                 }
@@ -964,12 +982,16 @@ Item {
                                         spacing: LayoutMetrics.spacing.sm
                                         ComboBox {
                                             id: shuffleUnitCombo
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.preferredWidth: toolContent.fieldWidth
                                             Layout.alignment: Qt.AlignVCenter
                                             model: textToolsVM.sortUnits
                                         }
                                         SpinBox {
                                             id: seedSpin
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.preferredWidth: LayoutMetrics.size.spinBoxWidth
                                             Layout.alignment: Qt.AlignVCenter
                                             from: 0
@@ -977,6 +999,10 @@ Item {
                                             value: 0
                                         }
                                         Button {
+                                            primary: true
+                                            isometric: true
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.alignment: Qt.AlignVCenter
                                             buttonText: "Shuffle input"
                                             onPressed: page.runShuffle()
@@ -1011,6 +1037,8 @@ Item {
                                     }
                                     ComboBox {
                                         id: delimiterCombo
+                                        height: page.controlHeight
+                                        Layout.preferredHeight: page.controlHeight
                                         anchors.horizontalCenter: parent.horizontalCenter
                                         width: toolContent.fieldWidth
                                         model: textToolsVM.delimiters
@@ -1071,7 +1099,11 @@ Item {
                                     }
                                     LineEdit {
                                         id: fieldsField
-                                        width: parent.width
+                                        height: page.controlHeight
+                                        Layout.preferredHeight: page.controlHeight
+                                        width: Math.min(parent.width * 0.85,
+                                                        LayoutMetrics.size.lineEditWidth)
+                                        anchors.horizontalCenter: parent.horizontalCenter
                                         placeholderText: "Optional, comma separated; leave empty to use the first object's keys"
                                     }
                                 }
@@ -1094,17 +1126,28 @@ Item {
                                         anchors.horizontalCenter: parent.horizontalCenter
                                         spacing: LayoutMetrics.spacing.xs
                                         Button {
+                                            primary: true
+                                            isometric: true
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.alignment: Qt.AlignVCenter
                                             buttonText: "To JSON"
-                                            primary: true
                                             onPressed: page.runDelimitedToJson()
                                         }
                                         Button {
+                                            primary: true
+                                            isometric: true
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.alignment: Qt.AlignVCenter
                                             buttonText: "To delimited"
                                             onPressed: page.runJsonToDelimited()
                                         }
                                         Button {
+                                            primary: true
+                                            isometric: true
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.alignment: Qt.AlignVCenter
                                             buttonText: "Markdown table"
                                             onPressed: page.runMarkdown()
@@ -1131,6 +1174,8 @@ Item {
                                         spacing: LayoutMetrics.spacing.sm
                                         SpinBox {
                                             id: extractColumnSpin
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.preferredWidth: LayoutMetrics.size.spinBoxWidth
                                             Layout.alignment: Qt.AlignVCenter
                                             from: 0
@@ -1138,6 +1183,10 @@ Item {
                                             value: 0
                                         }
                                         Button {
+                                            primary: true
+                                            isometric: true
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             Layout.alignment: Qt.AlignVCenter
                                             buttonText: "Extract column"
                                             onPressed: page.runExtractColumn()
@@ -1167,6 +1216,7 @@ Item {
                                     spacing: LayoutMetrics.spacing.xxs
                                     Label {
                                         anchors.horizontalCenter: parent.horizontalCenter
+                                        visible: page.replaceRules.length > 0
                                         text: "Replace rules"
                                         style_2: true
                                     }
@@ -1189,16 +1239,35 @@ Item {
                                             model: page.replaceRules
 
                                             Rectangle {
-                                                width: parent.width
-                                                height: LayoutMetrics.size.controlHeightHuge
-                                                radius: LayoutMetrics.radius.s
+                                                width: parent.width * 0.85
+                                                anchors.horizontalCenter: parent.horizontalCenter
+                                                height: page.controlHeight
+                                                       + LayoutMetrics.spacing.xs * 2
+                                                radius: LayoutMetrics.radius.m
                                                 color: Theme.backgroundColor
                                                 border.color: Theme.borderColor
                                                 border.width: LayoutMetrics.border.s
 
+                                                // Accent marks enabled rules at a glance.
+                                                Rectangle {
+                                                    width: LayoutMetrics.border.l
+                                                    height: parent.height
+                                                           - LayoutMetrics.spacing.sm
+                                                    anchors.left: parent.left
+                                                    anchors.leftMargin: LayoutMetrics.spacing.xs
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                    radius: width / 2
+                                                    color: modelData.enabled !== false
+                                                           ? Theme.themeColor
+                                                           : Theme.dividerColor
+                                                }
+
                                                 RowLayout {
                                                     anchors.fill: parent
-                                                    anchors.margins: LayoutMetrics.spacing.xs
+                                                    anchors.leftMargin: LayoutMetrics.spacing.md
+                                                    anchors.rightMargin: LayoutMetrics.spacing.sm
+                                                    anchors.topMargin: LayoutMetrics.spacing.xs
+                                                    anchors.bottomMargin: LayoutMetrics.spacing.xs
                                                     spacing: LayoutMetrics.spacing.xs
 
                                                     Switch {
@@ -1207,6 +1276,8 @@ Item {
                                                         onToggled: page.setRuleField(index, "enabled", checked)
                                                     }
                                                     LineEdit {
+                                                        height: page.controlHeight
+                                                        Layout.preferredHeight: page.controlHeight
                                                         Layout.fillWidth: true
                                                         Layout.minimumWidth: 0
                                                         Layout.alignment: Qt.AlignVCenter
@@ -1215,6 +1286,8 @@ Item {
                                                         onTextEdited: page.setRuleField(index, "find", text)
                                                     }
                                                     LineEdit {
+                                                        height: page.controlHeight
+                                                        Layout.preferredHeight: page.controlHeight
                                                         Layout.fillWidth: true
                                                         Layout.minimumWidth: 0
                                                         Layout.alignment: Qt.AlignVCenter
@@ -1251,11 +1324,16 @@ Item {
                                         anchors.horizontalCenter: parent.horizontalCenter
                                         spacing: LayoutMetrics.spacing.xs
                                         Button {
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             buttonText: "Add rule"
                                             onPressed: page.addRule()
                                         }
                                         Button {
+                                            height: page.controlHeight
+                                            Layout.preferredHeight: page.controlHeight
                                             buttonText: "Clear rules"
+                                            iconPath: SVGLibrary.eraser
                                             onPressed: page.replaceRules = []
                                         }
                                     }
@@ -1308,9 +1386,12 @@ Item {
                                         style_2: true
                                     }
                                     Button {
+                                        primary: true
+                                        isometric: true
+                                        height: page.controlHeight
+                                        Layout.preferredHeight: page.controlHeight
                                         anchors.horizontalCenter: parent.horizontalCenter
                                         buttonText: "Replace all rules"
-                                        primary: true
                                         onPressed: page.runBatchReplace()
                                     }
                                 }
@@ -1353,7 +1434,10 @@ Item {
 
                             Button {
                                 id: copyOutputButton
+                                height: page.controlHeight
+                                Layout.preferredHeight: page.controlHeight
                                 buttonText: "Copy"
+                                iconPath: SVGLibrary.copy
                                 onPressed: outputEdit.copy()
                             }
                         }

@@ -16,6 +16,8 @@ QtObject {
     readonly property url copy: Qt.resolvedUrl("../assets/icons/actions/copy.svg")
     readonly property url paste: Qt.resolvedUrl("../assets/icons/actions/clipboard-paste.svg")
     readonly property url eraser: Qt.resolvedUrl("../assets/icons/actions/eraser.svg")
+    readonly property url colorPicker: Qt.resolvedUrl("../assets/icons/actions/color_picker.svg")
+    readonly property url swap: Qt.resolvedUrl("../assets/icons/actions/swap.svg")
     readonly property url star: Qt.resolvedUrl("../assets/icons/actions/star.svg")
 
     readonly property url downloader: Qt.resolvedUrl("../assets/icons/labels/Downloader.svg")

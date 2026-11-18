@@ -17,6 +17,7 @@ from .viewmodels import (
     MathVM,
     NumberToolsVM,
     OrganizerVM,
+    ReplVM,
     SettingsVM,
     SocialMediaVM,
     TextAnalysisVM,
@@ -66,6 +67,7 @@ class Controller(QObject):
         self._math_vm = MathVM(self)
         self._generators_vm = GeneratorsVM(self)
         self._dictionary_vm = DictionaryVM(self)
+        self._repl_vm = ReplVM(self)
 
         self._language_files = ["en.json", "fr.json", "de.json", "es.json", "it.json"]
         self._languages_path = (
@@ -434,3 +436,7 @@ class Controller(QObject):
     @Property(QObject, constant=True)
     def dictionaryVM(self) -> DictionaryVM:
         return self._dictionary_vm
+
+    @Property(QObject, constant=True)
+    def replVM(self) -> ReplVM:
+        return self._repl_vm

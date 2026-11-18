@@ -307,6 +307,18 @@ Item {
                                     pixelSize: Typography.h6
                                     wrapMode: Text.WordWrap
                                 }
+
+                                Button {
+                                    width: parent.width
+                                    buttonText: colorsVM.picking
+                                                ? "Click a pixel..."
+                                                : "Pick from screen"
+                                    iconPath: SVGLibrary.colorPicker
+                                    primary: true
+                                    isometric: true
+                                    enabled: !colorsVM.picking
+                                    onPressed: colorsVM.pickScreenColor()
+                                }
                             }
                         }
                     }

@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 from PySide6.QtCore import QObject, Qt, QUrl
-from PySide6.QtQml import QQmlExpression
+from PySide6.QtQml import QJSValue, QQmlExpression
 
 import run
 
@@ -30,6 +30,8 @@ def evaluate(engine, obj, expression):
     if isinstance(value, tuple):
         value, has_error = value
         assert not has_error, expr.error().toString()
+    if isinstance(value, QJSValue):
+        value = value.toVariant()
     return value
 
 
@@ -60,7 +62,7 @@ def test_text_tools_is_registered_everywhere():
     assert pages[-1].strip() == '{ source: "pages/TextTools.qml" }'
 
     sidebar = (UI / "components" / "layout" / "SideBar.qml").read_text()
-    assert '{ label: "Text Tools", icon: "textTools" }' in sidebar
+    assert 'label: "Text Tools", icon: "textTools", page: 14' in sidebar
     assert "case \"textTools\": return SVGLibrary.textTools" in sidebar
 
     library = (RESOURCES / "style" / "SVGLibrary.qml").read_text()
@@ -211,7 +213,21 @@ def test_text_tools_layout_is_calm_and_consistent(text_tools_page):
     assert "SVGLibrary.cross" in source
     assert "IconButton" not in source
     assert "heightMultiplier" not in source
-    assert "isometric: true" not in source
+    # Only the main actions use the isometric primary style of the Download button;
+    # utility buttons (Paste/Clear/Copy/Add/Clear rules) stay subdued.
+    assert source.count("isometric: true") == 15
+    assert "Literal find and replace" not in source
+    assert "runLiteralReplace" not in source
+    assert 'visible: page.replaceRules.length > 0' in source
+    assert "Accent marks enabled rules" in source
+    assert "hoverBackgroundColor" not in source
+    assert "width: parent.width * 0.85" in source
+    # One shared height for all standard controls, plus per-control bindings.
+    assert "readonly property real controlHeight" in source
+    assert source.count("height: page.controlHeight") >= 40
+    assert "iconPath: SVGLibrary.paste" in source
+    assert "iconPath: SVGLibrary.copy" in source
+    assert "iconPath: SVGLibrary.eraser" in source
 
     engine, window, page = text_tools_page
     assert evaluate(engine, page, "replaceRules.length") == 0
@@ -256,6 +272,123 @@ def test_sorter_and_data_actions(text_tools_page):
     evaluate(engine, page, "runDelimitedToJson(); 1")
     output = evaluate(engine, page, "outputEdit.text")
     assert json.loads(output) == [{"name": "Ada", "age": "36"}]
+
+
+def test_regex_fields_and_rule_cards_are_centered(text_tools_page):
+    engine, window, page = text_tools_page
+
+    evaluate(engine, page, "toolTabs.currentIndex = 1")
+    for ident in ("patternField", "regexReplaceField"):
+        geometry = evaluate(
+            engine, page,
+            f"[{ident}.x, {ident}.width, {ident}.parent.width]",
+        )
+        x, width, parent_width = geometry
+        assert abs(x - (parent_width - width) / 2) < 2
+
+    evaluate(engine, page, "toolTabs.currentIndex = 3")
+    geometry = evaluate(
+        engine, page,
+        "[fieldsField.x, fieldsField.width, fieldsField.parent.width]",
+    )
+    x, width, parent_width = geometry
+    assert abs(x - (parent_width - width) / 2) < 2
+
+    evaluate(engine, page, "toolTabs.currentIndex = 4")
+    evaluate(engine, page,
+             'replaceRules = [{find: "x", replace: "y", enabled: true}]')
+    card = evaluate(
+        engine, page,
+        '''(() => {
+            var found = null;
+            function walk(item) {
+                if (item.width > 0 && item.height < 100
+                        && Math.abs(item.width - toolContent.width * 0.85) < 2)
+                    found = item;
+                for (var i = 0; i < item.children.length; i++) walk(item.children[i]);
+            }
+            walk(toolContent);
+            return found ? [found.x, found.width, toolContent.width] : null;
+        })()''',
+    )
+    assert card is not None
+    x, width, parent_width = card
+    assert abs(x - (parent_width - width) / 2) < 2
+
+
+def test_replace_rules_label_only_shows_with_rules(text_tools_page):
+    engine, window, page = text_tools_page
+
+    evaluate(engine, page, "toolTabs.currentIndex = 4")
+    label = evaluate(
+        engine, page,
+        '''(() => {
+            var found = null;
+            function walk(item) {
+                if (item.text === "Replace rules") found = item;
+                for (var i = 0; i < item.children.length; i++) walk(item.children[i]);
+            }
+            walk(page);
+            return found;
+        })()''',
+    )
+    assert label is not None
+    assert evaluate(engine, label, "visible") is False
+    evaluate(engine, page, "addRule(); 1")
+    assert evaluate(engine, label, "visible") is True
+
+
+def test_controls_share_a_larger_height_and_use_icons(text_tools_page):
+    engine, window, page = text_tools_page
+
+    shared = evaluate(engine, page, "page.controlHeight")
+    for ident in ("caseCombo", "lineOpCombo", "prefixField", "startSpin",
+                  "splitSpin", "copyOutputButton"):
+        assert evaluate(engine, page, ident + ".height") == shared
+
+    buttons = evaluate(
+        engine, page,
+        '''(() => {
+            var out = {};
+            function walk(item) {
+                if (item.buttonText !== undefined && item.iconPath !== undefined)
+                    out[item.buttonText] = [item.height, item.iconPath.toString()];
+                for (var i = 0; i < item.children.length; i++) walk(item.children[i]);
+            }
+            walk(page);
+            return out;
+        })()''',
+    )
+    assert len(buttons) == 20
+    assert all(height == shared for height, _ in buttons.values())
+    assert buttons["Paste"][1].endswith("clipboard-paste.svg")
+    assert buttons["Copy"][1].endswith("copy.svg")
+    assert buttons["Clear"][1].endswith("eraser.svg")
+    assert buttons["Clear rules"][1].endswith("eraser.svg")
+
+    primary = evaluate(
+        engine, page,
+        '''(() => {
+            var out = {};
+            function walk(item) {
+                if (item.buttonText !== undefined && item.primary === true)
+                    out[item.buttonText] = item.isometric;
+                for (var i = 0; i < item.children.length; i++) walk(item.children[i]);
+            }
+            walk(page);
+            return out;
+        })()''',
+    )
+    assert set(primary) == {
+        "Change case", "Clean whitespace", "Reverse text", "Apply to lines",
+        "Show matches", "Split by pattern", "Replace all matches",
+        "Replace first match", "Sort input", "Shuffle input",
+        "To JSON", "To delimited", "Markdown table", "Extract column",
+        "Replace all rules",
+    }
+    assert all(primary.values())
+    for utility in ("Paste", "Clear", "Add rule", "Clear rules", "Copy"):
+        assert utility not in primary
 
 
 def test_process_action_follows_active_tab(text_tools_page):

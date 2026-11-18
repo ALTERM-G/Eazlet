@@ -10,6 +10,7 @@ Rectangle {
     property bool collapsed: false
     property bool showFocusRing: false
     property bool hovered: false
+    property bool separatorBefore: false
 
     signal clicked()
 
@@ -19,6 +20,16 @@ Rectangle {
     visible: !collapsed
     activeFocusOnTab: true
     focusPolicy: Qt.TabFocus
+
+    // Thin divider that marks the start of a new group of workspaces.
+    Rectangle {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        height: LayoutMetrics.border.s
+        color: Theme.dividerColor
+        visible: root.separatorBefore && !root.collapsed
+    }
 
     Rectangle {
         id: background

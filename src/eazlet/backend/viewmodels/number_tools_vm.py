@@ -618,20 +618,70 @@ class NumberToolsVM(BaseVM):
         return list(self.MODES)
 
     @Property(list, constant=True)
+    def modeOptions(self) -> list:
+        labels = {
+            "Base converter": self.tr("pages.numberTools.modes.base", "Base converter"),
+            "GCD / LCM": self.tr("pages.numberTools.modes.gcd", "GCD / LCM"),
+            "Factors & divisors": self.tr("pages.numberTools.modes.factors", "Factors & divisors"),
+            "Bitwise": self.tr("pages.numberTools.modes.bitwise", "Bitwise"),
+        }
+        return [{"id": m, "label": labels.get(m, m)} for m in self.MODES]
+
+    @Property(list, constant=True)
     def operations(self) -> list:
         return list(self.BITWISE_OPS)
+
+    @Property(list, constant=True)
+    def operationOptions(self) -> list:
+        labels = {
+            "AND": self.tr("pages.numberTools.ops.and", "AND"),
+            "OR": self.tr("pages.numberTools.ops.or", "OR"),
+            "XOR": self.tr("pages.numberTools.ops.xor", "XOR"),
+            "NOT": self.tr("pages.numberTools.ops.not", "NOT"),
+            "Shift left": self.tr("pages.numberTools.ops.shl", "Shift left"),
+            "Shift right": self.tr("pages.numberTools.ops.shr", "Shift right"),
+            "Rotate left": self.tr("pages.numberTools.ops.rol", "Rotate left"),
+            "Rotate right": self.tr("pages.numberTools.ops.ror", "Rotate right"),
+        }
+        return [{"id": m, "label": labels.get(m, m)} for m in self.BITWISE_OPS]
 
     @Property(list, constant=True)
     def bitwiseWidths(self) -> list:
         return list(self.BITWISE_WIDTHS)
 
     @Property(list, constant=True)
+    def bitwiseWidthOptions(self) -> list:
+        return [{"id": m, "label": m} for m in self.BITWISE_WIDTHS]
+
+    @Property(list, constant=True)
     def fromBases(self) -> list:
         return list(self.BASES)
 
     @Property(list, constant=True)
+    def fromBaseOptions(self) -> list:
+        labels = {
+            "Auto": self.tr("pages.numberTools.bases.auto", "Auto"),
+            "Custom": self.tr("pages.numberTools.bases.custom", "Custom"),
+        }
+        out = []
+        for b in self.BASES:
+            out.append({"id": b, "label": labels.get(b, b)})
+        return out
+
+    @Property(list, constant=True)
     def toBases(self) -> list:
         return list(self.TO_BASES)
+
+    @Property(list, constant=True)
+    def toBaseOptions(self) -> list:
+        labels = {
+            "All common": self.tr("pages.numberTools.bases.allCommon", "All common"),
+            "Custom": self.tr("pages.numberTools.bases.custom", "Custom"),
+        }
+        out = []
+        for b in self.TO_BASES:
+            out.append({"id": b, "label": labels.get(b, b)})
+        return out
 
     def _set_status(self, value: str) -> None:
         if value != self._status:
@@ -746,11 +796,11 @@ class NumberToolsVM(BaseVM):
                 self._run_bitwise()
             else:
                 self._set_output("")
-                self._set_status("Unknown mode")
+                self._set_status(self.tr("pages.numberTools.msgUnknownMode", "Unknown mode"))
         except Exception as e:
             self._set_error(str(e))
             self._set_output("")
-            self._set_status("Error")
+            self._set_status(self.tr("common.error", "Error"))
             self._set_computing(False)
 
     def _run_base(self) -> None:
@@ -769,7 +819,7 @@ class NumberToolsVM(BaseVM):
             if b is None:
                 b = 10
             self._set_output(f"Base {b}: {_fmt_base(n, b)}")
-        self._set_status("Done")
+        self._set_status(self.tr("common.done", "Done"))
 
     def _parse_int_list(self) -> list[int]:
         raw = (self._input_a or "").replace(",", " ").replace(";", " ")
@@ -804,19 +854,19 @@ class NumberToolsVM(BaseVM):
             gg, s, t = _bezout(a, b)
             lines.append(f"Bézout: {a}*({s}) + {b}*({t}) = {gg}")
         self._set_output("\n".join(lines))
-        self._set_status("Done")
+        self._set_status(self.tr("common.done", "Done"))
 
     def _start_factors(self) -> None:
         n = self._parse_a()
         if n == 0:
             self._set_output("0 has no prime factorization; every non-zero integer divides 0.")
-            self._set_status("Done")
+            self._set_status(self.tr("common.done", "Done"))
             self._set_progress(1.0)
             return
         self._factors_n = n
         self._set_computing(True)
         self._set_progress(0.0)
-        self._set_status("Computing…")
+        self._set_status(self.tr("pages.numberTools.msgComputing", "Computing…"))
         self._set_output("")
         worker = _FactorWorker(n, self)
         worker.progressed.connect(self._on_factor_progress)
@@ -837,7 +887,7 @@ class NumberToolsVM(BaseVM):
         if error:
             self._set_error(error)
             self._set_output("")
-            self._set_status("Error")
+            self._set_status(self.tr("common.error", "Error"))
             return
         n = self._factors_n
         an = abs(n)
@@ -864,7 +914,7 @@ class NumberToolsVM(BaseVM):
             + ("…" if div_count > 60 else ""),
         ]
         self._set_output("\n".join(lines))
-        self._set_status("Done")
+        self._set_status(self.tr("common.done", "Done"))
 
     def _run_bitwise(self) -> None:
         op = self._operation
@@ -884,7 +934,7 @@ class NumberToolsVM(BaseVM):
             f"Bit length: {result.bit_length()}",
         ]
         self._set_output("\n".join(lines))
-        self._set_status("Done")
+        self._set_status(self.tr("common.done", "Done"))
 
     @Slot()
     def processAction(self) -> None:
@@ -907,6 +957,6 @@ class NumberToolsVM(BaseVM):
             return
         try:
             QGuiApplication.clipboard().setText(self._output)
-            self._set_status("Copied")
+            self._set_status(self.tr("pages.numberTools.msgCopied", "Copied"))
         except Exception as e:
             self._set_error(str(e))

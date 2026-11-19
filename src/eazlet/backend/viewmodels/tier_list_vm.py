@@ -222,15 +222,14 @@ class TierListVM(BaseVM):
 
         if added:
             if skipped:
-                self._set_message(
-                    f"Added {added} image{'s' if added != 1 else ''}; "
-                    f"skipped {skipped} unsupported file{'s' if skipped != 1 else ''}."
-                )
+                msg = self.tr("pages.tierList.msgAddedSkipped", "Added {added} image(s); skipped {skipped} unsupported file(s).")
+                self._set_message(msg.replace("{added}", str(added)).replace("{skipped}", str(skipped)))
             else:
-                self._set_message(f"Added {added} image{'s' if added != 1 else ''}.")
+                msg = self.tr("pages.tierList.msgAdded", "Added {count} image(s).")
+                self._set_message(msg.replace("{count}", str(added)))
             self._notify()
         elif skipped:
-            self._set_message("No supported images were found in that selection.")
+            self._set_message(self.tr("pages.tierList.msgNoSupported", "No supported images were found in that selection."))
 
     @Slot(str)
     def removeItem(self, item_id: str) -> bool:
@@ -293,14 +292,14 @@ class TierListVM(BaseVM):
         self._pool = []
         for tier in self._tiers:
             tier["items"] = []
-        self._set_message("Removed all images.")
+        self._set_message(self.tr("pages.tierList.msgRemovedAll", "Removed all images."))
         self._notify()
 
     # -- tiers -----------------------------------------------------------
     @Slot(result=str)
     def addTier(self) -> str:
         if len(self._tiers) >= self.MAX_TIERS:
-            self._set_message(f"A tier list can have at most {self.MAX_TIERS} tiers.")
+            self._set_message(self.tr("pages.tierList.msgMaxTiers", "A tier list can have at most {max} tiers.").replace("{max}", str(self.MAX_TIERS)))
             return ""
 
         used = {tier["name"].upper() for tier in self._tiers}
@@ -317,7 +316,7 @@ class TierListVM(BaseVM):
         if tier is None:
             return False
         if len(self._tiers) <= 1:
-            self._set_message("Keep at least one tier so images have somewhere to go.")
+            self._set_message(self.tr("pages.tierList.msgKeepOne", "Keep at least one tier so images have somewhere to go."))
             return False
 
         self._tiers.remove(tier)

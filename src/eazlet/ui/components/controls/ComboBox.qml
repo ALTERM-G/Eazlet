@@ -14,7 +14,7 @@ ComboBox {
     property int maxVisibleItems: 10
 
     contentItem: Text {
-        text: control.displayText !== "" ? control.displayText : "Select"
+        text: control.displayText !== "" ? control.displayText : (typeof Lang !== "undefined" ? Lang.common.selectPlaceholder : "Select")
         width: control.availableWidth
         anchors.verticalCenter: parent.verticalCenter
         font.pixelSize: Typography.h4

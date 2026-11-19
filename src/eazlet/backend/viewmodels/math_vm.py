@@ -862,7 +862,7 @@ class MathVM(BaseVM):
         super().__init__(parent)
         self._expression = ""
         self._result = ""
-        self._status = "Ready"
+        self._status = self.tr("pages.math.statusReady", "Ready")
         self._error = ""
         self._computing = False
         self._worker = None
@@ -879,7 +879,7 @@ class MathVM(BaseVM):
         self._latex_image_source = ""
         self._latex_rendering = False
         self._latex_error = ""
-        self._latex_status = "Ready"
+        self._latex_status = self.tr("pages.math.statusReady", "Ready")
         self._latex_dimensions = ""
         self._latex_saved_message = ""
         self._latex_png = b""
@@ -942,16 +942,26 @@ class MathVM(BaseVM):
             self._mode = value
             self.modeChanged.emit()
             self._set_error("")
-            self._set_status("Ready")
+            self._set_status(self.tr("pages.math.statusReady", "Ready"))
             self._set_result("")
 
     @Property(str, notify=modeChanged)
     def actionLabel(self) -> str:
-        return _ACTION_LABELS.get(self._mode, "Compute")
+        labels = {
+            "Simplify": self.tr("pages.math.actionSimplify", "Simplify"),
+            "Expand": self.tr("pages.math.actionExpand", "Expand"),
+            "Factor": self.tr("pages.math.actionFactor", "Factor"),
+            "Solve": self.tr("pages.math.actionSolve", "Solve"),
+            "Derivative": self.tr("pages.math.actionDerivative", "Differentiate"),
+            "Integral": self.tr("pages.math.actionIntegral", "Integrate"),
+            "Limit": self.tr("pages.math.actionLimit", "Evaluate"),
+            LATEX_MODE: self.tr("pages.math.actionLatex", "Render PNG"),
+        }
+        return labels.get(self._mode, self.tr("pages.math.actionCompute", "Compute"))
 
     @Property(str, notify=modeChanged)
     def inputLabel(self) -> str:
-        return "LaTeX"
+        return self.tr("pages.math.latexCode", "LaTeX")
 
     @Property(bool, notify=modeChanged)
     def requiresVariable(self) -> bool:
@@ -1170,11 +1180,20 @@ class MathVM(BaseVM):
         except ValueError as error:
             self._set_error(str(error))
             self._set_result("")
-            self._set_status("Error")
+            self._set_status(self.tr("pages.math.statusError", "Error"))
             return
 
+        running = {
+            "Simplify": self.tr("pages.math.statusSimplifying", "Simplifying…"),
+            "Expand": self.tr("pages.math.statusExpanding", "Expanding…"),
+            "Factor": self.tr("pages.math.statusFactoring", "Factoring…"),
+            "Solve": self.tr("pages.math.statusSolving", "Solving…"),
+            "Derivative": self.tr("pages.math.statusDifferentiating", "Differentiating…"),
+            "Integral": self.tr("pages.math.statusIntegrating", "Integrating…"),
+            "Limit": self.tr("pages.math.statusEvaluating", "Evaluating…"),
+        }
         self._set_result("")
-        self._set_status(_RUNNING_STATUS.get(self._mode, "Working…"))
+        self._set_status(running.get(self._mode, self.tr("pages.math.statusWorking", "Working…")))
         self._set_computing(True)
 
         worker = _MathWorker(
@@ -1193,17 +1212,59 @@ class MathVM(BaseVM):
     @Slot(str, str, str, str)
     def _on_finished(self, original: str, result: str, label: str, status: str) -> None:
         self._worker = None
-        lines = [f"Input:      {original}", f"{label}: {result}"]
+        # keep "Input:" readable across locales via common label
+        input_prefix = self.tr("common.input", "Input")
+        # label is result label (e.g. Simplified/Solutions/Derivative) from worker
+        label_map = {
+            "Simplified": self.tr("pages.math.resultSimplified", "Simplified"),
+            "Expanded": self.tr("pages.math.resultExpanded", "Expanded"),
+            "Factored": self.tr("pages.math.resultFactored", "Factored"),
+            "Solutions": self.tr("pages.math.resultSolved", "Solved"),
+            "Derivative": self.tr("pages.math.resultDifferentiated", "Differentiated"),
+            "Integral": self.tr("pages.math.resultIntegrated", "Integrated"),
+            "Limit": self.tr("pages.math.resultEvaluated", "Evaluated"),
+        }
+        status_map = {
+            "Simplified": self.tr("pages.math.resultSimplified", "Simplified"),
+            "Expanded": self.tr("pages.math.resultExpanded", "Expanded"),
+            "Factored": self.tr("pages.math.resultFactored", "Factored"),
+            "Solved": self.tr("pages.math.resultSolved", "Solved"),
+            "Differentiated": self.tr("pages.math.resultDifferentiated", "Differentiated"),
+            "Integrated": self.tr("pages.math.resultIntegrated", "Integrated"),
+            "Evaluated": self.tr("pages.math.resultEvaluated", "Evaluated"),
+        }
+        display_label = label_map.get(label, label)
+        display_status = status_map.get(status, status)
+        lines = [f"{input_prefix}:      {original}", f"{display_label}: {result}"]
         self._set_result("\n".join(lines))
-        self._set_status(status)
+        self._set_status(display_status)
         self._set_computing(False)
+
+    def _translate_math_error(self, error: str) -> str:
+        mapping = {
+            "Enter an equation to solve": self.tr("pages.math.errEnterEquation", "Enter an equation to solve"),
+            "Enter an expression to simplify": self.tr("pages.math.errEnterExpression", "Enter an expression to simplify"),
+            "Enter an expression, not an equation (for example: (x^2 - 1)/(x - 1))": self.tr("pages.math.errNoEquation", "Enter an expression, not an equation (for example: (x^2 - 1)/(x - 1))"),
+            "Unsupported use of '.': write decimals like 0.5": self.tr("pages.math.errUnsupportedDot", "Unsupported use of '.'; write decimals like 0.5"),
+            "Enter an equation with exactly one '=' (for example: x^2 - 4 = 0)": self.tr("pages.math.errOneEquals", "Enter an equation with exactly one '=' (for example: x^2 - 4 = 0)"),
+            "Enter both sides of the equation (for example: x^2 - 4 = 0)": self.tr("pages.math.errBothSides", "Enter both sides of the equation (for example: x^2 - 4 = 0)"),
+            "Enter a variable name like x, y, or t": self.tr("pages.math.errEnterVariable", "Enter a variable name like x, y, or t"),
+            "Enter LaTeX code to render": self.tr("pages.math.errEnterLatex", "Enter LaTeX code to render"),
+            "LaTeX code contains unsupported control characters": self.tr("pages.math.errLatexControl", "LaTeX code contains unsupported control characters"),
+            "LaTeX comments (%) are not supported": self.tr("pages.math.errLatexComments", "LaTeX comments (%) are not supported"),
+            "Unsupported use of \\begin or \\end": self.tr("pages.math.errLatexBeginEnd", "Unsupported use of \\begin or \\end"),
+            "Choose a visible text colour": self.tr("pages.math.errVisibleColour", "Choose a visible text colour"),
+            "Choose a colour in #RRGGBB format": self.tr("pages.math.errHexColour", "Choose a colour in #RRGGBB format"),
+        }
+        return mapping.get(error, error)
 
     @Slot(str)
     def _on_failed(self, error: str) -> None:
         self._worker = None
-        self._set_error(error or "Could not compute this expression")
+        translated = self._translate_math_error(error) if error else ""
+        self._set_error(translated or self.tr("pages.math.msgComputeFailed", "Could not compute this expression"))
         self._set_result("")
-        self._set_status("Error")
+        self._set_status(self.tr("pages.math.statusError", "Error"))
         self._set_computing(False)
 
     @Slot()
@@ -1215,7 +1276,7 @@ class MathVM(BaseVM):
         self._set_latex_saved_message("")
         if not self._latex_available:
             self._set_latex_error(self._latex_toolchain_error)
-            self._set_latex_status("Unavailable")
+            self._set_latex_status(self.tr("pages.math.statusUnavailable", "Unavailable"))
             return
 
         try:
@@ -1224,12 +1285,12 @@ class MathVM(BaseVM):
             _dvipng_color(self._latex_foreground, "#000000", allow_transparent=False)
         except ValueError as error:
             self._set_latex_error(str(error))
-            self._set_latex_status("Error")
+            self._set_latex_status(self.tr("pages.math.statusError", "Error"))
             return
 
         self._set_latex_image_source("")
         self._set_latex_dimensions("")
-        self._set_latex_status("Rendering…")
+        self._set_latex_status(self.tr("pages.math.statusRendering", "Rendering…"))
         self._set_latex_rendering(True)
 
         worker = _LatexWorker(
@@ -1260,13 +1321,13 @@ class MathVM(BaseVM):
             self._latex_png = b""
         self._set_latex_image_source(data_url)
         self._set_latex_dimensions(f"{width} × {height} px")
-        self._set_latex_status("Rendered")
+        self._set_latex_status(self.tr("pages.math.statusRendered", "Rendered"))
         self._set_latex_rendering(False)
 
     @Slot(str)
     def _on_latex_failed(self, error: str) -> None:
         self._worker = None
-        self._set_latex_error(error or "Could not render this formula")
+        self._set_latex_error(error or self.tr("pages.math.msgRenderFailed", "Could not render this formula"))
         self._set_latex_image_source("")
         self._set_latex_dimensions("")
         self._set_latex_status("Error")
@@ -1279,10 +1340,10 @@ class MathVM(BaseVM):
         if target.startswith("file://"):
             target = QUrl(target).toLocalFile()
         if not target:
-            self._set_latex_saved_message("Choose where to save the PNG.")
+            self._set_latex_saved_message(self.tr("pages.math.msgChoosePngSave", "Choose where to save the PNG."))
             return
         if not self._latex_png:
-            self._set_latex_saved_message("Render a formula first.")
+            self._set_latex_saved_message(self.tr("pages.math.msgRenderFirst", "Render a formula first."))
             return
 
         target_path = Path(target).expanduser()
@@ -1292,10 +1353,10 @@ class MathVM(BaseVM):
         try:
             target_path.write_bytes(self._latex_png)
         except OSError as error:
-            self._set_latex_saved_message(f"Could not save the PNG: {error}")
+            self._set_latex_saved_message(self.tr("pages.math.msgPngSaveFailed", "Could not save the PNG: {error}").replace("{error}", str(error)))
             return
 
-        self._set_latex_saved_message(f"Saved {target_path.name}")
+        self._set_latex_saved_message(self.tr("pages.generators.msgQrSaved", "Saved {name}").replace("{name}", target_path.name))
 
     @Slot()
     def clear(self) -> None:
@@ -1309,11 +1370,11 @@ class MathVM(BaseVM):
             self._set_latex_dimensions("")
             self._set_latex_error("")
             self._set_latex_saved_message("")
-            self._set_latex_status("Ready")
+            self._set_latex_status(self.tr("pages.math.statusReady", "Ready"))
             return
 
         self.expression = ""
         self._set_result("")
         self._set_error("")
-        self._set_status("Ready")
+        self._set_status(self.tr("pages.math.statusReady", "Ready"))
 

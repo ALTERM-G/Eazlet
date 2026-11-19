@@ -19,7 +19,7 @@ Item {
             spacing: LayoutMetrics.spacing.lg
 
             Title {
-                text: "Downloader"
+                text: Lang.pages.downloader.title
                 textColor: Theme.textColor
                 pixelSize: Typography.h2
             }
@@ -27,15 +27,15 @@ Item {
             LineEdit {
                 id: urlInput
                 width: parent.width
-                placeholderText: "URL"
+                placeholderText: Lang.pages.downloader.urlPlaceholder
                 text: downloadVM.url
                 onTextChanged: downloadVM.url = text
             }
 
             Row {
                 spacing: LayoutMetrics.spacing.md
-                Button { buttonText: "Paste"; iconPath: SVGLibrary.paste; onPressed: downloadVM.pasteFromClipboard() }
-                Button { buttonText: "Destination"; onPressed: folderDialog.open() }
+                Button { buttonText: Lang.common.paste; iconPath: SVGLibrary.paste; onPressed: downloadVM.pasteFromClipboard() }
+                Button { buttonText: Lang.pages.downloader.destination; onPressed: folderDialog.open() }
                 Label {
                     bold: false
                     text: downloadVM.destination
@@ -44,17 +44,17 @@ Item {
                     elide: Text.ElideMiddle
                     width: parent.width * 0.5
                 }
-                Button { buttonText: "Open Folder"; onPressed: downloadVM.openDestination() }
+                Button { buttonText: Lang.common.openFolder; onPressed: downloadVM.openDestination() }
             }
 
             Row {
                 spacing: LayoutMetrics.spacing.md
-                Button { buttonText: "Download"; primary: true; isometric: true; heightMultiplier: 1.3; enabled: !downloadVM.downloading; onPressed: downloadVM.startDownload() }
-                Button { buttonText: "Add to Queue"; enabled: !downloadVM.downloading; onPressed: downloadVM.addToQueue() }
-                Button { buttonText: "Pause"; enabled: downloadVM.downloading; onPressed: downloadVM.pause() }
-                Button { buttonText: "Resume"; onPressed: downloadVM.resume() }
-                Button { buttonText: "Cancel"; enabled: downloadVM.downloading; onPressed: downloadVM.cancel() }
-                Button { buttonText: "Retry"; onPressed: downloadVM.retry() }
+                Button { buttonText: Lang.common.download; primary: true; isometric: true; heightMultiplier: 1.3; enabled: !downloadVM.downloading; onPressed: downloadVM.startDownload() }
+                Button { buttonText: Lang.pages.downloader.addToQueue; enabled: !downloadVM.downloading; onPressed: downloadVM.addToQueue() }
+                Button { buttonText: Lang.pages.downloader.pause; enabled: downloadVM.downloading; onPressed: downloadVM.pause() }
+                Button { buttonText: Lang.pages.downloader.resume; onPressed: downloadVM.resume() }
+                Button { buttonText: Lang.common.cancel; enabled: downloadVM.downloading; onPressed: downloadVM.cancel() }
+                Button { buttonText: Lang.pages.downloader.retry; onPressed: downloadVM.retry() }
             }
 
             ProgressBar {
@@ -66,19 +66,19 @@ Item {
                 spacing: LayoutMetrics.spacing.lg
                 Label {
                     bold: false
-                    text: "Size: " + downloadVM.size
+                    text: Lang.pages.downloader.size + " " + downloadVM.size
                     textColor: Theme.textColor
                     pixelSize: Typography.h6
                 }
                 Label {
                     bold: false
-                    text: "Speed: " + downloadVM.speed
+                    text: Lang.pages.downloader.speed + " " + downloadVM.speed
                     textColor: Theme.textColor
                     pixelSize: Typography.h6
                 }
                 Label {
                     bold: false
-                    text: "ETA: " + downloadVM.eta
+                    text: Lang.pages.downloader.eta + " " + downloadVM.eta
                     textColor: Theme.textColor
                     pixelSize: Typography.h6
                 }
@@ -94,12 +94,12 @@ Item {
                     height: LayoutMetrics.size.iconS
                     path: SVGLibrary.checkMark
                     color: Theme.textColor
-                    visible: downloadVM.status === "Done"
+                    visible: downloadVM.status === Lang.common.done || downloadVM.status === "Done"
                 }
                 Label {
                     bold: false
                     anchors.verticalCenter: parent.verticalCenter
-                    width: Math.max(0, parent.width - (downloadVM.status === "Done" ? LayoutMetrics.size.iconS + parent.spacing : 0))
+                    width: Math.max(0, parent.width - ((downloadVM.status === Lang.common.done || downloadVM.status === "Done") ? LayoutMetrics.size.iconS + parent.spacing : 0))
                     text: downloadVM.status
                     textColor: Theme.textColor
                     pixelSize: Typography.h6
@@ -129,17 +129,17 @@ Item {
             }
 
             Label {
-                text: "Queue (" + downloadVM.queue.length + ")"
+                text: Lang.pages.downloader.queue + " (" + downloadVM.queue.length + ")"
                 textColor: Theme.textColor
                 pixelSize: Typography.h4
             }
             Row {
                 spacing: LayoutMetrics.spacing.sm
-                Button { buttonText: "Clear Queue"; onPressed: downloadVM.clearQueue() }
+                Button { buttonText: Lang.pages.downloader.clearQueue; onPressed: downloadVM.clearQueue() }
             }
 
             Label {
-                text: "History"
+                text: Lang.pages.downloader.history
                 textColor: Theme.textColor
                 pixelSize: Typography.h4
             }

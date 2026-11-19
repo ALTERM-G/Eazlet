@@ -15,8 +15,9 @@ Item {
 
     function syncDownloader() {
         var target = unifiedDownloadVM.autoDetect ? "auto" : unifiedDownloadVM.downloader
-        for (var i = 0; i < unifiedDownloadVM.downloaders.length; i++) {
-            if (unifiedDownloadVM.downloaders[i].id === target) {
+        var model = downloaderCombo.model
+        for (var i = 0; i < model.length; i++) {
+            if (model[i].id === target) {
                 downloaderCombo.currentIndex = i
                 return
             }
@@ -63,7 +64,17 @@ Item {
 
                 Title {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: unifiedDownloadVM.title
+                    text: {
+                        switch (unifiedDownloadVM.downloader) {
+                        case "direct": return Lang.pages.downloadUnified.directTitle
+                        case "khinsider-dl": return Lang.pages.downloadUnified.tools.khid
+                        case "spotdl": return Lang.pages.downloadUnified.tools.spotdl
+                        case "bandcamp-dl": return Lang.pages.downloadUnified.tools.bandcamp
+                        case "yt-dlp": return Lang.pages.downloadUnified.tools.ytdlp
+                        case "gallery-dl": return Lang.pages.downloadUnified.tools.gallery
+                        default: return unifiedDownloadVM.title
+                        }
+                    }
                     textColor: Theme.textColor
                     pixelSize: Typography.h2
                 }
@@ -72,7 +83,17 @@ Item {
                     width: parent.width
                     horizontalAlignment: Text.AlignHCenter
                     bold: false
-                    text: unifiedDownloadVM.hint
+                    text: {
+                        switch (unifiedDownloadVM.downloader) {
+                        case "direct": return Lang.pages.downloadUnified.directHint
+                        case "khinsider-dl": return Lang.pages.downloadUnified.hints.khid
+                        case "spotdl": return Lang.pages.downloadUnified.hints.spotdl
+                        case "bandcamp-dl": return Lang.pages.downloadUnified.hints.bandcamp
+                        case "yt-dlp": return Lang.pages.downloadUnified.hints.ytdlp
+                        case "gallery-dl": return Lang.pages.downloadUnified.hints.gallery
+                        default: return unifiedDownloadVM.hint
+                        }
+                    }
                     textColor: Theme.dividerColor
                     pixelSize: Typography.h6
                     wrapMode: Text.WordWrap
@@ -90,13 +111,13 @@ Item {
                     LineEdit {
                         id: unifiedUrl
                         width: Math.max(0, parent.width - pasteBtn.width - parent.spacing)
-                        placeholderText: "Paste a link here (video, gallery, Spotify, Bandcamp, Khinsider, or direct file URL)"
+                        placeholderText: Lang.pages.downloader.urlPlaceholder
                         text: unifiedDownloadVM.url
                         onTextChanged: unifiedDownloadVM.url = text
                     }
                     Button {
                         id: pasteBtn
-                        buttonText: "Paste"
+                        buttonText: Lang.common.paste
                         iconPath: SVGLibrary.paste
                         onPressed: unifiedDownloadVM.pasteFromClipboard()
                     }
@@ -116,8 +137,9 @@ Item {
                     spacing: LayoutMetrics.spacing.xxs
 
                     Label {
+                        anchors.horizontalCenter: parent.horizontalCenter
                         bold: false
-                        text: "Downloader"
+                        text: Lang.pages.downloader.title
                         textColor: Theme.textColor
                         pixelSize: Typography.h6
                     }
@@ -125,7 +147,15 @@ Item {
                     ComboBox {
                         id: downloaderCombo
                         width: parent.width
-                        model: unifiedDownloadVM.downloaders
+                        model: [
+                            { id: "auto", label: Lang.pages.downloadUnified.autoByUrl },
+                            { id: "direct", label: Lang.pages.downloadUnified.directFile },
+                            { id: "khinsider-dl", label: Lang.pages.downloadUnified.tools.khid },
+                            { id: "spotdl", label: Lang.pages.downloadUnified.tools.spotdl },
+                            { id: "bandcamp-dl", label: Lang.pages.downloadUnified.tools.bandcamp },
+                            { id: "yt-dlp", label: Lang.pages.downloadUnified.tools.ytdlp },
+                            { id: "gallery-dl", label: Lang.pages.downloadUnified.tools.gallery }
+                        ]
                         textRole: "label"
                         valueRole: "id"
                         onActivated: unifiedDownloadVM.setDownloader(currentValue)
@@ -135,7 +165,7 @@ Item {
                 Row {
                     anchors.horizontalCenter: parent.horizontalCenter
                     spacing: LayoutMetrics.spacing.sm
-                    Button { buttonText: "Open Folder"; onPressed: unifiedDownloadVM.openDestination() }
+                    Button { buttonText: Lang.common.openFolder; onPressed: unifiedDownloadVM.openDestination() }
                 }
 
                 Column {
@@ -143,12 +173,17 @@ Item {
                     visible: unifiedDownloadVM.supportsFormats
                     spacing: LayoutMetrics.spacing.md
 
-                    Row {
+                    RowLayout {
                         anchors.horizontalCenter: parent.horizontalCenter
                         spacing: LayoutMetrics.spacing.md
-                        Button { buttonText: "Load Formats"; onPressed: unifiedDownloadVM.fetchFormats() }
+                        Button {
+                            Layout.alignment: Qt.AlignVCenter
+                            buttonText: Lang.pages.downloader.loadFormats
+                            onPressed: unifiedDownloadVM.fetchFormats()
+                        }
                         Switch {
-                            text: "Audio only (MP3)"
+                            Layout.alignment: Qt.AlignVCenter
+                            text: Lang.pages.downloader.audioOnlyMp3
                             checked: unifiedDownloadVM.audioOnly
                             onCheckedChanged: unifiedDownloadVM.audioOnly = checked
                         }
@@ -160,8 +195,9 @@ Item {
                         visible: !unifiedDownloadVM.audioOnly
 
                         Label {
+                            anchors.horizontalCenter: parent.horizontalCenter
                             bold: false
-                            text: "Format"
+                            text: Lang.common.format
                             textColor: Theme.textColor
                             pixelSize: Typography.h6
                         }
@@ -170,7 +206,7 @@ Item {
                             width: parent.width
                             model: unifiedDownloadVM.formats.length > 0 ? unifiedDownloadVM.formats : []
                             textRole: "label"
-                            displayText: unifiedDownloadVM.formats.length > 0 ? currentText : "Best available"
+                            displayText: unifiedDownloadVM.formats.length > 0 ? currentText : Lang.common.bestAvailable
                             scrollablePopup: true
                             maxVisibleItems: 10
                             onCurrentIndexChanged: {
@@ -192,7 +228,7 @@ Item {
                     spacing: LayoutMetrics.spacing.md
 
                     Button {
-                        buttonText: "Download"
+                        buttonText: Lang.common.download
                         primary: true
                         isometric: true
                         heightMultiplier: 1.3
@@ -201,7 +237,7 @@ Item {
                     }
 
                     Button {
-                        buttonText: "Cancel"
+                        buttonText: Lang.common.cancel
                         visible: unifiedDownloadVM.downloading
                         onPressed: unifiedDownloadVM.cancel()
                     }
@@ -220,21 +256,21 @@ Item {
                     visible: unifiedDownloadVM.downloading || unifiedDownloadVM.size !== "" || unifiedDownloadVM.speed !== ""
                     Label {
                         bold: false
-                        text: "Size: " + unifiedDownloadVM.size
+                        text: Lang.pages.downloadUnified.size + " " + unifiedDownloadVM.size
                         textColor: Theme.textColor
                         pixelSize: Typography.h6
                         visible: unifiedDownloadVM.size !== ""
                     }
                     Label {
                         bold: false
-                        text: "Speed: " + unifiedDownloadVM.speed
+                        text: Lang.pages.downloadUnified.speed + " " + unifiedDownloadVM.speed
                         textColor: Theme.textColor
                         pixelSize: Typography.h6
                         visible: unifiedDownloadVM.speed !== ""
                     }
                     Label {
                         bold: false
-                        text: "ETA: " + unifiedDownloadVM.eta
+                        text: Lang.pages.downloadUnified.eta + " " + unifiedDownloadVM.eta
                         textColor: Theme.textColor
                         pixelSize: Typography.h6
                         visible: unifiedDownloadVM.eta !== ""
@@ -251,12 +287,12 @@ Item {
                         height: LayoutMetrics.size.iconS
                         path: SVGLibrary.checkMark
                         color: Theme.textColor
-                        visible: unifiedDownloadVM.status === "Done"
+                        visible: unifiedDownloadVM.status === Lang.common.done || unifiedDownloadVM.status === "Done"
                     }
                     Label {
                         bold: false
                         anchors.verticalCenter: parent.verticalCenter
-                        width: Math.max(0, parent.width - (unifiedDownloadVM.status === "Done" ? LayoutMetrics.size.iconS + parent.spacing : 0))
+                        width: Math.max(0, parent.width - ((unifiedDownloadVM.status === Lang.common.done || unifiedDownloadVM.status === "Done") ? LayoutMetrics.size.iconS + parent.spacing : 0))
                         text: unifiedDownloadVM.status
                         textColor: Theme.textColor
                         pixelSize: Typography.h6

@@ -640,12 +640,34 @@ class GeneratorsVM(BaseVM):
         return list(self.LOREM_TYPES)
 
     @Property(list, constant=True)
+    def loremTypeOptions(self) -> list[dict]:
+        labels = {
+            "Paragraphs": self.tr("pages.generators.paragraphs", "Paragraphs"),
+            "Sentences": self.tr("pages.generators.sentences", "Sentences"),
+            "Words": self.tr("pages.generators.words", "Words"),
+        }
+        return [{"id": t, "label": labels.get(t, t)} for t in self.LOREM_TYPES]
+
+    @Property(list, constant=True)
     def randomSorts(self) -> list[str]:
         return list(self.RANDOM_SORTS)
 
     @Property(list, constant=True)
+    def randomSortOptions(self) -> list[dict]:
+        labels = {
+            "As generated": self.tr("pages.generators.asGenerated", "As generated"),
+            "Ascending": self.tr("options.textTools.sortOrder.ascending", "Ascending"),
+            "Descending": self.tr("options.textTools.sortOrder.descending", "Descending"),
+        }
+        return [{"id": t, "label": labels.get(t, t)} for t in self.RANDOM_SORTS]
+
+    @Property(list, constant=True)
     def qrResolutions(self) -> list[int]:
         return list(QR_RESOLUTIONS)
+
+    @Property(list, constant=True)
+    def qrResolutionOptions(self) -> list[dict]:
+        return [{"id": r, "label": str(r)} for r in QR_RESOLUTIONS]
 
     @Property(list, constant=True)
     def randomIpVersions(self) -> list[str]:
@@ -654,6 +676,15 @@ class GeneratorsVM(BaseVM):
     @Property(list, constant=True)
     def randomIdFormats(self) -> list[str]:
         return list(RANDOM_ID_FORMATS)
+
+    @Property(list, constant=True)
+    def randomIdFormatOptions(self) -> list[dict]:
+        labels = {
+            "UUID v4": self.tr("pages.generators.uuidV4", "UUID v4"),
+            "Short ID": self.tr("pages.generators.shortId", "Short ID"),
+            "Numeric": self.tr("pages.generators.numericId", "Numeric"),
+        }
+        return [{"id": t, "label": labels.get(t, t)} for t in RANDOM_ID_FORMATS]
 
     @Property(list, constant=True)
     def randomColorFormats(self) -> list[str]:
@@ -753,7 +784,7 @@ class GeneratorsVM(BaseVM):
             self._set_password("")
             self._set_password_strength("")
             self._set_password_entropy(0)
-            self._set_password_error("Select at least one character set.")
+            self._set_password_error(self.tr("pages.generators.msgSelectCharset", "Select at least one character set."))
             return
 
         length = self._password_length
@@ -761,7 +792,7 @@ class GeneratorsVM(BaseVM):
             self._set_password("")
             self._set_password_strength("")
             self._set_password_entropy(0)
-            self._set_password_error("Password is too short for the selected character sets.")
+            self._set_password_error(self.tr("pages.generators.msgPasswordTooShort", "Password is too short for the selected character sets."))
             return
 
         alphabet = "".join(character_sets)
@@ -776,13 +807,13 @@ class GeneratorsVM(BaseVM):
         entropy = round(length * math.log2(len(alphabet)))
         self._set_password_entropy(entropy)
         if entropy < 50:
-            strength = "Weak"
+            strength = self.tr("pages.generators.strengthWeak", "Weak")
         elif entropy < 80:
-            strength = "Fair"
+            strength = self.tr("pages.generators.strengthFair", "Fair")
         elif entropy < 120:
-            strength = "Strong"
+            strength = self.tr("pages.generators.strengthStrong", "Strong")
         else:
-            strength = "Very strong"
+            strength = self.tr("pages.generators.strengthVeryStrong", "Very strong")
         self._set_password_strength(strength)
 
     @Slot()
@@ -834,7 +865,7 @@ class GeneratorsVM(BaseVM):
         maximum = self._random_max
         if minimum > maximum:
             self._set_random_output("")
-            self._set_random_error("Minimum cannot be greater than maximum.")
+            self._set_random_error(self.tr("pages.generators.msgMinMax", "Minimum cannot be greater than maximum."))
             return
 
         count = self._random_count
@@ -842,7 +873,7 @@ class GeneratorsVM(BaseVM):
         if self._random_unique and count > span:
             self._set_random_output("")
             self._set_random_error(
-                "Cannot generate that many unique numbers in this range."
+                self.tr("pages.generators.msgUniqueRange", "Cannot generate that many unique numbers in this range.")
             )
             return
 
@@ -893,14 +924,14 @@ class GeneratorsVM(BaseVM):
         character_sets = self._random_string_sets()
         if not character_sets:
             self._set_random_string_output("")
-            self._set_random_string_error("Select at least one character set.")
+            self._set_random_string_error(self.tr("pages.generators.msgSelectCharset", "Select at least one character set."))
             return
 
         length = self._random_string_length
         if length < len(character_sets):
             self._set_random_string_output("")
             self._set_random_string_error(
-                "Length is too short for the selected character sets."
+                self.tr("pages.generators.msgLengthTooShort", "Length is too short for the selected character sets.")
             )
             return
 
@@ -1095,7 +1126,7 @@ class GeneratorsVM(BaseVM):
         if not text:
             self._set_qr_matrix([])
             self._set_qr_image_source("")
-            self._set_qr_error("Enter a URL or text to encode.")
+            self._set_qr_error(self.tr("pages.generators.msgEnterQrText", "Enter a URL or text to encode."))
             return
 
         try:
@@ -1113,18 +1144,18 @@ class GeneratorsVM(BaseVM):
         except DataOverflowError:
             self._set_qr_matrix([])
             self._set_qr_image_source("")
-            self._set_qr_error("Text is too long for a QR code.")
+            self._set_qr_error(self.tr("pages.generators.msgQrTooLong", "Text is too long for a QR code."))
             return
         except Exception:
             self._set_qr_matrix([])
             self._set_qr_image_source("")
-            self._set_qr_error("Could not generate the QR code.")
+            self._set_qr_error(self.tr("pages.generators.msgQrGenerateFailed", "Could not generate the QR code."))
             return
 
         if not source:
             self._set_qr_matrix([])
             self._set_qr_image_source("")
-            self._set_qr_error("Could not render the QR code.")
+            self._set_qr_error(self.tr("pages.generators.msgQrRenderFailed", "Could not render the QR code."))
             return
         self._set_qr_matrix(matrix)
         self._set_qr_image_source(source)
@@ -1136,7 +1167,7 @@ class GeneratorsVM(BaseVM):
         if target.startswith("file://"):
             target = QUrl(target).toLocalFile()
         if not target:
-            self._set_qr_saved_message("Choose where to save the QR code.")
+            self._set_qr_saved_message(self.tr("pages.generators.msgChooseQrSave", "Choose where to save the QR code."))
             return
 
         target_path = Path(target).expanduser()
@@ -1147,12 +1178,12 @@ class GeneratorsVM(BaseVM):
             self.generateQr()
             if not self._qr_matrix:
                 self._set_qr_saved_message(
-                    self._qr_error or "Generate a QR code first."
+                    self._qr_error or self.tr("pages.generators.msgGenerateQrFirst", "Generate a QR code first.")
                 )
                 return
 
         image = self._render_qr(self._qr_matrix, self._qr_resolution)
         if image.isNull() or not image.save(str(target_path), "PNG"):
-            self._set_qr_saved_message("Could not save the QR code.")
+            self._set_qr_saved_message(self.tr("pages.generators.msgQrSaveFailed", "Could not save the QR code."))
             return
-        self._set_qr_saved_message(f"Saved {target_path.name}")
+        self._set_qr_saved_message(self.tr("pages.generators.msgQrSaved", "Saved {name}").replace("{name}", target_path.name))

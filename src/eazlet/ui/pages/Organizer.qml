@@ -43,7 +43,7 @@ Item {
 
                 Title {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Organizer / Sorter"
+                    text: Lang.pages.organizer.title
                     textColor: Theme.textColor
                     pixelSize: Typography.h2
                 }
@@ -52,7 +52,7 @@ Item {
                     width: parent.width
                     horizontalAlignment: Text.AlignHCenter
                     bold: false
-                    text: "Scan a folder for duplicate files or rename its files in order."
+                    text: Lang.pages.organizer.subtitle
                     textColor: Theme.dividerColor
                     pixelSize: Typography.h6
                     wrapMode: Text.WordWrap
@@ -73,27 +73,29 @@ Item {
                         text: organizerVM.folder
                         onTextChanged: organizerVM.folder = text
                     }
-                    Button { id: browseBtn; buttonText: "Browse"; onPressed: orgFolderDialog.open() }
-                    Button { id: openBtn; buttonText: "Open"; onPressed: organizerVM.openFolder() }
+                    Button { id: browseBtn; buttonText: Lang.common.browse; onPressed: orgFolderDialog.open() }
+                    Button { id: openBtn; buttonText: Lang.common.open; onPressed: organizerVM.openFolder() }
                 }
 
                 Row {
                     anchors.horizontalCenter: parent.horizontalCenter
                     spacing: LayoutMetrics.spacing.sm
-                    Button { buttonText: "Scan for duplicates"; primary: true; isometric: true; heightMultiplier: 1.3; enabled: !organizerVM.scanning; onPressed: organizerVM.scan() }
+                    Button { buttonText: Lang.pages.organizer.scanDuplicates; primary: true; isometric: true; heightMultiplier: 1.3; enabled: !organizerVM.scanning; onPressed: organizerVM.scan() }
                 }
 
-                Row {
+                RowLayout {
                     anchors.horizontalCenter: parent.horizontalCenter
                     spacing: LayoutMetrics.spacing.sm
                     LineEdit {
                         id: renamePattern
-                        width: 200
-                        placeholderText: "Prefix (e.g. photo)"
-                        text: "file"
+                        Layout.alignment: Qt.AlignVCenter
+                        Layout.preferredWidth: 200
+                        placeholderText: Lang.pages.organizer.prefixPlaceholder
+                        text: Lang.pages.organizer.defaultPrefix
                     }
                     Button {
-                        buttonText: "Rename all files…"
+                        Layout.alignment: Qt.AlignVCenter
+                        buttonText: Lang.pages.organizer.renameAll
                         enabled: !organizerVM.scanning
                         onPressed: {
                             renameDialog.fileCount = organizerVM.renameTargetCount()
@@ -106,7 +108,7 @@ Item {
                     width: parent.width
                     horizontalAlignment: Text.AlignHCenter
                     bold: false
-                    text: "Renames every file directly inside the selected folder. Files in subfolders are left untouched."
+                    text: Lang.pages.organizer.renameNote
                     textColor: Theme.dividerColor
                     pixelSize: Typography.h6
                     wrapMode: Text.WordWrap
@@ -128,7 +130,7 @@ Item {
                         height: LayoutMetrics.size.iconS
                         path: SVGLibrary.checkMark
                         color: Theme.textColor
-                        visible: organizerVM.status === "Done"
+                        visible: organizerVM.status === Lang.common.done || organizerVM.status === "Done"
                     }
                     Label {
                         bold: false
@@ -158,7 +160,7 @@ Item {
                 }
 
                 Label {
-                    text: "Duplicate groups: " + organizerVM.duplicates.length
+                    text: Lang.pages.organizer.duplicateGroupsCount.replace("{count}", organizerVM.duplicates.length)
                     textColor: Theme.textColor
                     pixelSize: Typography.h4
                     visible: organizerVM.duplicates.length > 0
@@ -174,7 +176,7 @@ Item {
                             width: parent.width
                             spacing: LayoutMetrics.spacing.xs
                             Label {
-                                text: "Group (" + (modelData.files ? modelData.files.length : 0) + " files)"
+                                text: Lang.pages.organizer.groupLabel.replace("{count}", (modelData.files ? modelData.files.length : 0))
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h4
                             }
@@ -230,7 +232,7 @@ Item {
 
                 Label {
                     width: parent.width
-                    text: "Rename files?"
+                    text: Lang.pages.organizer.renameFilesTitle
                     textColor: Theme.textColor
                     pixelSize: Typography.h3
                 }
@@ -240,12 +242,14 @@ Item {
                     bold: false
                     textFormat: Text.PlainText
                     text: renameDialog.fileCount > 0
-                        ? "This will rename " + (renameDialog.fileCount === 1
-                           ? "1 file" : renameDialog.fileCount + " files")
-                          + " directly inside \"" + organizerVM.folder + "\". "
-                          + "This cannot be undone."
-                        : "There are no files directly inside \""
-                          + organizerVM.folder + "\" to rename."
+                        ? (renameDialog.fileCount === 1
+                           ? Lang.pages.organizer.renameConfirmSingle.replace(
+                                 "{folder}", organizerVM.folder)
+                           : Lang.pages.organizer.renameConfirmMultiple.replace(
+                                 "{count}", renameDialog.fileCount).replace(
+                                 "{folder}", organizerVM.folder))
+                        : Lang.pages.organizer.renameNoFiles.replace(
+                              "{folder}", organizerVM.folder)
                     textColor: Theme.textColor
                     pixelSize: Typography.h6
                     wrapMode: Text.WordWrap
@@ -255,7 +259,7 @@ Item {
                     width: parent.width
                     bold: false
                     visible: renameDialog.fileCount > 0
-                    text: "Files inside subfolders are not touched."
+                    text: Lang.pages.organizer.subfoldersNote
                     textColor: Theme.dividerColor
                     pixelSize: Typography.h6
                     wrapMode: Text.WordWrap
@@ -268,14 +272,15 @@ Item {
                     Item { Layout.fillWidth: true }
 
                     Button {
-                        buttonText: "Cancel"
+                        buttonText: Lang.common.cancel
                         onPressed: renameDialog.close()
                     }
 
                     Button {
                         buttonText: renameDialog.fileCount === 1
-                                    ? "Rename 1 file"
-                                    : "Rename " + renameDialog.fileCount + " files"
+                                    ? Lang.pages.organizer.renameButtonSingle
+                                    : Lang.pages.organizer.renameButtonMultiple.replace(
+                                          "{count}", renameDialog.fileCount)
                         primary: true
                         enabled: renameDialog.fileCount > 0
                         onPressed: {

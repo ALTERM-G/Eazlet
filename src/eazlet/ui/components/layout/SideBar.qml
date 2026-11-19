@@ -18,22 +18,22 @@ Rectangle {
     // Display order is grouped by purpose; `page` is the workspace index in
     // the stack layout. Keeping them separate lets us reorder the sidebar
     // without touching any page indices or saved-workspace behaviour.
-    property var navItems: [
-        { label: "Home", icon: "home", page: 0 },
-        { label: "Code Tools", icon: "codeTools", page: 5, separator: true },
-        { label: "Text Tools", icon: "textTools", page: 14 },
-        { label: "Text Analysis", icon: "textAnalysis", page: 6 },
-        { label: "Dictionary", icon: "dictionary", page: 11 },
-        { label: "Downloader", icon: "downloader", page: 1, separator: true },
-        { label: "Converter", icon: "converter", page: 2 },
-        { label: "Archive", icon: "archive", page: 3 },
-        { label: "Organizer", icon: "organizer", page: 4 },
-        { label: "Math", icon: "math", page: 9, separator: true },
-        { label: "Number Tools", icon: "numberTools", page: 8 },
-        { label: "Tier List", icon: "tierList", page: 13, separator: true },
-        { label: "Colors", icon: "colors", page: 12 },
-        { label: "Generators", icon: "generators", page: 10 },
-        { label: "ASCII Art", icon: "asciiArt", page: 7 }
+    readonly property var navItems: [
+        { label: Lang.sidebar.home, icon: "home", page: 0 },
+        { label: Lang.sidebar.codeTools, icon: "codeTools", page: 5, separator: true },
+        { label: Lang.sidebar.textTools, icon: "textTools", page: 14 },
+        { label: Lang.sidebar.textAnalysis, icon: "textAnalysis", page: 6 },
+        { label: Lang.sidebar.dictionary, icon: "dictionary", page: 11 },
+        { label: Lang.sidebar.downloader, icon: "downloader", page: 1, separator: true },
+        { label: Lang.sidebar.converter, icon: "converter", page: 2 },
+        { label: Lang.sidebar.archive, icon: "archive", page: 3 },
+        { label: Lang.sidebar.organizer, icon: "organizer", page: 4 },
+        { label: Lang.sidebar.math, icon: "math", page: 9, separator: true },
+        { label: Lang.sidebar.numberTools, icon: "numberTools", page: 8 },
+        { label: Lang.sidebar.tierList, icon: "tierList", page: 13, separator: true },
+        { label: Lang.sidebar.colors, icon: "colors", page: 12 },
+        { label: Lang.sidebar.generators, icon: "generators", page: 10 },
+        { label: Lang.sidebar.asciiArt, icon: "asciiArt", page: 7 }
     ]
 
     signal navigationClicked(int index)

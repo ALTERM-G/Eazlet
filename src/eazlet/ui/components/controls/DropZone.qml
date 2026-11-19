@@ -5,8 +5,8 @@ import components
 Item {
     id: root
 
-    property string title: "Drop files here"
-    property string description: "Drag and drop files, or click to browse"
+    property string title: Lang.common.dropFilesTitle
+    property string description: Lang.common.dropFilesDescription
     property string hint: ""
     property string iconPath: ""
     property var acceptedExtensions: []

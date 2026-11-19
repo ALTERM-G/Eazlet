@@ -62,7 +62,8 @@ def test_text_tools_is_registered_everywhere():
     assert pages[-1].strip() == '{ source: "pages/TextTools.qml" }'
 
     sidebar = (UI / "components" / "layout" / "SideBar.qml").read_text()
-    assert 'label: "Text Tools", icon: "textTools", page: 14' in sidebar
+    assert 'icon: "textTools", page: 14' in sidebar
+    assert 'Lang.sidebar.textTools' in sidebar
     assert "case \"textTools\": return SVGLibrary.textTools" in sidebar
 
     library = (RESOURCES / "style" / "SVGLibrary.qml").read_text()

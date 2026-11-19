@@ -131,9 +131,10 @@ Item {
             if (target.indexOf("file://") === 0)
                 target = decodeURIComponent(target.substring(7))
             if (result.saveToFile(target))
-                tierListVM.setMessage("Tier list exported to " + target)
+                tierListVM.setMessage(
+                    Lang.pages.tierList.msgExported.replace("{path}", target))
             else
-                tierListVM.setMessage("Could not export the tier list")
+                tierListVM.setMessage(Lang.pages.tierList.msgExportFailed)
         }, Qt.size(Math.round(board.width * exportScale),
                    Math.round(board.height * exportScale)))
     }
@@ -186,7 +187,7 @@ Item {
 
                 Title {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Tier List"
+                    text: Lang.pages.tierList.title
                     textColor: Theme.textColor
                     pixelSize: Typography.h2
                 }
@@ -195,7 +196,7 @@ Item {
                     width: parent.width
                     horizontalAlignment: Text.AlignHCenter
                     bold: false
-                    text: "Rank anything by dragging images into colored tiers, Tier Maker style."
+                    text: Lang.pages.tierList.subtitle
                     textColor: Theme.dividerColor
                     pixelSize: Typography.h6
                     wrapMode: Text.WordWrap
@@ -212,7 +213,7 @@ Item {
                     spacing: LayoutMetrics.spacing.sm
 
                     Button {
-                        buttonText: "Add images"
+                        buttonText: Lang.pages.tierList.addImages
                         iconPath: SVGLibrary.browse
                         primary: true
                         isometric: true
@@ -221,7 +222,7 @@ Item {
                     }
 
                     Button {
-                        buttonText: "Add tier"
+                        buttonText: Lang.pages.tierList.addTier
                         isometric: true
                         heightMultiplier: 1.3
                         enabled: tierListVM.tierCount < tierListVM.maxTiers
@@ -233,7 +234,7 @@ Item {
                     }
 
                     Button {
-                        buttonText: "Export PNG"
+                        buttonText: Lang.pages.tierList.exportPng
                         isometric: true
                         heightMultiplier: 1.3
                         enabled: tierListVM.itemCount > 0
@@ -241,7 +242,7 @@ Item {
                     }
 
                     Button {
-                        buttonText: "Clear images"
+                        buttonText: Lang.pages.tierList.clearImages
                         iconPath: SVGLibrary.eraser
                         isometric: true
                         heightMultiplier: 1.3
@@ -255,7 +256,7 @@ Item {
                     bold: false
                     text: tierListVM.message !== ""
                           ? tierListVM.message
-                          : "Drag a thumbnail into a tier, or click a thumbnail and then a tier. Click a colored label to rename it."
+                          : Lang.pages.tierList.hintDragOrClick
                     textColor: Theme.dividerColor
                     pixelSize: Typography.caption
                     wrapMode: Text.WordWrap
@@ -543,7 +544,7 @@ Item {
                                     visible: tierRow.tierData.items.length === 0
                                              && !page.exporting
                                     bold: false
-                                    text: "Drag images here"
+                                    text: Lang.pages.tierList.dragImagesHere
                                     textColor: Theme.dividerColor
                                     pixelSize: Typography.h6
                                 }
@@ -587,7 +588,7 @@ Item {
                             horizontalAlignment: Text.AlignHCenter
                             visible: tierListVM.tierCount === 0
                             bold: false
-                            text: "No tiers yet. Add one to start ranking."
+                            text: Lang.pages.tierList.noTiers
                             textColor: Theme.dividerColor
                             pixelSize: Typography.h6
                         }
@@ -629,7 +630,7 @@ Item {
                     spacing: LayoutMetrics.spacing.sm
 
                     Label {
-                        text: "Unranked"
+                        text: Lang.pages.tierList.unranked
                         textColor: Theme.textColor
                         pixelSize: Typography.h5
                     }
@@ -638,8 +639,10 @@ Item {
                         Layout.fillWidth: true
                         Layout.minimumWidth: 0
                         bold: false
-                        text: tierListVM.poolCount
-                              + (tierListVM.poolCount === 1 ? " image" : " images")
+                        text: tierListVM.poolCount + " "
+                              + (tierListVM.poolCount === 1
+                                 ? Lang.common.imageSingular
+                                 : Lang.common.imagePlural)
                         textColor: Theme.dividerColor
                         pixelSize: Typography.h6
                         elide: Text.ElideRight
@@ -647,7 +650,7 @@ Item {
 
                     Label {
                         bold: false
-                        text: "Drop files anywhere on this page to add them"
+                        text: Lang.pages.tierList.dropFilesHint
                         textColor: Theme.dividerColor
                         pixelSize: Typography.caption
                     }
@@ -701,8 +704,8 @@ Item {
                         visible: tierListVM.poolCount === 0
                         bold: false
                         text: tierListVM.itemCount === 0
-                              ? "Add some images, then drag them into a tier."
-                              : "Everything is ranked. Drag an image back here to unrank it."
+                              ? Lang.pages.tierList.emptyPoolHint
+                              : Lang.pages.tierList.allRankedHint
                         textColor: Theme.dividerColor
                         pixelSize: Typography.h6
                         wrapMode: Text.WordWrap
@@ -892,9 +895,9 @@ Item {
 
     FileDialog {
         id: imageDialog
-        title: "Add images to the tier list"
+        title: Lang.pages.tierList.addImagesDialogTitle
         fileMode: FileDialog.OpenFiles
-        nameFilters: ["Images (*.png *.jpg *.jpeg *.bmp *.gif *.webp *.tif *.tiff *.svg)"]
+        nameFilters: [Lang.common.fileFilters.images]
         onAccepted: {
             var files = selectedFiles && selectedFiles.length > 0
                     ? selectedFiles
@@ -905,16 +908,16 @@ Item {
 
     FileDialog {
         id: exportDialog
-        title: "Export tier list as an image"
+        title: Lang.pages.tierList.exportDialogTitle
         fileMode: FileDialog.SaveFile
         defaultSuffix: "png"
-        nameFilters: ["PNG image (*.png)"]
+        nameFilters: [Lang.common.fileFilters.pngImage]
         onAccepted: page.exportBoard()
     }
 
     ColorDialog {
         id: colorDialog
-        title: "Choose a tier color"
+        title: Lang.pages.tierList.colorDialogTitle
         onAccepted: {
             if (page.colorTierId !== "")
                 tierListVM.setTierColor(page.colorTierId, selectedColor)

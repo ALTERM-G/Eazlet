@@ -1,43 +1,27 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 24 24"
+     fill="#000000">
+  <path d="
+    M1.5 4
+    C1.5 3 2.3 2.2 3.3 2.2
+    H22
+    C23 2.2 23.8 3 23.8 4
+    C23.8 5 23 5.8 22 5.8
+    H3.3
+    C2.3 5.8 1.5 5 1.5 4 Z
 
-<svg
-   fill="#000000"
-   version="1.1"
-   id="Capa_1"
-   width="178.39722"
-   height="151.36734"
-   viewBox="0 0 5.5191639 4.682927"
-   xml:space="preserve"
-   sodipodi:docname="left_sidebar.svg"
-   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg"><defs
-   id="defs1" /><sodipodi:namedview
-   id="namedview1"
-   pagecolor="#ffffff"
-   bordercolor="#000000"
-   borderopacity="0.25"
-   inkscape:showpageshadow="2"
-   inkscape:pageopacity="0.0"
-   inkscape:pagecheckerboard="0"
-   inkscape:deskcolor="#d1d1d1"
-   inkscape:zoom="0.35875"
-   inkscape:cx="89.198606"
-   inkscape:cy="66.898955"
-   inkscape:window-width="1920"
-   inkscape:window-height="1080"
-   inkscape:window-x="0"
-   inkscape:window-y="0"
-   inkscape:window-maximized="1"
-   inkscape:current-layer="Capa_1" />
-<g
-   id="g1"
-   transform="matrix(0.16550523,0,0,0.16550523,0.7114547,0.29333622)">
-	<path
-   d="m 0,3.875 c 0,-1.104 0.896,-2 2,-2 h 20.75 c 1.104,0 2,0.896 2,2 0,1.104 -0.896,2 -2,2 H 2 c -1.104,0 -2,-0.896 -2,-2 z m 22.75,6.5 H 2 c -1.104,0 -2,0.896 -2,2 0,1.104 0.896,2 2,2 h 20.75 c 1.104,0 2,-0.896 2,-2 0,-1.104 -0.895,-2 -2,-2 z m 0,8.5 H 2 c -1.104,0 -2,0.896 -2,2 0,1.104 0.896,2 2,2 h 20.75 c 1.104,0 2,-0.896 2,-2 0,-1.104 -0.895,-2 -2,-2 z"
-   id="path1" />
-</g>
+    M3.3 9.2 H22
+    C23 9.2 23.8 10 23.8 11
+    C23.8 12 23 12.8 22 12.8
+    H3.3
+    C2.3 12.8 1.5 12 1.5 11
+    C1.5 10 2.3 9.2 3.3 9.2 Z
+
+    M3.3 16.2 H22
+    C23 16.2 23.8 17 23.8 18
+    C23.8 19 23 19.8 22 19.8
+    H3.3
+    C2.3 19.8 1.5 19 1.5 18
+    C1.5 17 2.3 16.2 3.3 16.2 Z
+  "/>
 </svg>

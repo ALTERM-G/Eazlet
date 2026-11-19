@@ -19,9 +19,14 @@ Rectangle {
     }
 
     width: overwrite ? blockWidth : thickness
-    height: cursorRect.height * heightScale
+    height: Math.max(1, Math.min(cursorRect.height * heightScale,
+                                 parent ? parent.height : cursorRect.height * heightScale))
     x: cursorRect.x
-    y: cursorRect.y - (height - cursorRect.height) / 2
+    y: {
+        var yy = cursorRect.y - (height - cursorRect.height) / 2
+        var maxY = parent ? Math.max(0, parent.height - height) : yy
+        return Math.max(0, Math.min(yy, maxY))
+    }
     color: Theme.themeColor
     radius: overwrite ? 0 : width / 2
 

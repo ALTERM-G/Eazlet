@@ -12,7 +12,7 @@ Column {
     property var viewModel: null
     property string inputProperty: ""
     property string outputProperty: ""
-    property string placeholderText: "Enter text or a payload here"
+    property string placeholderText: Lang.pages.cipher.encodingPlaceholder
 
     readonly property string inputText: (viewModel && inputProperty !== "")
                                         ? viewModel[inputProperty] : ""
@@ -43,20 +43,20 @@ Column {
         spacing: LayoutMetrics.spacing.sm
 
         Label {
-            text: "Input"
+            text: Lang.common.input
             textColor: Theme.textColor
             pixelSize: Typography.h4
             anchors.verticalCenter: parent.verticalCenter
         }
 
         Button {
-            buttonText: "Paste"
+            buttonText: Lang.common.paste
             iconPath: SVGLibrary.paste
             onPressed: inputBox.paste()
         }
 
         Button {
-            buttonText: "Clear"
+            buttonText: Lang.common.clear
             iconPath: SVGLibrary.eraser
             onPressed: root.clearRequested()
         }
@@ -72,7 +72,7 @@ Column {
     }
 
     Label {
-        text: "Output"
+        text: Lang.common.output
         textColor: Theme.textColor
         pixelSize: Typography.h4
     }

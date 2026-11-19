@@ -5,7 +5,7 @@ QtObject {
     readonly property url settings: Qt.resolvedUrl("../assets/icons/settings/settings.svg")
     readonly property url reset: Qt.resolvedUrl("../assets/icons/settings/reset.svg")
     readonly property url leftSidebar: Qt.resolvedUrl("../assets/icons/navigation/left_sidebar.svg")
-    readonly property url home: Qt.resolvedUrl("../assets/icons/navigation/home.svg")
+    readonly property url home: Qt.resolvedUrl("../assets/icons/labels/Home.svg")
     readonly property url info: Qt.resolvedUrl("../assets/icons/navigation/info.svg")
     readonly property url dropDown: Qt.resolvedUrl("../assets/icons/navigation/drop_down.svg")
     readonly property url chevronLeft: Qt.resolvedUrl("../assets/icons/navigation/chevron_left.svg")

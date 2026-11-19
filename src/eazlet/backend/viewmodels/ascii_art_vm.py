@@ -32,6 +32,53 @@ def _normalize_preview(rendered: str) -> str:
     return "\n".join(lines)
 
 
+BORDER_STYLES = {
+    "none": None,
+    "single": {"tl": "┌", "tr": "┐", "bl": "└", "br": "┘", "h": "─", "v": "│"},
+    "double": {"tl": "╔", "tr": "╗", "bl": "╚", "br": "╝", "h": "═", "v": "║"},
+    "rounded": {"tl": "╭", "tr": "╮", "bl": "╰", "br": "╯", "h": "─", "v": "│"},
+    "ascii": {"tl": "+", "tr": "+", "bl": "+", "br": "+", "h": "-", "v": "|"},
+    "bold": {"tl": "┏", "tr": "┓", "bl": "┗", "br": "┛", "h": "━", "v": "┃"},
+    "stars": {"tl": "*", "tr": "*", "bl": "*", "br": "*", "h": "*", "v": "*"},
+    "dots": {"tl": "·", "tr": "·", "bl": "·", "br": "·", "h": "·", "v": "·"},
+    "hash": {"tl": "#", "tr": "#", "bl": "#", "br": "#", "h": "#", "v": "#"},
+    "block": {"tl": "█", "tr": "█", "bl": "█", "br": "█", "h": "█", "v": "█"},
+}
+
+COOL_FONTS = [
+    "standard", "big", "slant", "banner3-D", "doom", "graffiti", "ghost",
+    "starwars", "isometric1", "epic", "cyberlarge", "larry3d", "speed",
+    "poison", "roman", "3-d", "block", "bubble", "digital", "ivrit", "mini",
+    "script", "shadow", "small", "smslant", "stop",
+]
+
+
+def _apply_border(text: str, style_id: str, h_pad: int, v_pad: int) -> str:
+    style = BORDER_STYLES.get(style_id)
+    if not style or not text:
+        return text
+    h_pad = max(0, int(h_pad))
+    v_pad = max(0, int(v_pad))
+    raw_lines = text.splitlines() or [""]
+    width = max((len(line) for line in raw_lines), default=0)
+    inner = width + h_pad * 2
+
+    top = style["tl"] + style["h"] * inner + style["tr"]
+    bottom = style["bl"] + style["h"] * inner + style["br"]
+    empty = style["v"] + " " * inner + style["v"]
+    pad_left = " " * h_pad
+    pad_right = " " * h_pad
+
+    body = []
+    for _ in range(v_pad):
+        body.append(empty)
+    for line in raw_lines:
+        body.append(style["v"] + pad_left + line.ljust(width) + pad_right + style["v"])
+    for _ in range(v_pad):
+        body.append(empty)
+    return "\n".join([top, *body, bottom])
+
+
 class AsciiArtVM(BaseVM):
     inputChanged = Signal()
     outputChanged = Signal()
@@ -41,6 +88,13 @@ class AsciiArtVM(BaseVM):
     errorChanged = Signal()
     favoritesChanged = Signal()
     recentsChanged = Signal()
+    widthChanged = Signal()
+    justifyChanged = Signal()
+    directionChanged = Signal()
+    borderStyleChanged = Signal()
+    borderHPaddingChanged = Signal()
+    borderVPaddingChanged = Signal()
+    coolFontsChanged = Signal()
 
     MAX_RECENTS = 24
     MAX_PREVIEWS = 256
@@ -54,10 +108,17 @@ class AsciiArtVM(BaseVM):
         super().__init__(parent)
         self._controller = parent
         self._input = ""
+        self._raw_output = ""
         self._output = ""
         self._status = ""
         self._error = ""
-        self._figures: dict[str, object] = {}
+        self._width = self.FIGLET_WIDTH
+        self._justify = "auto"
+        self._direction = "auto"
+        self._border_style = "none"
+        self._border_h_padding = 1
+        self._border_v_padding = 0
+        self._figures: dict[tuple[str, int, str, str], object] = {}
         self._preview_figures: dict[str, object] = {}
         self._preview_cache: OrderedDict[tuple[str, str], str] = OrderedDict()
         self._favorites: list[str] = []
@@ -65,8 +126,11 @@ class AsciiArtVM(BaseVM):
         if pyfiglet is None:
             self._fonts = ["standard"]
             self._font = "standard"
-            self._error = "pyfiglet is not installed (add it to project dependencies)."
-            self._status = "Unavailable"
+            self._error = self.tr(
+                "pages.asciiArt.msgPyfigletMissing",
+                "pyfiglet is not installed (add it to project dependencies).",
+            )
+            self._status = self.tr("pages.asciiArt.msgUnavailable", "Unavailable")
         else:
             try:
                 fonts = pyfiglet.FigletFont.getFonts()
@@ -74,6 +138,7 @@ class AsciiArtVM(BaseVM):
             except Exception:
                 self._fonts = ["standard"]
             self._font = "standard" if "standard" in self._fonts else self._fonts[0]
+        self._cool_fonts = [f for f in COOL_FONTS if f in self._fonts]
         self._load_persisted_lists()
 
     def _load_persisted_lists(self) -> None:
@@ -126,6 +191,88 @@ class AsciiArtVM(BaseVM):
     def fonts(self) -> list:
         return self._fonts
 
+    @Property(list, notify=coolFontsChanged)
+    def coolFonts(self) -> list:
+        return self._cool_fonts
+
+    @Property(int, notify=widthChanged)
+    def width(self) -> int:
+        return self._width
+
+    @width.setter
+    def width(self, value: int) -> None:
+        try:
+            value = int(value)
+        except Exception:
+            value = self.FIGLET_WIDTH
+        value = max(20, min(4000, value))
+        if value != self._width:
+            self._width = value
+            self.widthChanged.emit()
+
+    @Property(str, notify=justifyChanged)
+    def justify(self) -> str:
+        return self._justify
+
+    @justify.setter
+    def justify(self, value: str) -> None:
+        value = value if value in ("auto", "left", "center", "right") else "auto"
+        if value != self._justify:
+            self._justify = value
+            self.justifyChanged.emit()
+
+    @Property(str, notify=directionChanged)
+    def direction(self) -> str:
+        return self._direction
+
+    @direction.setter
+    def direction(self, value: str) -> None:
+        value = value if value in ("auto", "left-to-right", "right-to-left") else "auto"
+        if value != self._direction:
+            self._direction = value
+            self.directionChanged.emit()
+
+    @Property(str, notify=borderStyleChanged)
+    def borderStyle(self) -> str:
+        return self._border_style
+
+    @borderStyle.setter
+    def borderStyle(self, value: str) -> None:
+        value = value if value in BORDER_STYLES else "none"
+        if value != self._border_style:
+            self._border_style = value
+            self.borderStyleChanged.emit()
+
+    @Property(int, notify=borderHPaddingChanged)
+    def borderHPadding(self) -> int:
+        return self._border_h_padding
+
+    @borderHPadding.setter
+    def borderHPadding(self, value: int) -> None:
+        try:
+            value = int(value)
+        except Exception:
+            value = 1
+        value = max(0, min(20, value))
+        if value != self._border_h_padding:
+            self._border_h_padding = value
+            self.borderHPaddingChanged.emit()
+
+    @Property(int, notify=borderVPaddingChanged)
+    def borderVPadding(self) -> int:
+        return self._border_v_padding
+
+    @borderVPadding.setter
+    def borderVPadding(self, value: int) -> None:
+        try:
+            value = int(value)
+        except Exception:
+            value = 0
+        value = max(0, min(10, value))
+        if value != self._border_v_padding:
+            self._border_v_padding = value
+            self.borderVPaddingChanged.emit()
+
     @Property(list, notify=favoritesChanged)
     def favorites(self) -> list:
         return self._favorites
@@ -154,10 +301,14 @@ class AsciiArtVM(BaseVM):
             self.errorChanged.emit()
 
     def _figure(self, font: str):
-        figure = self._figures.get(font)
+        key = (font, self._width, self._justify, self._direction)
+        figure = self._figures.get(key)
         if figure is None:
-            figure = pyfiglet.Figlet(font=font, width=self.FIGLET_WIDTH)
-            self._figures[font] = figure
+            figure = pyfiglet.Figlet(
+                font=font, width=self._width,
+                justify=self._justify, direction=self._direction,
+            )
+            self._figures[key] = figure
         return figure
 
     def _preview_figure(self, font: str):
@@ -186,6 +337,16 @@ class AsciiArtVM(BaseVM):
             self._recents = recents
             self.recentsChanged.emit()
             self._persist_recents()
+
+    def _apply_output(self, raw: str) -> None:
+        self._raw_output = raw
+        bordered = _apply_border(
+            raw, self._border_style,
+            self._border_h_padding, self._border_v_padding,
+        )
+        if bordered != self._output:
+            self._output = bordered
+            self.outputChanged.emit()
 
     @Slot(str)
     def setInput(self, value: str) -> None:
@@ -241,34 +402,79 @@ class AsciiArtVM(BaseVM):
     def process(self) -> None:
         self._set_error("")
         if pyfiglet is None:
-            self._set_error("pyfiglet is not installed (add it to project dependencies).")
-            self._set_status("Unavailable")
+            self._set_error(
+                self.tr(
+                    "pages.asciiArt.msgPyfigletMissing",
+                    "pyfiglet is not installed (add it to project dependencies).",
+                )
+            )
+            self._set_status(
+                self.tr("pages.asciiArt.msgUnavailable", "Unavailable")
+            )
             return
         text = self._input
         if not text:
-            self._set_status("Enter text to convert")
-            self._output = ""
-            self.outputChanged.emit()
+            self._set_status(self.tr("pages.asciiArt.msgEnterText", "Enter text to convert"))
+            self._raw_output = ""
+            self._apply_output("")
             return
         try:
             rendered = self._figure(self._font).renderText(text)
         except Exception as e:
             self._set_error(str(e))
-            self._set_status("Error")
-            self._output = ""
-            self.outputChanged.emit()
+            self._set_status(self.tr("pages.asciiArt.msgError", "Error"))
+            self._raw_output = ""
+            self._apply_output("")
             return
-        self._output = rendered.rstrip("\n")
-        self.outputChanged.emit()
+        self._apply_output(rendered.rstrip("\n"))
         self._set_status("")
 
     @Slot()
     def processAction(self) -> None:
         self.process()
 
+    @Slot(int)
+    def setWidth(self, value: int) -> None:
+        self.width = value
+        if self._input:
+            self.process()
+
+    @Slot(str)
+    def setJustify(self, value: str) -> None:
+        self.justify = value
+        if self._input:
+            self.process()
+
+    @Slot(str)
+    def setDirection(self, value: str) -> None:
+        self.direction = value
+        if self._input:
+            self.process()
+
+    @Slot(str)
+    def setBorderStyle(self, value: str) -> None:
+        self.borderStyle = value
+        if self._raw_output:
+            self._apply_output(self._raw_output)
+        elif self._input:
+            self.process()
+
+    @Slot(int)
+    def setBorderHPadding(self, value: int) -> None:
+        self.borderHPadding = value
+        if self._raw_output:
+            self._apply_output(self._raw_output)
+
+    @Slot(int)
+    def setBorderVPadding(self, value: int) -> None:
+        self.borderVPadding = value
+        if self._raw_output:
+            self._apply_output(self._raw_output)
+
     @Slot()
     def clear(self) -> None:
         self.input = ""
+        self._raw_output = ""
         self._output = ""
         self.outputChanged.emit()
         self._set_error("")
@@ -280,7 +486,7 @@ class AsciiArtVM(BaseVM):
             return
         try:
             QGuiApplication.clipboard().setText(self._output)
-            self._set_status("Copied")
+            self._set_status(self.tr("pages.asciiArt.msgCopied", "Copied"))
         except Exception as e:
             self._set_error(str(e))
 
@@ -289,14 +495,24 @@ class AsciiArtVM(BaseVM):
         self._set_error("")
         self._set_status("")
         if not self._output:
-            self._set_error("Generate ASCII art before exporting SVG.")
+            self._set_error(
+                self.tr(
+                    "pages.asciiArt.msgGenerateFirst",
+                    "Generate ASCII art before exporting SVG.",
+                )
+            )
             return
 
         target = str(path or "").strip()
         if target.startswith("file://"):
             target = QUrl(target).toLocalFile()
         if not target:
-            self._set_error("Choose where to save the SVG.")
+            self._set_error(
+                self.tr(
+                    "pages.asciiArt.msgChooseLocation",
+                    "Choose where to save the SVG.",
+                )
+            )
             return
 
         target_path = Path(target).expanduser()
@@ -307,7 +523,7 @@ class AsciiArtVM(BaseVM):
             svg = render_ascii_svg(self._output, color)
             target_path.write_text(svg, encoding="utf-8")
         except Exception as e:
-            self._set_error(f"Could not save the SVG: {e}")
+            self._set_error(self.tr("pages.asciiArt.msgSaveFailed", "Could not save the SVG: {error}", error=str(e)))
             return
 
-        self._set_status(f"Saved {target_path.name}")
+        self._set_status(self.tr("pages.asciiArt.msgSaved", "Saved {name}", name=target_path.name))

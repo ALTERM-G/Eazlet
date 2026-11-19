@@ -143,13 +143,13 @@ def test_ascii_art_wires_export_button_to_save_dialog():
     source = (ROOT / "src/eazlet/ui/pages/AsciiArt.qml").read_text()
 
     assert "import QtQuick.Dialogs" in source
-    assert 'buttonText: "Export SVG"' in source
+    assert "Lang.pages.asciiArt.exportSvg" in source
     assert 'objectName: "exportSvgButton"' in source
     assert "primary: true" in source
     assert "isometric: true" in source
     assert "id: svgFileDialog" in source
     assert "fileMode: FileDialog.SaveFile" in source
     assert 'defaultSuffix: "svg"' in source
-    assert 'nameFilters: ["SVG images (*.svg)"]' in source
+    assert "Lang.pages.asciiArt.svgFilter" in source
     assert "asciiArtVM.exportSvg(" in source
     assert "Theme.textColor.toString()" in source

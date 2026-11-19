@@ -71,7 +71,7 @@ Item {
 
                 Title {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Archive / Compressor"
+                    text: Lang.pages.archive.title
                     textColor: Theme.textColor
                     pixelSize: Typography.h2
                 }
@@ -80,7 +80,7 @@ Item {
                     width: parent.width
                     horizontalAlignment: Text.AlignHCenter
                     bold: false
-                    text: "Compress files into an archive or extract an archive you added."
+                    text: Lang.pages.archive.subtitle
                     textColor: Theme.dividerColor
                     pixelSize: Typography.h6
                     wrapMode: Text.WordWrap
@@ -94,9 +94,9 @@ Item {
 
                 DropZone {
                     width: parent.width
-                    title: "Drop files or folders here"
-                    description: "Add files to compress, or an archive to extract"
-                    hint: "Drag and drop one or more files or folders, or click to browse files"
+                    title: Lang.pages.archive.dropTitle
+                    description: Lang.pages.archive.dropDescription
+                    hint: Lang.pages.archive.dropHint
                     onClicked: fileDialog.open()
                     onFilesDropped: function(urls) {
                         archiveVM.addFiles(urls)
@@ -105,7 +105,7 @@ Item {
 
                 FileDialog {
                     id: fileDialog
-                    title: "Select one or more files to add"
+                    title: Lang.pages.archive.selectDialogTitle
                     fileMode: FileDialog.OpenFiles
                     onAccepted: {
                         var files = selectedFiles && selectedFiles.length > 0
@@ -140,7 +140,7 @@ Item {
                             spacing: LayoutMetrics.spacing.sm
 
                             Label {
-                                text: "Files"
+                                text: Lang.pages.archive.files
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h5
                             }
@@ -149,8 +149,10 @@ Item {
                                 Layout.fillWidth: true
                                 Layout.minimumWidth: 0
                                 bold: false
-                                text: archiveVM.files.length
-                                      + (archiveVM.files.length === 1 ? " item" : " items")
+                                text: archiveVM.files.length + " "
+                                      + (archiveVM.files.length === 1
+                                         ? Lang.pages.archive.itemSingular
+                                         : Lang.pages.archive.itemPlural)
                                 textColor: Theme.dividerColor
                                 pixelSize: Typography.h6
                                 elide: Text.ElideRight
@@ -165,7 +167,7 @@ Item {
                                 onPressed: archiveVM.clearFiles()
 
                                 ToolTip {
-                                    text: "Clear all files"
+                                    text: Lang.pages.archive.clearAllFilesTooltip
                                     visible: clearFilesButton.hovered
                                     delay: 600
                                 }
@@ -279,7 +281,7 @@ Item {
                                         onPressed: archiveVM.removeFile(index)
 
                                         ToolTip {
-                                            text: "Remove"
+                                            text: Lang.pages.archive.removeTooltip
                                             visible: removeFileButton.hovered
                                             delay: 600
                                         }
@@ -298,8 +300,9 @@ Item {
                         spacing: LayoutMetrics.spacing.xxs
 
                         Label {
+                            anchors.horizontalCenter: parent.horizontalCenter
                             bold: false
-                            text: "Format"
+                            text: Lang.pages.archive.format
                             textColor: Theme.textColor
                             pixelSize: Typography.h6
                         }
@@ -325,8 +328,9 @@ Item {
                         visible: archiveVM.format === "zip"
 
                         Label {
+                            anchors.horizontalCenter: parent.horizontalCenter
                             bold: false
-                            text: "Compression"
+                            text: Lang.pages.archive.compression
                             textColor: Theme.textColor
                             pixelSize: Typography.h6
                         }
@@ -352,7 +356,7 @@ Item {
                 Row {
                     anchors.horizontalCenter: parent.horizontalCenter
                     spacing: LayoutMetrics.spacing.sm
-                    Button { buttonText: "Open Folder"; onPressed: archiveVM.openOutputDir() }
+                    Button { buttonText: Lang.pages.archive.openFolder; onPressed: archiveVM.openOutputDir() }
                 }
 
                 Rectangle {
@@ -364,7 +368,7 @@ Item {
                 Row {
                     anchors.horizontalCenter: parent.horizontalCenter
                     spacing: LayoutMetrics.spacing.sm
-                    Button { buttonText: "Compress"; primary: true; isometric: true; heightMultiplier: 1.3; enabled: !archiveVM.compressing && !archiveVM.extracting && archiveVM.files.length > 0; onPressed: archiveVM.compress() }
+                    Button { buttonText: Lang.pages.archive.compress; primary: true; isometric: true; heightMultiplier: 1.3; enabled: !archiveVM.compressing && !archiveVM.extracting && archiveVM.files.length > 0; onPressed: archiveVM.compress() }
                 }
 
                 Row {
@@ -372,12 +376,12 @@ Item {
                     spacing: LayoutMetrics.spacing.sm
                     Label {
                         bold: false
-                        text: "Extract archive:"
+                        text: Lang.pages.archive.extractArchive
                         textColor: Theme.textColor
                         pixelSize: Typography.h6
                         anchors.verticalCenter: parent.verticalCenter
                     }
-                    Button { buttonText: "Extract Selected"; enabled: !archiveVM.extracting && archiveVM.files.length === 1; onPressed: archiveVM.extract(archiveVM.files[0].path) }
+                    Button { buttonText: Lang.pages.archive.extractSelected; enabled: !archiveVM.extracting && archiveVM.files.length === 1; onPressed: archiveVM.extract(archiveVM.files[0].path) }
                 }
 
                 ProgressBar {
@@ -396,7 +400,7 @@ Item {
                         height: LayoutMetrics.size.iconS
                         path: SVGLibrary.checkMark
                         color: Theme.textColor
-                        visible: archiveVM.status === "Done"
+                        visible: archiveVM.status === Lang.common.done || archiveVM.status === "Done"
                     }
                     Label {
                         bold: false

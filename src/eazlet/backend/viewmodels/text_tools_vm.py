@@ -35,11 +35,11 @@ SORT_KEYS = ["Alphabetic", "Natural", "Numeric", "Length"]
 SORT_ORDERS = ["Ascending", "Descending"]
 REGEX_FLAGS = ["IgnoreCase", "Multiline", "DotAll"]
 DELIMITERS = [
-    {"name": "Comma", "value": ","},
-    {"name": "Tab", "value": "\t"},
-    {"name": "Semicolon", "value": ";"},
-    {"name": "Pipe", "value": "|"},
-    {"name": "Space", "value": " "},
+    {"id": "comma", "name": "Comma", "value": ","},
+    {"id": "tab", "name": "Tab", "value": "\t"},
+    {"id": "semicolon", "name": "Semicolon", "value": ";"},
+    {"id": "pipe", "name": "Pipe", "value": "|"},
+    {"id": "space", "name": "Space", "value": " "},
 ]
 
 REGEX_PRESETS = [
@@ -564,37 +564,116 @@ def extract_column(text: str, delimiter: str = ",", column: int = 0) -> str:
 # Qt wrapper
 # --------------------------------------------------------------------------
 class TextToolsVM(BaseVM):
+    # Stable IDs used by logic/QML comparisons; labels are localized for display.
     @Property(list, constant=True)
     def caseModes(self) -> list[str]:
         return list(CASE_MODES)
+
+    @Property(list, constant=True)
+    def caseModeOptions(self) -> list[dict]:
+        labels = {
+            "Upper": self.tr("options.textTools.case.upper", "Upper"),
+            "Lower": self.tr("options.textTools.case.lower", "Lower"),
+            "Title": self.tr("options.textTools.case.title", "Title"),
+            "Sentence": self.tr("options.textTools.case.sentence", "Sentence"),
+            "Swap": self.tr("options.textTools.case.swap", "Swap"),
+            "Capitalize": self.tr("options.textTools.case.capitalize", "Capitalize"),
+        }
+        return [{"id": m, "label": labels.get(m, m)} for m in CASE_MODES]
 
     @Property(list, constant=True)
     def whitespaceOptions(self) -> list[str]:
         return list(WHITESPACE_OPTIONS)
 
     @Property(list, constant=True)
+    def whitespaceOptionItems(self) -> list[dict]:
+        labels = {
+            "Trim": self.tr("pages.textTools.trim", "Trim"),
+            "Collapse": self.tr("pages.textTools.collapse", "Collapse"),
+            "Expand tabs": self.tr("pages.textTools.expandTabs", "Expand tabs"),
+        }
+        return [{"id": m, "label": labels.get(m, m)} for m in WHITESPACE_OPTIONS]
+
+    @Property(list, constant=True)
     def reverseUnits(self) -> list[str]:
         return list(REVERSE_UNITS)
+
+    @Property(list, constant=True)
+    def reverseUnitOptions(self) -> list[dict]:
+        labels = {
+            "Characters": self.tr("options.textTools.reverse.characters", "Characters"),
+            "Words": self.tr("options.textTools.reverse.words", "Words"),
+            "Lines": self.tr("options.textTools.reverse.lines", "Lines"),
+        }
+        return [{"id": m, "label": labels.get(m, m)} for m in REVERSE_UNITS]
 
     @Property(list, constant=True)
     def lineOperations(self) -> list[str]:
         return list(LINE_OPERATIONS)
 
     @Property(list, constant=True)
+    def lineOperationOptions(self) -> list[dict]:
+        labels = {
+            "Remove blank lines": self.tr("options.textTools.lineOp.removeBlank", "Remove blank lines"),
+            "Remove duplicate lines": self.tr("options.textTools.lineOp.removeDuplicates", "Remove duplicate lines"),
+            "Trim each line": self.tr("options.textTools.lineOp.trimEach", "Trim each line"),
+            "Number lines": self.tr("options.textTools.lineOp.numberLines", "Number lines"),
+            "Prefix / suffix": self.tr("options.textTools.lineOp.prefixSuffix", "Prefix / suffix"),
+        }
+        return [{"id": m, "label": labels.get(m, m)} for m in LINE_OPERATIONS]
+
+    @Property(list, constant=True)
     def sortUnits(self) -> list[str]:
         return list(SORT_UNITS)
+
+    @Property(list, constant=True)
+    def sortUnitOptions(self) -> list[dict]:
+        labels = {
+            "Lines": self.tr("options.textTools.sortUnit.lines", "Lines"),
+            "Words": self.tr("options.textTools.sortUnit.words", "Words"),
+            "Characters": self.tr("options.textTools.sortUnit.characters", "Characters"),
+            "Columns": self.tr("options.textTools.sortUnit.columns", "Columns"),
+        }
+        return [{"id": m, "label": labels.get(m, m)} for m in SORT_UNITS]
 
     @Property(list, constant=True)
     def sortKeys(self) -> list[str]:
         return list(SORT_KEYS)
 
     @Property(list, constant=True)
+    def sortKeyOptions(self) -> list[dict]:
+        labels = {
+            "Alphabetic": self.tr("options.textTools.sortKey.alphabetic", "Alphabetic"),
+            "Natural": self.tr("options.textTools.sortKey.natural", "Natural"),
+            "Numeric": self.tr("options.textTools.sortKey.numeric", "Numeric"),
+            "Length": self.tr("options.textTools.sortKey.length", "Length"),
+        }
+        return [{"id": m, "label": labels.get(m, m)} for m in SORT_KEYS]
+
+    @Property(list, constant=True)
     def sortOrders(self) -> list[str]:
         return list(SORT_ORDERS)
 
     @Property(list, constant=True)
+    def sortOrderOptions(self) -> list[dict]:
+        labels = {
+            "Ascending": self.tr("options.textTools.sortOrder.ascending", "Ascending"),
+            "Descending": self.tr("options.textTools.sortOrder.descending", "Descending"),
+        }
+        return [{"id": m, "label": labels.get(m, m)} for m in SORT_ORDERS]
+
+    @Property(list, constant=True)
     def regexFlags(self) -> list[str]:
         return list(REGEX_FLAGS)
+
+    @Property(list, constant=True)
+    def regexFlagOptions(self) -> list[dict]:
+        labels = {
+            "IgnoreCase": self.tr("options.textTools.regexFlag.ignoreCase", "Ignore case"),
+            "Multiline": self.tr("options.textTools.regexFlag.multiline", "Multiline"),
+            "DotAll": self.tr("options.textTools.regexFlag.dotAll", "Dot matches newline"),
+        }
+        return [{"id": m, "label": labels.get(m, m)} for m in REGEX_FLAGS]
 
     @Property(list, constant=True)
     def regexPresets(self) -> list[str]:
@@ -602,7 +681,19 @@ class TextToolsVM(BaseVM):
 
     @Property(list, constant=True)
     def delimiters(self) -> list[dict]:
-        return [dict(item) for item in DELIMITERS]
+        labels = {
+            "comma": self.tr("options.textTools.delimiter.comma", "Comma"),
+            "tab": self.tr("options.textTools.delimiter.tab", "Tab"),
+            "semicolon": self.tr("options.textTools.delimiter.semicolon", "Semicolon"),
+            "pipe": self.tr("options.textTools.delimiter.pipe", "Pipe"),
+            "space": self.tr("options.textTools.delimiter.space", "Space"),
+        }
+        out = []
+        for item in DELIMITERS:
+            row = dict(item)
+            row["label"] = labels.get(item.get("id"), item["name"])
+            out.append(row)
+        return out
 
     @Slot(str, result=str)
     def presetPattern(self, name: str) -> str:
@@ -611,6 +702,21 @@ class TextToolsVM(BaseVM):
     @Slot(str, result=str)
     def presetDescription(self, name: str) -> str:
         return preset_for(name)["description"]
+
+    def _localize_error(self, err: dict) -> dict:
+        if err.get("ok", True):
+            return err
+        msg = err.get("error", "") or ""
+        mapping = {
+            "Enter a pattern": self.tr("pages.textTools.msgEnterPattern", "Enter a pattern"),
+            "No active rules": self.tr("pages.textTools.msgNoActiveRules", "No active rules"),
+            "Enter text to find": self.tr("pages.textTools.msgEnterTextToFind", "Enter text to find"),
+            "No JSON objects found": self.tr("pages.textTools.msgNoJsonObjects", "No JSON objects found"),
+        }
+        if msg in mapping:
+            err = dict(err)
+            err["error"] = mapping[msg]
+        return err
 
     @Slot(str, str, result=dict)
     def applyCase(self, text: str, mode: str) -> dict:
@@ -633,19 +739,19 @@ class TextToolsVM(BaseVM):
     def replaceLiteral(self, text: str, find: str, replacement: str,
                        case_sensitive: bool, replace_all: bool) -> dict:
         if not find:
-            return result(ok=False, error="Enter text to find")
+            return self._localize_error(result(ok=False, error="Enter text to find"))
         return result(replace_literal(text, find, replacement,
                                       case_sensitive, replace_all))
 
     @Slot(str, list, bool, bool, bool, result=dict)
     def multiReplace(self, text: str, rules: list, case_sensitive: bool,
                      regex_mode: bool, whole_word: bool) -> dict:
-        return multi_replace(text, rules, case_sensitive=case_sensitive,
-                             regex_mode=regex_mode, whole_word=whole_word)
+        return self._localize_error(multi_replace(text, rules, case_sensitive=case_sensitive,
+                             regex_mode=regex_mode, whole_word=whole_word))
 
     @Slot(str, str, list, result=dict)
     def findRegex(self, text: str, pattern: str, flags: list) -> dict:
-        found = regex_find(text, pattern, flags)
+        found = self._localize_error(regex_find(text, pattern, flags))
         if not found["ok"]:
             return found
         return result(text=found["text"], count=found["count"],
@@ -654,12 +760,12 @@ class TextToolsVM(BaseVM):
     @Slot(str, str, str, list, bool, result=dict)
     def replaceRegex(self, text: str, pattern: str, replacement: str,
                      flags: list, replace_all: bool) -> dict:
-        return regex_replace(text, pattern, replacement, flags, replace_all)
+        return self._localize_error(regex_replace(text, pattern, replacement, flags, replace_all))
 
     @Slot(str, str, list, int, result=dict)
     def splitRegex(self, text: str, pattern: str, flags: list,
                    max_split: int) -> dict:
-        return regex_split(text, pattern, flags, max_split)
+        return self._localize_error(regex_split(text, pattern, flags, max_split))
 
     @Slot(str, str, str, str, bool, bool, str, int, result=dict)
     def sortText(self, text: str, unit: str, key: str, order: str,

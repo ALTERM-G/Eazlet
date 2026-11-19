@@ -12,6 +12,17 @@ Item {
 
     property string randomMode: "numbers"
 
+    readonly property var loremTypeOptions: [
+        { id: "Paragraphs", label: Lang.pages.generators.paragraphs },
+        { id: "Sentences", label: Lang.pages.generators.sentences },
+        { id: "Words", label: Lang.pages.generators.words }
+    ]
+    readonly property var randomSortOptions: [
+        { id: "As generated", label: Lang.pages.generators.asGenerated },
+        { id: "Ascending", label: Lang.options.textTools.sortOrder.ascending },
+        { id: "Descending", label: Lang.options.textTools.sortOrder.descending }
+    ]
+
     function processAction() {
         if (tabs.currentIndex === 0)
             generatorsVM.generatePassword()
@@ -48,7 +59,7 @@ Item {
             Title {
                 id: pageTitle
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: "Generators"
+                text: Lang.pages.generators.title
                 textColor: Theme.textColor
                 pixelSize: Typography.h2
             }
@@ -58,7 +69,7 @@ Item {
                 bold: false
                 width: parent.width
                 horizontalAlignment: Text.AlignHCenter
-                text: "Generate passwords, placeholder text, random values, IP addresses, IDs, colors, and QR codes."
+                text: Lang.pages.generators.subtitle
                 textColor: Theme.dividerColor
                 pixelSize: Typography.h6
                 wrapMode: Text.WordWrap
@@ -67,7 +78,7 @@ Item {
             TabBar {
                 id: tabs
                 anchors.horizontalCenter: parent.horizontalCenter
-                tabData: ["Password", "Lorem Ipsum", "Random", "QR Code"]
+                tabData: [Lang.pages.generators.tabPassword, Lang.pages.generators.tabLorem, Lang.pages.generators.tabRandom, Lang.pages.generators.tabQr]
                 active: page.visible
             }
 
@@ -117,24 +128,26 @@ Item {
                         Label {
                             bold: false
                             width: parent.width
-                            text: "Create passwords with the operating system's secure random source."
+                            text: Lang.pages.generators.passwordDesc
                             textColor: Theme.dividerColor
                             pixelSize: Typography.h6
                             wrapMode: Text.WordWrap
                         }
 
                         Column {
-                            width: parent.width
+                            anchors.horizontalCenter: parent.horizontalCenter
                             spacing: LayoutMetrics.spacing.xxs
 
                             Label {
+                                anchors.horizontalCenter: parent.horizontalCenter
                                 bold: false
-                                text: "Length"
+                                text: Lang.common.length
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
                             }
 
                             Row {
+                                anchors.horizontalCenter: parent.horizontalCenter
                                 spacing: LayoutMetrics.spacing.md
 
                                 SpinBox {
@@ -148,7 +161,7 @@ Item {
                                 Label {
                                     bold: false
                                     anchors.verticalCenter: parent.verticalCenter
-                                    text: "characters"
+                                    text: Lang.pages.generators.charactersUnit
                                     textColor: Theme.dividerColor
                                     pixelSize: Typography.h6
                                 }
@@ -156,26 +169,39 @@ Item {
                         }
 
                         Flow {
-                            width: parent.width
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            readonly property real naturalContentWidth: {
+                                var total = 0, count = 0
+                                for (var i = 0; i < children.length; i++) {
+                                    var child = children[i]
+                                    if (!child || !child.visible)
+                                        continue
+                                    var w = child.implicitWidth > 0 ? child.implicitWidth : child.width
+                                    total += w
+                                    count++
+                                }
+                                return total + Math.max(0, count - 1) * spacing
+                            }
+                            width: Math.min(parent.width, naturalContentWidth)
                             spacing: LayoutMetrics.spacing.md
 
                             Switch {
-                                text: "Uppercase"
+                                text: Lang.pages.generators.uppercase
                                 checked: generatorsVM.includeUppercase
                                 onCheckedChanged: generatorsVM.includeUppercase = checked
                             }
                             Switch {
-                                text: "Lowercase"
+                                text: Lang.pages.generators.lowercase
                                 checked: generatorsVM.includeLowercase
                                 onCheckedChanged: generatorsVM.includeLowercase = checked
                             }
                             Switch {
-                                text: "Digits"
+                                text: Lang.pages.generators.digits
                                 checked: generatorsVM.includeDigits
                                 onCheckedChanged: generatorsVM.includeDigits = checked
                             }
                             Switch {
-                                text: "Symbols"
+                                text: Lang.pages.generators.symbols
                                 checked: generatorsVM.includeSymbols
                                 onCheckedChanged: generatorsVM.includeSymbols = checked
                             }
@@ -186,14 +212,14 @@ Item {
                             spacing: LayoutMetrics.spacing.sm
 
                             Button {
-                                buttonText: "Generate"
+                                buttonText: Lang.common.generate
                                 primary: true
                                 isometric: true
                                 heightMultiplier: 1.3
                                 onPressed: generatorsVM.generatePassword()
                             }
                             Button {
-                                buttonText: "Copy"
+                                buttonText: Lang.common.copy
                                 iconPath: SVGLibrary.copy
                                 enabled: generatorsVM.password.length > 0
                                 onPressed: generatorsVM.copyPassword()
@@ -204,7 +230,7 @@ Item {
                             width: parent.width
                             readOnly: true
                             text: generatorsVM.password
-                            placeholderText: "Your password will appear here"
+                            placeholderText: Lang.pages.generators.passwordPlaceholder
                             font.family: "JetBrains Mono"
                         }
 
@@ -214,7 +240,7 @@ Item {
 
                             Label {
                                 bold: false
-                                text: "Strength:"
+                                text: Lang.pages.generators.strength
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
                             }
@@ -226,7 +252,7 @@ Item {
                             }
                             Label {
                                 bold: false
-                                text: "·  " + generatorsVM.passwordEntropy + " bits of entropy"
+                                text: "·  " + generatorsVM.passwordEntropy + " " + Lang.pages.generators.bitsOfEntropy
                                 textColor: Theme.dividerColor
                                 pixelSize: Typography.h6
                             }
@@ -266,7 +292,7 @@ Item {
                         Label {
                             bold: false
                             width: parent.width
-                            text: "Generate classic filler text in paragraphs, sentences, or individual words."
+                            text: Lang.pages.generators.loremDesc
                             textColor: Theme.dividerColor
                             pixelSize: Typography.h6
                             wrapMode: Text.WordWrap
@@ -281,8 +307,10 @@ Item {
                                 spacing: LayoutMetrics.spacing.xxs
 
                                 Label {
+                                    width: parent.width
+                                    horizontalAlignment: Text.AlignHCenter
                                     bold: false
-                                    text: "Type"
+                                    text: Lang.pages.generators.type
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
                                 }
@@ -290,10 +318,21 @@ Item {
                                 ComboBox {
                                     id: loremTypeCombo
                                     width: parent.width
-                                    model: generatorsVM.loremTypes
-                                    currentIndex: {
+                                    model: page.loremTypeOptions
+                                    textRole: "label"
+                                    valueRole: "id"
+                                    Component.onCompleted: {
                                         var idx = generatorsVM.loremTypes.indexOf(generatorsVM.loremType)
-                                        return idx >= 0 ? idx : 0
+                                        if (idx >= 0) currentIndex = idx
+                                    }
+                                    onActivated: function(index) {
+                                        if (index >= 0 && index < generatorsVM.loremTypes.length) {
+                                            var type = generatorsVM.loremTypes[index]
+                                            if (type && type !== generatorsVM.loremType) {
+                                                generatorsVM.loremType = type
+                                                generatorsVM.generateLorem()
+                                            }
+                                        }
                                     }
                                     onCurrentIndexChanged: {
                                         if (currentIndex >= 0
@@ -312,8 +351,9 @@ Item {
                                 spacing: LayoutMetrics.spacing.xxs
 
                                 Label {
+                                    anchors.horizontalCenter: parent.horizontalCenter
                                     bold: false
-                                    text: "Amount"
+                                    text: Lang.pages.generators.amount
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
                                 }
@@ -333,14 +373,14 @@ Item {
                             spacing: LayoutMetrics.spacing.sm
 
                             Button {
-                                buttonText: "Generate"
+                                buttonText: Lang.common.generate
                                 primary: true
                                 isometric: true
                                 heightMultiplier: 1.3
                                 onPressed: generatorsVM.generateLorem()
                             }
                             Button {
-                                buttonText: "Copy"
+                                buttonText: Lang.common.copy
                                 iconPath: SVGLibrary.copy
                                 enabled: generatorsVM.loremText.length > 0
                                 onPressed: generatorsVM.copyLorem()
@@ -355,7 +395,7 @@ Item {
                             fontFamily: "JetBrains Mono"
                             fontPixelSize: Typography.body
                             text: generatorsVM.loremText
-                            placeholderText: "Generated Lorem ipsum will appear here"
+                            placeholderText: Lang.pages.generators.loremPlaceholder
                             showCopyButton: true
                         }
 
@@ -393,7 +433,7 @@ Item {
                         Label {
                             bold: false
                             width: parent.width
-                            text: "Generate random numbers, strings, IP addresses, IDs, or colors using the operating system's secure random source."
+                            text: Lang.pages.generators.randomDesc
                             textColor: Theme.dividerColor
                             pixelSize: Typography.h6
                             wrapMode: Text.WordWrap
@@ -411,31 +451,31 @@ Item {
 
                             Button {
                                 width: randomModeGrid.cellWidth
-                                buttonText: "Numbers"
+                                buttonText: Lang.pages.generators.numbers
                                 primary: page.randomMode === "numbers"
                                 onPressed: page.randomMode = "numbers"
                             }
                             Button {
                                 width: randomModeGrid.cellWidth
-                                buttonText: "Strings"
+                                buttonText: Lang.pages.generators.strings
                                 primary: page.randomMode === "strings"
                                 onPressed: page.randomMode = "strings"
                             }
                             Button {
                                 width: randomModeGrid.cellWidth
-                                buttonText: "IPs"
+                                buttonText: Lang.pages.generators.ips
                                 primary: page.randomMode === "ips"
                                 onPressed: page.randomMode = "ips"
                             }
                             Button {
                                 width: randomModeGrid.cellWidth
-                                buttonText: "IDs"
+                                buttonText: Lang.pages.generators.ids
                                 primary: page.randomMode === "ids"
                                 onPressed: page.randomMode = "ids"
                             }
                             Button {
                                 width: randomModeGrid.cellWidth
-                                buttonText: "Colors"
+                                buttonText: Lang.pages.generators.colors
                                 primary: page.randomMode === "colors"
                                 onPressed: page.randomMode = "colors"
                             }
@@ -450,15 +490,29 @@ Item {
                         visible: tabs.currentIndex === 2 && page.randomMode === "numbers"
 
                         Flow {
-                            width: parent.width
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            readonly property real naturalContentWidth: {
+                                var total = 0, count = 0
+                                for (var i = 0; i < children.length; i++) {
+                                    var child = children[i]
+                                    if (!child || !child.visible)
+                                        continue
+                                    var w = child.implicitWidth > 0 ? child.implicitWidth : child.width
+                                    total += w
+                                    count++
+                                }
+                                return total + Math.max(0, count - 1) * spacing
+                            }
+                            width: Math.min(parent.width, naturalContentWidth)
                             spacing: LayoutMetrics.spacing.md
 
                             Column {
                                 spacing: LayoutMetrics.spacing.xxs
 
                                 Label {
+                                    anchors.horizontalCenter: parent.horizontalCenter
                                     bold: false
-                                    text: "Minimum"
+                                    text: Lang.pages.generators.minimum
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
                                 }
@@ -476,8 +530,9 @@ Item {
                                 spacing: LayoutMetrics.spacing.xxs
 
                                 Label {
+                                    anchors.horizontalCenter: parent.horizontalCenter
                                     bold: false
-                                    text: "Maximum"
+                                    text: Lang.pages.generators.maximum
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
                                 }
@@ -495,8 +550,9 @@ Item {
                                 spacing: LayoutMetrics.spacing.xxs
 
                                 Label {
+                                    anchors.horizontalCenter: parent.horizontalCenter
                                     bold: false
-                                    text: "Count"
+                                    text: Lang.common.count
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
                                 }
@@ -511,34 +567,63 @@ Item {
                             }
                         }
 
-                        Row {
+                        Flow {
                             anchors.horizontalCenter: parent.horizontalCenter
+                            readonly property real naturalContentWidth: {
+                                var total = 0, count = 0
+                                for (var i = 0; i < children.length; i++) {
+                                    var child = children[i]
+                                    if (!child || !child.visible)
+                                        continue
+                                    var w = child.implicitWidth > 0 ? child.implicitWidth : child.width
+                                    total += w
+                                    count++
+                                }
+                                return total + Math.max(0, count - 1) * spacing
+                            }
+                            width: Math.min(parent.width, naturalContentWidth)
                             spacing: LayoutMetrics.spacing.lg
 
-                            Switch {
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: "Unique numbers"
-                                checked: generatorsVM.randomUnique
-                                onCheckedChanged: generatorsVM.randomUnique = checked
+                            Item {
+                                width: uniqueSwitch.implicitWidth
+                                height: orderColumn.implicitHeight
+
+                                Switch {
+                                    id: uniqueSwitch
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: Lang.pages.generators.uniqueNumbers
+                                    checked: generatorsVM.randomUnique
+                                    onCheckedChanged: generatorsVM.randomUnique = checked
+                                }
                             }
 
                             Column {
-                                width: Math.min(LayoutMetrics.unit * 18, randomPanel.width * 0.22)
+                                id: orderColumn
                                 spacing: LayoutMetrics.spacing.xxs
 
                                 Label {
+                                    anchors.horizontalCenter: parent.horizontalCenter
                                     bold: false
-                                    text: "Order"
+                                    text: Lang.pages.generators.order
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
                                 }
 
                                 ComboBox {
-                                    width: parent.width
-                                    model: generatorsVM.randomSorts
-                                    currentIndex: {
+                                    width: LayoutMetrics.size.comboBoxWidth * 0.8
+                                    model: page.randomSortOptions
+                                    textRole: "label"
+                                    valueRole: "id"
+                                    Component.onCompleted: {
                                         var idx = generatorsVM.randomSorts.indexOf(generatorsVM.randomSort)
-                                        return idx >= 0 ? idx : 0
+                                        if (idx >= 0) currentIndex = idx
+                                    }
+                                    onActivated: function(index) {
+                                        if (index >= 0 && index < generatorsVM.randomSorts.length) {
+                                            var sort = generatorsVM.randomSorts[index]
+                                            if (sort && sort !== generatorsVM.randomSort)
+                                                generatorsVM.randomSort = sort
+                                        }
                                     }
                                     onCurrentIndexChanged: {
                                         if (currentIndex >= 0
@@ -557,14 +642,14 @@ Item {
                             spacing: LayoutMetrics.spacing.sm
 
                             Button {
-                                buttonText: "Generate"
+                                buttonText: Lang.common.generate
                                 primary: true
                                 isometric: true
                                 heightMultiplier: 1.3
                                 onPressed: generatorsVM.generateRandom()
                             }
                             Button {
-                                buttonText: "Copy"
+                                buttonText: Lang.common.copy
                                 iconPath: SVGLibrary.copy
                                 enabled: generatorsVM.randomOutput.length > 0
                                 onPressed: generatorsVM.copyRandom()
@@ -579,7 +664,7 @@ Item {
                             fontFamily: "JetBrains Mono"
                             fontPixelSize: Typography.body
                             text: generatorsVM.randomOutput
-                            placeholderText: "Generated numbers will appear here"
+                            placeholderText: Lang.pages.generators.numbersPlaceholder
                             showCopyButton: true
                         }
 
@@ -615,15 +700,29 @@ Item {
                         visible: tabs.currentIndex === 2 && page.randomMode === "strings"
 
                         Flow {
-                            width: parent.width
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            readonly property real naturalContentWidth: {
+                                var total = 0, count = 0
+                                for (var i = 0; i < children.length; i++) {
+                                    var child = children[i]
+                                    if (!child || !child.visible)
+                                        continue
+                                    var w = child.implicitWidth > 0 ? child.implicitWidth : child.width
+                                    total += w
+                                    count++
+                                }
+                                return total + Math.max(0, count - 1) * spacing
+                            }
+                            width: Math.min(parent.width, naturalContentWidth)
                             spacing: LayoutMetrics.spacing.md
 
                             Column {
                                 spacing: LayoutMetrics.spacing.xxs
 
                                 Label {
+                                    anchors.horizontalCenter: parent.horizontalCenter
                                     bold: false
-                                    text: "Length"
+                                    text: Lang.common.length
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
                                 }
@@ -642,7 +741,7 @@ Item {
                                     Label {
                                         bold: false
                                         anchors.verticalCenter: parent.verticalCenter
-                                        text: "characters"
+                                        text: Lang.pages.generators.charactersUnit
                                         textColor: Theme.dividerColor
                                         pixelSize: Typography.h6
                                     }
@@ -653,8 +752,9 @@ Item {
                                 spacing: LayoutMetrics.spacing.xxs
 
                                 Label {
+                                    anchors.horizontalCenter: parent.horizontalCenter
                                     bold: false
-                                    text: "Count"
+                                    text: Lang.common.count
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
                                 }
@@ -670,26 +770,39 @@ Item {
                         }
 
                         Flow {
-                            width: parent.width
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            readonly property real naturalContentWidth: {
+                                var total = 0, count = 0
+                                for (var i = 0; i < children.length; i++) {
+                                    var child = children[i]
+                                    if (!child || !child.visible)
+                                        continue
+                                    var w = child.implicitWidth > 0 ? child.implicitWidth : child.width
+                                    total += w
+                                    count++
+                                }
+                                return total + Math.max(0, count - 1) * spacing
+                            }
+                            width: Math.min(parent.width, naturalContentWidth)
                             spacing: LayoutMetrics.spacing.md
 
                             Switch {
-                                text: "Uppercase"
+                                text: Lang.pages.generators.uppercase
                                 checked: generatorsVM.randomStringUppercase
                                 onCheckedChanged: generatorsVM.randomStringUppercase = checked
                             }
                             Switch {
-                                text: "Lowercase"
+                                text: Lang.pages.generators.lowercase
                                 checked: generatorsVM.randomStringLowercase
                                 onCheckedChanged: generatorsVM.randomStringLowercase = checked
                             }
                             Switch {
-                                text: "Digits"
+                                text: Lang.pages.generators.digits
                                 checked: generatorsVM.randomStringDigits
                                 onCheckedChanged: generatorsVM.randomStringDigits = checked
                             }
                             Switch {
-                                text: "Symbols"
+                                text: Lang.pages.generators.symbols
                                 checked: generatorsVM.randomStringSymbols
                                 onCheckedChanged: generatorsVM.randomStringSymbols = checked
                             }
@@ -700,15 +813,17 @@ Item {
                             spacing: LayoutMetrics.spacing.xxs
 
                             Switch {
-                                text: "Exclude ambiguous characters"
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                text: Lang.pages.generators.excludeAmbiguous
                                 checked: generatorsVM.randomStringExcludeAmbiguous
                                 onCheckedChanged: generatorsVM.randomStringExcludeAmbiguous = checked
                             }
 
                             Label {
                                 bold: false
-                                width: parent.width
-                                text: "Removes characters that are easy to confuse, such as O, 0, I, l, 1 and |."
+                                width: Math.min(parent.width, parent.parent ? parent.parent.width : parent.width)
+                                horizontalAlignment: Text.AlignHCenter
+                                text: Lang.pages.generators.excludeAmbiguousHint
                                 textColor: Theme.dividerColor
                                 pixelSize: Typography.h6
                                 wrapMode: Text.WordWrap
@@ -720,14 +835,14 @@ Item {
                             spacing: LayoutMetrics.spacing.sm
 
                             Button {
-                                buttonText: "Generate"
+                                buttonText: Lang.common.generate
                                 primary: true
                                 isometric: true
                                 heightMultiplier: 1.3
                                 onPressed: generatorsVM.generateRandomString()
                             }
                             Button {
-                                buttonText: "Copy"
+                                buttonText: Lang.common.copy
                                 iconPath: SVGLibrary.copy
                                 enabled: generatorsVM.randomStringOutput.length > 0
                                 onPressed: generatorsVM.copyRandomString()
@@ -742,7 +857,7 @@ Item {
                             fontFamily: "JetBrains Mono"
                             fontPixelSize: Typography.body
                             text: generatorsVM.randomStringOutput
-                            placeholderText: "Generated strings will appear here"
+                            placeholderText: Lang.pages.generators.stringsPlaceholder
                             showCopyButton: true
                         }
 
@@ -794,15 +909,29 @@ Item {
                         }
 
                         Flow {
-                            width: parent.width
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            readonly property real naturalContentWidth: {
+                                var total = 0, count = 0
+                                for (var i = 0; i < children.length; i++) {
+                                    var child = children[i]
+                                    if (!child || !child.visible)
+                                        continue
+                                    var w = child.implicitWidth > 0 ? child.implicitWidth : child.width
+                                    total += w
+                                    count++
+                                }
+                                return total + Math.max(0, count - 1) * spacing
+                            }
+                            width: Math.min(parent.width, naturalContentWidth)
                             spacing: LayoutMetrics.spacing.md
 
                             Column {
                                 spacing: LayoutMetrics.spacing.xxs
 
                                 Label {
+                                    anchors.horizontalCenter: parent.horizontalCenter
                                     bold: false
-                                    text: "Count"
+                                    text: Lang.common.count
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
                                 }
@@ -818,11 +947,13 @@ Item {
                         }
 
                         Column {
+                            anchors.horizontalCenter: parent.horizontalCenter
                             width: parent.width
                             spacing: LayoutMetrics.spacing.xxs
 
                             Switch {
-                                text: "Private addresses only"
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                text: Lang.pages.generators.privateIpsOnly
                                 checked: generatorsVM.randomIpPrivate
                                 onCheckedChanged: generatorsVM.randomIpPrivate = checked
                             }
@@ -830,7 +961,8 @@ Item {
                             Label {
                                 bold: false
                                 width: parent.width
-                                text: "Private IPv4 uses 10.0.0.0/8, 172.16.0.0/12, and 192.168.0.0/16; private IPv6 uses fd00::/8."
+                                horizontalAlignment: Text.AlignHCenter
+                                text: Lang.pages.generators.privateIpsHint
                                 textColor: Theme.dividerColor
                                 pixelSize: Typography.h6
                                 wrapMode: Text.WordWrap
@@ -842,14 +974,14 @@ Item {
                             spacing: LayoutMetrics.spacing.sm
 
                             Button {
-                                buttonText: "Generate"
+                                buttonText: Lang.common.generate
                                 primary: true
                                 isometric: true
                                 heightMultiplier: 1.3
                                 onPressed: generatorsVM.generateRandomIp()
                             }
                             Button {
-                                buttonText: "Copy"
+                                buttonText: Lang.common.copy
                                 iconPath: SVGLibrary.copy
                                 enabled: generatorsVM.randomIpOutput.length > 0
                                 onPressed: generatorsVM.copyRandomIp()
@@ -864,7 +996,7 @@ Item {
                             fontFamily: "JetBrains Mono"
                             fontPixelSize: Typography.body
                             text: generatorsVM.randomIpOutput
-                            placeholderText: "Generated IP addresses will appear here"
+                            placeholderText: Lang.pages.generators.ipsPlaceholder
                             showCopyButton: true
                         }
                     }
@@ -881,32 +1013,46 @@ Item {
                             spacing: LayoutMetrics.spacing.sm
 
                             Button {
-                                buttonText: "UUID v4"
+                                buttonText: Lang.pages.generators.uuidV4
                                 primary: generatorsVM.randomIdFormat === "UUID v4"
                                 onPressed: generatorsVM.randomIdFormat = "UUID v4"
                             }
                             Button {
-                                buttonText: "Short ID"
+                                buttonText: Lang.pages.generators.shortId
                                 primary: generatorsVM.randomIdFormat === "Short ID"
                                 onPressed: generatorsVM.randomIdFormat = "Short ID"
                             }
                             Button {
-                                buttonText: "Numeric"
+                                buttonText: Lang.pages.generators.numericId
                                 primary: generatorsVM.randomIdFormat === "Numeric"
                                 onPressed: generatorsVM.randomIdFormat = "Numeric"
                             }
                         }
 
                         Flow {
-                            width: parent.width
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            readonly property real naturalContentWidth: {
+                                var total = 0, count = 0
+                                for (var i = 0; i < children.length; i++) {
+                                    var child = children[i]
+                                    if (!child || !child.visible)
+                                        continue
+                                    var w = child.implicitWidth > 0 ? child.implicitWidth : child.width
+                                    total += w
+                                    count++
+                                }
+                                return total + Math.max(0, count - 1) * spacing
+                            }
+                            width: Math.min(parent.width, naturalContentWidth)
                             spacing: LayoutMetrics.spacing.md
 
                             Column {
                                 spacing: LayoutMetrics.spacing.xxs
 
                                 Label {
+                                    anchors.horizontalCenter: parent.horizontalCenter
                                     bold: false
-                                    text: "Count"
+                                    text: Lang.common.count
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
                                 }
@@ -925,8 +1071,9 @@ Item {
                                 visible: generatorsVM.randomIdFormat !== "UUID v4"
 
                                 Label {
+                                    anchors.horizontalCenter: parent.horizontalCenter
                                     bold: false
-                                    text: generatorsVM.randomIdFormat === "Numeric" ? "Digits" : "Length"
+                                    text: generatorsVM.randomIdFormat === "Numeric" ? Lang.pages.generators.digitsCount : Lang.common.length
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
                                 }
@@ -945,7 +1092,7 @@ Item {
                                     Label {
                                         bold: false
                                         anchors.verticalCenter: parent.verticalCenter
-                                        text: generatorsVM.randomIdFormat === "Numeric" ? "digits" : "characters"
+                                        text: generatorsVM.randomIdFormat === "Numeric" ? Lang.pages.generators.digitsUnit : Lang.pages.generators.charactersUnit
                                         textColor: Theme.dividerColor
                                         pixelSize: Typography.h6
                                     }
@@ -958,14 +1105,14 @@ Item {
                             spacing: LayoutMetrics.spacing.sm
 
                             Button {
-                                buttonText: "Generate"
+                                buttonText: Lang.common.generate
                                 primary: true
                                 isometric: true
                                 heightMultiplier: 1.3
                                 onPressed: generatorsVM.generateRandomId()
                             }
                             Button {
-                                buttonText: "Copy"
+                                buttonText: Lang.common.copy
                                 iconPath: SVGLibrary.copy
                                 enabled: generatorsVM.randomIdOutput.length > 0
                                 onPressed: generatorsVM.copyRandomId()
@@ -980,7 +1127,7 @@ Item {
                             fontFamily: "JetBrains Mono"
                             fontPixelSize: Typography.body
                             text: generatorsVM.randomIdOutput
-                            placeholderText: "Generated IDs will appear here"
+                            placeholderText: Lang.pages.generators.idsPlaceholder
                             showCopyButton: true
                         }
                     }
@@ -1014,15 +1161,29 @@ Item {
                         }
 
                         Flow {
-                            width: parent.width
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            readonly property real naturalContentWidth: {
+                                var total = 0, count = 0
+                                for (var i = 0; i < children.length; i++) {
+                                    var child = children[i]
+                                    if (!child || !child.visible)
+                                        continue
+                                    var w = child.implicitWidth > 0 ? child.implicitWidth : child.width
+                                    total += w
+                                    count++
+                                }
+                                return total + Math.max(0, count - 1) * spacing
+                            }
+                            width: Math.min(parent.width, naturalContentWidth)
                             spacing: LayoutMetrics.spacing.md
 
                             Column {
                                 spacing: LayoutMetrics.spacing.xxs
 
                                 Label {
+                                    anchors.horizontalCenter: parent.horizontalCenter
                                     bold: false
-                                    text: "Count"
+                                    text: Lang.common.count
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
                                 }
@@ -1042,14 +1203,14 @@ Item {
                             spacing: LayoutMetrics.spacing.sm
 
                             Button {
-                                buttonText: "Generate"
+                                buttonText: Lang.common.generate
                                 primary: true
                                 isometric: true
                                 heightMultiplier: 1.3
                                 onPressed: generatorsVM.generateRandomColor()
                             }
                             Button {
-                                buttonText: "Copy"
+                                buttonText: Lang.common.copy
                                 iconPath: SVGLibrary.copy
                                 enabled: generatorsVM.randomColorOutput.length > 0
                                 onPressed: generatorsVM.copyRandomColor()
@@ -1136,7 +1297,7 @@ Item {
                         Label {
                             bold: false
                             width: parent.width
-                            text: "Turn a URL or short piece of text into a scannable QR code."
+                            text: Lang.pages.generators.qrDesc
                             textColor: Theme.dividerColor
                             pixelSize: Typography.h6
                             wrapMode: Text.WordWrap
@@ -1153,7 +1314,7 @@ Item {
 
                                 Label {
                                     bold: false
-                                    text: "URL or text"
+                                    text: Lang.pages.generators.urlOrText
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
                                 }
@@ -1161,7 +1322,7 @@ Item {
                                 LineEdit {
                                     width: parent.width
                                     text: generatorsVM.qrUrl
-                                    placeholderText: "https://example.com"
+                                    placeholderText: Lang.pages.generators.qrPlaceholder
                                     onTextEdited: generatorsVM.qrUrl = text
                                     onEditingFinished: generatorsVM.generateQr()
                                 }
@@ -1171,7 +1332,7 @@ Item {
                                     spacing: LayoutMetrics.spacing.md
 
                                     Button {
-                                        buttonText: "Generate QR Code"
+                                        buttonText: Lang.pages.generators.generateQr
                                         primary: true
                                         isometric: true
                                         heightMultiplier: 1.3
@@ -1179,7 +1340,7 @@ Item {
                                     }
 
                                     Button {
-                                        buttonText: "Download"
+                                        buttonText: Lang.common.download
                                         iconPath: SVGLibrary.downloader
                                         enabled: generatorsVM.qrImageSource !== ""
                                         onPressed: qrFileDialog.open()
@@ -1193,7 +1354,7 @@ Item {
 
                                     Label {
                                         bold: false
-                                        text: "Resolution"
+                                        text: Lang.pages.generators.resolution
                                         textColor: Theme.textColor
                                         pixelSize: Typography.h6
                                     }
@@ -1206,9 +1367,16 @@ Item {
                                             width: Math.min(LayoutMetrics.unit * 12,
                                                             qrResolutionColumn.width * 0.24)
                                             model: generatorsVM.qrResolutions
-                                            currentIndex: {
+                                            Component.onCompleted: {
                                                 var idx = generatorsVM.qrResolutions.indexOf(generatorsVM.qrResolution)
-                                                return idx >= 0 ? idx : 0
+                                                if (idx >= 0) currentIndex = idx
+                                            }
+                                            onActivated: function(index) {
+                                                if (index >= 0 && index < generatorsVM.qrResolutions.length) {
+                                                    var resolution = generatorsVM.qrResolutions[index]
+                                                    if (resolution && resolution !== generatorsVM.qrResolution)
+                                                        generatorsVM.qrResolution = resolution
+                                                }
                                             }
                                             onCurrentIndexChanged: {
                                                 if (currentIndex >= 0
@@ -1223,7 +1391,7 @@ Item {
                                         Label {
                                             bold: false
                                             anchors.verticalCenter: parent.verticalCenter
-                                            text: "px"
+                                            text: Lang.pages.generators.px
                                             textColor: Theme.dividerColor
                                             pixelSize: Typography.h6
                                         }
@@ -1233,7 +1401,7 @@ Item {
                                 Label {
                                     bold: false
                                     width: parent.width
-                                    text: "The QR code is generated locally. Error correction level M is used."
+                                    text: Lang.pages.generators.qrHint
                                     textColor: Theme.dividerColor
                                     pixelSize: Typography.h6
                                     wrapMode: Text.WordWrap
@@ -1309,7 +1477,7 @@ Item {
                                         horizontalAlignment: Text.AlignHCenter
                                         wrapMode: Text.WordWrap
                                         bold: false
-                                        text: "Enter a URL to preview its QR code"
+                                        text: Lang.pages.generators.qrPreviewPlaceholder
                                         textColor: Theme.dividerColor
                                         pixelSize: Typography.h6
                                     }
@@ -1324,10 +1492,10 @@ Item {
 
     FileDialog {
         id: qrFileDialog
-        title: "Save QR Code"
+        title: Lang.pages.generators.saveQrDialogTitle
         fileMode: FileDialog.SaveFile
         defaultSuffix: "png"
-        nameFilters: ["PNG images (*.png)"]
+        nameFilters: [Lang.common.fileFilters.pngImages]
         onAccepted: generatorsVM.saveQr(selectedFile.toString())
     }
 }

@@ -2,10 +2,12 @@ import sys
 
 from PySide6.QtCore import Property, QByteArray, QObject, QProcess, Signal, Slot
 
+from .base_vm import BaseVM
+
 PROMPT = ">>> "
 
 
-class ReplVM(QObject):
+class ReplVM(BaseVM):
     outputChanged = Signal()
     runningChanged = Signal()
     replError = Signal(str)
@@ -55,7 +57,12 @@ class ReplVM(QObject):
     def _on_process_error(self, error: QProcess.ProcessError) -> None:
         if error == QProcess.FailedToStart:
             message = self._process.errorString()
-            self._output += f"[could not start Python: {message}]\n"
+            msg = self.tr(
+                "pages.repl.startError",
+                "[could not start Python: {message}]",
+                message=message,
+            )
+            self._output += msg + "\n"
             self.outputChanged.emit()
             self.replError.emit(message)
 

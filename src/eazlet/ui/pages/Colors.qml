@@ -58,7 +58,7 @@ Item {
 
                 Title {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Colors"
+                    text: Lang.pages.colors.title
                     textColor: Theme.textColor
                     pixelSize: Typography.h2
                 }
@@ -67,7 +67,7 @@ Item {
                     width: parent.width
                     horizontalAlignment: Text.AlignHCenter
                     bold: false
-                    text: "Pick a color, convert it between formats, and explore harmonious palettes."
+                    text: Lang.pages.colors.subtitle
                     textColor: Theme.dividerColor
                     pixelSize: Typography.h6
                     wrapMode: Text.WordWrap
@@ -85,8 +85,12 @@ Item {
 
                     // Picker -------------------------------------------------
                     Rectangle {
+                        id: pickerCard
                         Layout.preferredWidth: LayoutMetrics.unit * 33
                         Layout.alignment: Qt.AlignTop
+                        Layout.preferredHeight: Math.max(
+                            pickerColumn.implicitHeight + LayoutMetrics.spacing.lg * 2,
+                            rightSide.implicitHeight)
                         implicitHeight: pickerColumn.implicitHeight + LayoutMetrics.spacing.lg * 2
                         radius: LayoutMetrics.radius.m
                         color: Theme.inputBackgroundColor
@@ -233,7 +237,7 @@ Item {
 
                                 Label {
                                     bold: false
-                                    text: "Brightness"
+                                    text: Lang.pages.colors.brightness
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
                                 }
@@ -265,7 +269,7 @@ Item {
 
                                 Label {
                                     bold: false
-                                    text: "Hex"
+                                    text: Lang.pages.colors.hex
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
                                 }
@@ -279,7 +283,7 @@ Item {
                                         width: Math.max(0, parent.width - randomButton.width
                                                         - parent.spacing)
                                         text: colorsVM.hex
-                                        placeholderText: "#4A90E2"
+                                        placeholderText: Lang.pages.colors.hexPlaceholder
                                         onEditingFinished: {
                                             if (colorsVM.setColor(text))
                                                 text = colorsVM.hex
@@ -292,7 +296,7 @@ Item {
 
                                     Button {
                                         id: randomButton
-                                        buttonText: "Random"
+                                        buttonText: Lang.pages.colors.random
                                         isometric: true
                                         onPressed: colorsVM.randomColor()
                                     }
@@ -311,8 +315,8 @@ Item {
                                 Button {
                                     width: parent.width
                                     buttonText: colorsVM.picking
-                                                ? "Click a pixel..."
-                                                : "Pick from screen"
+                                                ? Lang.pages.colors.clickPixel
+                                                : Lang.pages.colors.pickFromScreen
                                     iconPath: SVGLibrary.colorPicker
                                     primary: true
                                     isometric: true
@@ -325,6 +329,7 @@ Item {
 
                     // Conversions --------------------------------------------
                     ColumnLayout {
+                        id: rightSide
                         Layout.fillWidth: true
                         Layout.minimumWidth: 0
                         Layout.alignment: Qt.AlignTop
@@ -333,7 +338,7 @@ Item {
                         Label {
                             Layout.fillWidth: true
                             bold: false
-                            text: "Conversions"
+                            text: Lang.pages.colors.conversions
                             textColor: Theme.textColor
                             pixelSize: Typography.h6
                         }
@@ -406,7 +411,8 @@ Item {
                                 y: LayoutMetrics.spacing.lg
                                 spacing: LayoutMetrics.spacing.md
 
-                                Row {
+                                Flow {
+                                    width: parent.width
                                     spacing: LayoutMetrics.spacing.md
 
                                     Column {
@@ -414,13 +420,13 @@ Item {
 
                                         Label {
                                             bold: false
-                                            text: "Harmony"
+                                            text: Lang.pages.colors.harmony
                                             textColor: Theme.textColor
                                             pixelSize: Typography.h6
                                         }
 
                                         ComboBox {
-                                            width: LayoutMetrics.size.comboBoxWidth
+                                            width: Math.min(LayoutMetrics.size.comboBoxWidth, parent.parent.width)
                                             model: colorsVM.harmonyTypes
                                             currentIndex: {
                                                 var index = colorsVM.harmonyTypes.indexOf(colorsVM.harmonyType)
@@ -442,7 +448,7 @@ Item {
 
                                         Label {
                                             bold: false
-                                            text: "Colors"
+                                            text: Lang.pages.colors.harmonyColors
                                             textColor: Theme.textColor
                                             pixelSize: Typography.h6
                                         }
@@ -459,19 +465,14 @@ Item {
 
                                 Flow {
                                     id: harmonyFlow
-                                    readonly property int itemCount: colorsVM.harmony.length
+                                    readonly property int itemCount: Math.max(1, colorsVM.harmony.length)
                                     readonly property real availableWidth: parent ? parent.width : 0
                                     readonly property real swatchWidth: Math.max(
-                                        LayoutMetrics.unit * 8,
-                                        Math.min(LayoutMetrics.unit * 20,
-                                                 (availableWidth
-                                                  - spacing * (itemCount - 1))
-                                                 / Math.max(1, itemCount)))
+                                        LayoutMetrics.unit * 9,
+                                        Math.min(LayoutMetrics.unit * 15,
+                                                 (availableWidth - spacing * 2) / 3))
 
-                                    anchors.horizontalCenter: parent.horizontalCenter
-                                    width: Math.min(availableWidth,
-                                                    itemCount * swatchWidth
-                                                    + spacing * Math.max(0, itemCount - 1))
+                                    width: availableWidth
                                     spacing: LayoutMetrics.spacing.md
 
                                     Repeater {
@@ -526,7 +527,7 @@ Item {
                                 Label {
                                     width: parent.width
                                     bold: false
-                                    text: "Click a swatch to copy its hex value."
+                                    text: Lang.pages.colors.copyHexHint
                                     textColor: Theme.dividerColor
                                     pixelSize: Typography.caption
                                 }

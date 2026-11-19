@@ -108,17 +108,17 @@ class SocialMediaVM(BaseVM):
     @Slot()
     def fetchFormats(self) -> None:
         if not self._url.strip():
-            self._error = "Enter a URL"
+            self._error = self.tr("messages.enterUrl", "Enter a URL")
             self.errorChanged.emit()
             return
         ytdlp = shutil.which("yt-dlp")
         if ytdlp is None:
-            self._error = "yt-dlp not found in PATH"
+            self._error = self.tr("messages.ytdlpNotFound", "yt-dlp not found in PATH")
             self.errorChanged.emit()
             return
         self._error = ""
         self.errorChanged.emit()
-        self._status = "Fetching formats..."
+        self._status = self.tr("common.fetchingFormats", "Fetching formats...")
         self.statusChanged.emit()
         proc = QProcess(self)
         proc.setProgram(ytdlp)
@@ -131,12 +131,12 @@ class SocialMediaVM(BaseVM):
         if code != 0:
             try:
                 err = bytes(self._formats_proc.readAllStandardError()).decode("utf-8", "replace")
-                self._error = err[:200] if err else "Failed to fetch formats"
+                self._error = err[:200] if err else self.tr("messages.failedFetchFormats", "Failed to fetch formats")
                 self.errorChanged.emit()
             except Exception:
-                self._error = "Failed to fetch formats"
+                self._error = self.tr("messages.failedFetchFormats", "Failed to fetch formats")
                 self.errorChanged.emit()
-            self._status = "Failed to fetch formats"
+            self._status = self.tr("messages.failedFetchFormats", "Failed to fetch formats")
             self.statusChanged.emit()
             return
         try:
@@ -225,12 +225,12 @@ class SocialMediaVM(BaseVM):
             fmts = uniq[:80]
             self._formats = [{"id": x["id"], "label": x["label"]} for x in fmts]
             self.formatsChanged.emit()
-            self._status = "Formats loaded" if fmts else "No formats found"
+            self._status = self.tr("common.formatsLoaded", "Formats loaded") if fmts else self.tr("common.noFormatsFound", "No formats found")
             self.statusChanged.emit()
         except Exception as e:
             self._error = str(e)
             self.errorChanged.emit()
-            self._status = "Error"
+            self._status = self.tr("common.error", "Error")
             self.statusChanged.emit()
 
     @Slot()
@@ -238,18 +238,18 @@ class SocialMediaVM(BaseVM):
         if self._downloading:
             return
         if not self._url.strip():
-            self._error = "Enter a URL"
+            self._error = self.tr("messages.enterUrl", "Enter a URL")
             self.errorChanged.emit()
             return
         ytdlp = shutil.which("yt-dlp")
         if ytdlp is None:
-            self._error = "yt-dlp not found in PATH"
+            self._error = self.tr("messages.ytdlpNotFound", "yt-dlp not found in PATH")
             self.errorChanged.emit()
             return
         Path(os.path.abspath(self._destination)).mkdir(parents=True, exist_ok=True)
         self._error = ""
         self._progress = 0.0
-        self._status = "Starting..."
+        self._status = self.tr("common.starting", "Starting...")
         self._downloading = True
         self.progressChanged.emit()
         self.statusChanged.emit()
@@ -281,7 +281,7 @@ class SocialMediaVM(BaseVM):
             except Exception:
                 pass
         self._downloading = False
-        self._status = "Cancelled"
+        self._status = self.tr("common.cancelled", "Cancelled")
         self.downloadingChanged.emit()
         self.statusChanged.emit()
         self._process = None
@@ -324,13 +324,15 @@ class SocialMediaVM(BaseVM):
         self.downloadingChanged.emit()
         if code == 0:
             self._progress = 1.0
-            self._status = "Done"
+            self._status = self.tr("common.done", "Done")
             self.progressChanged.emit()
             self.statusChanged.emit()
         else:
             if not self._error:
-                self._error = f"yt-dlp exited with code {code}"
+                self._error = self.tr(
+                    "messages.ytDlpExitCode", "yt-dlp exited with code {code}"
+                ).replace("{code}", str(code))
                 self.errorChanged.emit()
-            self._status = "Failed"
+            self._status = self.tr("common.failed", "Failed")
             self.statusChanged.emit()
         self._process = None

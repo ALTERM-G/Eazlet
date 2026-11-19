@@ -1,5 +1,5 @@
-import os
 import hashlib
+import os
 from collections import defaultdict
 from pathlib import Path
 
@@ -87,11 +87,13 @@ class OrganizerVM(BaseVM):
         if self._scanning:
             return
         if not os.path.isdir(self._folder):
-            self._error = "Folder not found"
+            self._error = self.tr(
+                "pages.organizer.errors.folderNotFound", "Folder not found"
+            )
             self.errorChanged.emit()
             return
         self._error = ""
-        self._status = "Scanning..."
+        self._status = self.tr("pages.organizer.scanning", "Scanning...")
         self._scanning = True
         self._progress = 0.0
         self._files = []
@@ -114,7 +116,11 @@ class OrganizerVM(BaseVM):
                         continue
             self._files = all_files
             self.filesChanged.emit()
-            self._status = f"Found {len(all_files)} files. Checking duplicates..."
+            self._status = self.tr(
+                "pages.organizer.checkingDuplicates",
+                "Found {count} files. Checking duplicates...",
+                count=len(all_files),
+            )
             self.statusChanged.emit()
             by_size = defaultdict(list)
             for f in all_files:
@@ -138,13 +144,17 @@ class OrganizerVM(BaseVM):
             self._duplicates = dup_groups
             self.duplicatesChanged.emit()
             self._progress = 1.0
-            self._status = f"Done. {len(dup_groups)} duplicate groups found"
+            self._status = self.tr(
+                "pages.organizer.scanDone",
+                "Done. {count} duplicate groups found",
+                count=len(dup_groups),
+            )
             self.progressChanged.emit()
             self.statusChanged.emit()
         except Exception as e:
             self._error = str(e)[:200]
             self.errorChanged.emit()
-            self._status = "Failed"
+            self._status = self.tr("common.failed", "Failed")
             self.statusChanged.emit()
         finally:
             self._scanning = False
@@ -166,14 +176,16 @@ class OrganizerVM(BaseVM):
         if self._scanning:
             return
         if not os.path.isdir(self._folder):
-            self._error = "Folder not found"
+            self._error = self.tr(
+                "pages.organizer.errors.folderNotFound", "Folder not found"
+            )
             self.errorChanged.emit()
             return
         if not pattern or not pattern.strip():
             pattern = "file"
         pattern = pattern.strip().replace("/", "_").replace("\\", "_")
         self._error = ""
-        self._status = "Renaming..."
+        self._status = self.tr("pages.organizer.renaming", "Renaming...")
         self.statusChanged.emit()
         self.errorChanged.emit()
         try:
@@ -208,11 +220,13 @@ class OrganizerVM(BaseVM):
                     count += 1
                 except Exception:
                     continue
-            self._status = f"Renamed {count} files"
+            self._status = self.tr(
+                "pages.organizer.renamedCount", "Renamed {count} files", count=count
+            )
             self.statusChanged.emit()
             self.scan()
         except Exception as e:
             self._error = str(e)[:200]
             self.errorChanged.emit()
-            self._status = "Failed"
+            self._status = self.tr("common.failed", "Failed")
             self.statusChanged.emit()

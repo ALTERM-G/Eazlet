@@ -1,11 +1,10 @@
 import os
-import shutil
-import zipfile
 import tarfile
+import zipfile
 from pathlib import Path
 from urllib.parse import unquote
 
-from PySide6.QtCore import Property, QObject, QProcess, QUrl, Signal, Slot
+from PySide6.QtCore import Property, QObject, QUrl, Signal, Slot
 from PySide6.QtGui import QDesktopServices
 
 from .base_vm import BaseVM
@@ -153,14 +152,14 @@ class ArchiveVM(BaseVM):
     @Slot()
     def compress(self):
         if self._compressing or not self._files:
-            self._error = "No files to compress"
+            self._error = self.tr("messages.noFilesToCompress", "No files to compress")
             self.errorChanged.emit()
             return
         Path(self._output_dir).mkdir(parents=True, exist_ok=True)
         self._error = ""
         self._progress = 0.0
         self._compressing = True
-        self._status = "Compressing..."
+        self._status = self.tr("pages.archive.compressing", "Compressing...")
         self.progressChanged.emit()
         self.compressingChanged.emit()
         self.statusChanged.emit()
@@ -197,7 +196,7 @@ class ArchiveVM(BaseVM):
                         else:
                             zf.write(p, Path(p).name)
                 self._progress = 1.0
-                self._status = "Done"
+                self._status = self.tr("common.done", "Done")
             elif fmt in ["tar.gz", "tgz"]:
                 out_path = os.path.join(self._output_dir, out_name + ".tar.gz")
                 base = Path(out_path).stem.replace(".tar", "")
@@ -218,7 +217,7 @@ class ArchiveVM(BaseVM):
                         p = f["path"]
                         tf.add(p, arcname=Path(p).name)
                 self._progress = 1.0
-                self._status = "Done"
+                self._status = self.tr("common.done", "Done")
             elif fmt in ["tar.xz", "txz"]:
                 out_path = os.path.join(self._output_dir, out_name + ".tar.xz")
                 base = Path(out_path).stem.replace(".tar", "")
@@ -239,7 +238,7 @@ class ArchiveVM(BaseVM):
                         p = f["path"]
                         tf.add(p, arcname=Path(p).name)
                 self._progress = 1.0
-                self._status = "Done"
+                self._status = self.tr("common.done", "Done")
             elif fmt in ["tar.bz2", "tbz2"]:
                 out_path = os.path.join(self._output_dir, out_name + ".tar.bz2")
                 base = Path(out_path).stem.replace(".tar", "")
@@ -260,17 +259,19 @@ class ArchiveVM(BaseVM):
                         p = f["path"]
                         tf.add(p, arcname=Path(p).name)
                 self._progress = 1.0
-                self._status = "Done"
+                self._status = self.tr("common.done", "Done")
             else:
-                self._error = "Unsupported format"
+                self._error = self.tr(
+                    "pages.archive.errors.unsupportedFormat", "Unsupported format"
+                )
                 self.errorChanged.emit()
-                self._status = "Failed"
+                self._status = self.tr("common.failed", "Failed")
             self.progressChanged.emit()
             self.statusChanged.emit()
         except Exception as e:
             self._error = str(e)[:200]
             self.errorChanged.emit()
-            self._status = "Failed"
+            self._status = self.tr("common.failed", "Failed")
             self.statusChanged.emit()
         finally:
             self._compressing = False
@@ -282,19 +283,21 @@ class ArchiveVM(BaseVM):
             return
         path = archive_path or (self._files[0]["path"] if self._files else None)
         if not path:
-            self._error = "No archive to extract"
+            self._error = self.tr("messages.noArchiveToExtract", "No archive to extract")
             self.errorChanged.emit()
             return
         p = path.replace("file://", "").strip()
         if not os.path.exists(p):
-            self._error = "Archive not found"
+            self._error = self.tr(
+                "pages.archive.errors.archiveNotFound", "Archive not found"
+            )
             self.errorChanged.emit()
             return
         Path(self._output_dir).mkdir(parents=True, exist_ok=True)
         self._error = ""
         self._progress = 0.0
         self._extracting = True
-        self._status = "Extracting..."
+        self._status = self.tr("pages.archive.extracting", "Extracting...")
         self.progressChanged.emit()
         self.extractingChanged.emit()
         self.statusChanged.emit()
@@ -318,21 +321,24 @@ class ArchiveVM(BaseVM):
                 with zipfile.ZipFile(p, "r") as zf:
                     zf.extractall(self._output_dir)
             else:
-                self._error = "Unsupported archive format"
+                self._error = self.tr(
+                    "pages.archive.errors.unsupportedArchiveFormat",
+                    "Unsupported archive format",
+                )
                 self.errorChanged.emit()
-                self._status = "Failed"
+                self._status = self.tr("common.failed", "Failed")
                 self.extractingChanged.emit()
                 self.statusChanged.emit()
                 self._extracting = False
                 return
             self._progress = 1.0
-            self._status = "Done"
+            self._status = self.tr("common.done", "Done")
             self.progressChanged.emit()
             self.statusChanged.emit()
         except Exception as e:
             self._error = str(e)[:200]
             self.errorChanged.emit()
-            self._status = "Failed"
+            self._status = self.tr("common.failed", "Failed")
             self.statusChanged.emit()
         finally:
             self._extracting = False

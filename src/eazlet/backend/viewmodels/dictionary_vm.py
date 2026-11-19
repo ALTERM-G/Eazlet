@@ -174,7 +174,7 @@ class DictionaryVM(BaseVM):
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._word = ""
-        self._status = "Ready"
+        self._status = self.tr("pages.dictionary.msgReady", "Ready")
         self._error = ""
         self._searching = False
         self._phonetic = ""
@@ -292,12 +292,17 @@ class DictionaryVM(BaseVM):
         self._set_entries([])
 
         if not word:
-            self._set_status("Ready")
-            self._set_error("Enter a word to look up.")
+            self._set_status(self.tr("pages.dictionary.msgReady", "Ready"))
+            self._set_error(
+                self.tr(
+                    "pages.dictionary.msgEnterWord",
+                    "Enter a word to look up.",
+                )
+            )
             return
 
         self._set_word(word)
-        self._set_status("Searching…")
+        self._set_status(self.tr("pages.dictionary.msgSearching", "Searching…"))
         self._set_searching(True)
 
         worker = _DictionaryWorker(word, self)
@@ -315,15 +320,21 @@ class DictionaryVM(BaseVM):
         self._set_phonetic(str(data.get("phonetic") or ""))
         self._set_origin(str(data.get("origin") or ""))
         self._set_entries(data.get("entries") or [])
-        self._set_status("Found")
+        self._set_status(self.tr("pages.dictionary.msgFound", "Found"))
         self._set_searching(False)
 
     @Slot(str)
     def _on_failed(self, error: str) -> None:
         self._worker = None
-        self._set_error(error or "Could not look up this word.")
+        self._set_error(
+            error
+            or self.tr(
+                "pages.dictionary.msgLookupFailed",
+                "Could not look up this word.",
+            )
+        )
         self._set_entries([])
-        self._set_status("Error")
+        self._set_status(self.tr("pages.dictionary.msgError", "Error"))
         self._set_searching(False)
 
     @Slot()
@@ -336,4 +347,4 @@ class DictionaryVM(BaseVM):
         self._set_origin("")
         self._set_entries([])
         self._set_error("")
-        self._set_status("Ready")
+        self._set_status(self.tr("pages.dictionary.msgReady", "Ready"))

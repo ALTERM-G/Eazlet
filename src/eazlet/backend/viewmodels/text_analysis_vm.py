@@ -56,7 +56,7 @@ class TextAnalysisVM(BaseVM):
         self._input = ""
         self._mode = "text"
         self._has_results = False
-        self._status = "Waiting for text"
+        self._status = self.tr("pages.textAnalysis.waitingForText", "Waiting for text")
         self._error = ""
         self._stats: list[dict] = []
         self._top_words: list[dict] = []
@@ -215,7 +215,9 @@ class TextAnalysisVM(BaseVM):
         if not text:
             self._clear_analysis()
             self.analysisChanged.emit()
-            self._status = "Nothing to analyze"
+            self._status = self.tr(
+                "pages.textAnalysis.nothingToAnalyze", "Nothing to analyze"
+            )
             self.statusChanged.emit()
             return
 
@@ -229,9 +231,9 @@ class TextAnalysisVM(BaseVM):
         if not words:
             self._clear_analysis()
             self.analysisChanged.emit()
-            self._status = "Failed"
+            self._status = self.tr("common.failed", "Failed")
             self.statusChanged.emit()
-            self._error = "No words found in the input"
+            self._error = self.tr("messages.noWordsFound", "No words found in the input")
             self.errorChanged.emit()
             return
 
@@ -416,7 +418,7 @@ class TextAnalysisVM(BaseVM):
 
         self._has_results = True
         self.analysisChanged.emit()
-        self._status = "Analysis complete"
+        self._status = self.tr("pages.textAnalysis.analysisComplete", "Analysis complete")
         self.statusChanged.emit()
 
     def _process_code(self, text):
@@ -462,7 +464,7 @@ class TextAnalysisVM(BaseVM):
             self._word_lengths.append(
                 {
                     "length": "13+",
-                    "count": sum(c for l, c in length_counts.items() if l > 12),
+                    "count": sum(c for length, c in length_counts.items() if length > 12),
                 }
             )
         self._word_length_max = max((item["count"] for item in self._word_lengths), default=0)
@@ -530,7 +532,7 @@ class TextAnalysisVM(BaseVM):
 
         self._has_results = True
         self.analysisChanged.emit()
-        self._status = "Analysis complete"
+        self._status = self.tr("pages.textAnalysis.analysisComplete", "Analysis complete")
         self.statusChanged.emit()
 
     @Slot()
@@ -541,7 +543,7 @@ class TextAnalysisVM(BaseVM):
         self.analysisChanged.emit()
         self._error = ""
         self.errorChanged.emit()
-        self._status = "Waiting for text"
+        self._status = self.tr("pages.textAnalysis.waitingForText", "Waiting for text")
         self.statusChanged.emit()
 
     @Slot()
@@ -550,7 +552,7 @@ class TextAnalysisVM(BaseVM):
         self.inputChanged.emit()
         self.process()
         if self._has_results:
-            self._status = "Sample loaded"
+            self._status = self.tr("pages.textAnalysis.sampleLoaded", "Sample loaded")
             self.statusChanged.emit()
 
     @Slot(str)
@@ -564,30 +566,36 @@ class TextAnalysisVM(BaseVM):
             if local:
                 raw = local
         if not raw:
-            self._error = "No file selected"
+            self._error = self.tr("messages.noFileSelected", "No file selected")
             self.errorChanged.emit()
-            self._status = "Nothing loaded"
+            self._status = self.tr("pages.textAnalysis.nothingLoaded", "Nothing loaded")
             self.statusChanged.emit()
             return
 
         file_path = Path(raw)
         suffix = file_path.suffix.lower()
         if suffix not in {".txt", ".md", ".markdown"}:
-            self._error = (
-                f"Unsupported file type: {suffix or 'unknown'} "
-                "(open a .txt or .md file)"
+            self._error = self.tr(
+                "pages.textAnalysis.errors.unsupportedFileType",
+                "Unsupported file type: {suffix} (open a .txt or .md file)",
+                suffix=suffix or "unknown",
             )
             self.errorChanged.emit()
-            self._status = "Nothing loaded"
+            self._status = self.tr("pages.textAnalysis.nothingLoaded", "Nothing loaded")
             self.statusChanged.emit()
             return
 
         try:
             text = file_path.read_text(encoding="utf-8", errors="replace")
         except OSError as exc:
-            self._error = f"Could not read {file_path.name}: {exc}"
+            self._error = self.tr(
+                "pages.textAnalysis.errors.couldNotRead",
+                "Could not read {name}: {error}",
+                name=file_path.name,
+                error=str(exc),
+            )
             self.errorChanged.emit()
-            self._status = "Nothing loaded"
+            self._status = self.tr("pages.textAnalysis.nothingLoaded", "Nothing loaded")
             self.statusChanged.emit()
             return
 
@@ -595,21 +603,27 @@ class TextAnalysisVM(BaseVM):
         self.inputChanged.emit()
         self.process()
         if self._has_results:
-            self._status = f"Loaded {file_path.name}"
+            self._status = self.tr(
+                "pages.textAnalysis.loadedFile", "Loaded {name}", name=file_path.name
+            )
             self.statusChanged.emit()
 
     @Slot()
     def copyReport(self):
         if not self._report_text:
-            self._status = "Nothing to copy"
+            self._status = self.tr("pages.textAnalysis.nothingToCopy", "Nothing to copy")
             self.statusChanged.emit()
             return
         app = QGuiApplication.instance()
         clipboard = app.clipboard() if app is not None else None
         if clipboard is None:
-            self._status = "Clipboard unavailable"
+            self._status = self.tr(
+                "pages.textAnalysis.clipboardUnavailable", "Clipboard unavailable"
+            )
             self.statusChanged.emit()
             return
         clipboard.setText(self._report_text)
-        self._status = "Report copied to clipboard"
+        self._status = self.tr(
+            "pages.textAnalysis.reportCopied", "Report copied to clipboard"
+        )
         self.statusChanged.emit()

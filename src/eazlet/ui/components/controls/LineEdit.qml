@@ -9,8 +9,11 @@ TextField {
 
     cursorDelegate: Item {}
 
-    padding: 6
-    leftPadding: padding + 4
+    readonly property real scaledPadding: Math.max(1, Math.round(LayoutMetrics.spacing.xs))
+    topPadding: Math.max(1, Math.min(scaledPadding, Math.floor(height * 0.2)))
+    bottomPadding: topPadding
+    leftPadding: scaledPadding + Math.max(1, Math.round(LayoutMetrics.spacing.xxs))
+    rightPadding: scaledPadding
 
     ContextMenu.menu: TextContextMenu {
         editor: control

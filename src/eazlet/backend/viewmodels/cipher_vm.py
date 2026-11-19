@@ -334,15 +334,59 @@ class CipherVM(BaseVM):
         spec = self._current_spec()
         return bool(spec and spec.uses_period)
 
+    _KEY_HINT_KEYS = {
+        "Affine": "pages.cipher.keyHints.affine",
+        "Vigenere": "pages.cipher.keyHints.vigenere",
+        "Beaufort": "pages.cipher.keyHints.beaufort",
+        "Autokey": "pages.cipher.keyHints.autokey",
+        "Playfair": "pages.cipher.keyHints.playfair",
+        "ADFGVX": "pages.cipher.keyHints.adfgvx",
+        "ADFGX": "pages.cipher.keyHints.adfgx",
+        "Hill": "pages.cipher.keyHints.hill",
+        "Simple Substitution": "pages.cipher.keyHints.substitution",
+        "Transposition Columnar": "pages.cipher.keyHints.columnar",
+        "XOR": "pages.cipher.keyHints.xor",
+    }
+    _HINT_KEYS = {
+        "ROT47": "pages.cipher.hints.rot47",
+        "Caesar": "pages.cipher.hints.caesar",
+        "Affine": "pages.cipher.hints.affine",
+        "Beaufort": "pages.cipher.hints.beaufort",
+        "Playfair": "pages.cipher.hints.playfair",
+        "Baconian": "pages.cipher.hints.baconian",
+        "Polybius": "pages.cipher.hints.polybius",
+        "Bifid": "pages.cipher.hints.bifid",
+        "Trifid": "pages.cipher.hints.trifid",
+        "ADFGVX": "pages.cipher.hints.adfgvx",
+        "ADFGX": "pages.cipher.hints.adfgx",
+        "Hill": "pages.cipher.hints.hill",
+        "Simple Substitution": "pages.cipher.hints.substitution",
+        "Rail Fence": "pages.cipher.hints.railFence",
+        "Transposition Columnar": "pages.cipher.hints.columnar",
+        "Scytale": "pages.cipher.hints.scytale",
+        "Leetspeak": "pages.cipher.hints.leetspeak",
+        "XOR": "pages.cipher.hints.xor",
+    }
+
     @Property(str, notify=cipherSettingsChanged)
     def keyHint(self):
         spec = self._current_spec()
-        return spec.key_hint if spec else ""
+        if not spec:
+            return ""
+        key = self._KEY_HINT_KEYS.get(self._cipher_algorithm)
+        if key:
+            return self.tr(key, spec.key_hint)
+        return spec.key_hint
 
     @Property(str, notify=cipherSettingsChanged)
     def cipherHint(self):
         spec = self._current_spec()
-        return spec.hint if spec else ""
+        if not spec:
+            return ""
+        key = self._HINT_KEYS.get(self._cipher_algorithm)
+        if key:
+            return self.tr(key, spec.hint)
+        return spec.hint
 
     # ------------------------------------------------------------------
     # Static option lists
@@ -438,7 +482,7 @@ class CipherVM(BaseVM):
             "encoding",
             "\n".join(f"{name}: {round(value * 100, 1)}%" for name, value in items),
         )
-        self._set_status("Detected")
+        self._set_status(self.tr("pages.cipher.msgDetected", "Detected"))
 
     # ------------------------------------------------------------------
     # State helpers
@@ -453,8 +497,8 @@ class CipherVM(BaseVM):
         self.statusChanged.emit()
 
     def _fail(self, message: str) -> None:
-        self._set_error(message or "Operation failed")
-        self._set_status("Failed")
+        self._set_error(message or self.tr("pages.cipher.msgFailed", "Failed"))
+        self._set_status(self.tr("pages.cipher.msgFailed", "Failed"))
 
     # ------------------------------------------------------------------
     # Processing
@@ -509,7 +553,7 @@ class CipherVM(BaseVM):
             else:
                 raise ValueError(f"Unknown algorithm {cipher!r}")
             self._set_tab_output(tab, result)
-            self._set_status("Done")
+            self._set_status(self.tr("common.done", "Done"))
         except Exception as exc:
             self._fail(str(exc)[:200])
 
@@ -531,7 +575,7 @@ class CipherVM(BaseVM):
     def encrypt(self):
         self._set_error("")
         if not self._passphrase:
-            self._fail("Enter a passphrase")
+            self._fail(self.tr("pages.cipher.msgEnterPassphrase", "Enter a passphrase"))
             return
         try:
             algorithm = self._encryption_algorithm
@@ -552,7 +596,13 @@ class CipherVM(BaseVM):
                 )
                 payload = aead.encrypt(nonce, self._encryption_input.encode("utf-8"), header)
             self._set_tab_output("encryption", base64.b64encode(header + payload).decode("ascii"))
-            self._set_status(f"Encrypted with {algorithm}")
+            self._set_status(
+                self.tr(
+                    "pages.cipher.msgEncryptedWith",
+                    "Encrypted with {algorithm}",
+                    algorithm=algorithm,
+                )
+            )
         except Exception as exc:
             self._fail(str(exc)[:200])
 
@@ -560,16 +610,26 @@ class CipherVM(BaseVM):
     def decrypt(self):
         self._set_error("")
         if not self._passphrase:
-            self._fail("Enter a passphrase")
+            self._fail(self.tr("pages.cipher.msgEnterPassphrase", "Enter a passphrase"))
             return
         try:
             raw = base64.b64decode(self._encryption_input.strip(), validate=True)
             header_size = len(self.ENCRYPTION_MAGIC) + 1 + self.SALT_SIZE + self.NONCE_SIZE
             if len(raw) <= header_size or not raw.startswith(self.ENCRYPTION_MAGIC):
-                raise ValueError("Not a valid Eazlet encrypted payload")
+                raise ValueError(
+                    self.tr(
+                        "pages.cipher.msgInvalidPayload",
+                        "Not a valid Eazlet encrypted payload",
+                    )
+                )
             algorithm_id = raw[len(self.ENCRYPTION_MAGIC)]
             if not 1 <= algorithm_id <= len(self.ENCRYPTION_ALGORITHMS):
-                raise ValueError("Unsupported encryption algorithm")
+                raise ValueError(
+                    self.tr(
+                        "pages.cipher.msgUnsupportedAlgorithm",
+                        "Unsupported encryption algorithm",
+                    )
+                )
             algorithm = self.ENCRYPTION_ALGORITHMS[algorithm_id - 1]
             salt_start = len(self.ENCRYPTION_MAGIC) + 1
             nonce_start = salt_start + self.SALT_SIZE
@@ -587,9 +647,20 @@ class CipherVM(BaseVM):
                 )
                 clear = aead.decrypt(nonce, payload, raw[:header_size])
             self._set_tab_output("encryption", clear.decode("utf-8"))
-            self._set_status(f"Decrypted with {algorithm}")
+            self._set_status(
+                self.tr(
+                    "pages.cipher.msgDecryptedWith",
+                    "Decrypted with {algorithm}",
+                    algorithm=algorithm,
+                )
+            )
         except (InvalidToken, InvalidTag):
-            self._fail("Wrong passphrase or corrupted payload")
+            self._fail(
+                self.tr(
+                    "pages.cipher.msgWrongPassphrase",
+                    "Wrong passphrase or corrupted payload",
+                )
+            )
         except Exception as exc:
             self._fail(str(exc)[:200])
 
@@ -638,6 +709,6 @@ class CipherVM(BaseVM):
         try:
             if text:
                 QGuiApplication.clipboard().setText(text)
-                self._set_status("Copied to clipboard")
+                self._set_status(self.tr("pages.cipher.msgCopied", "Copied to clipboard"))
         except Exception:
             pass

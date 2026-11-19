@@ -73,9 +73,12 @@ class Controller(QObject):
         self._languages_path = (
             Path(__file__).parent.parent / "resources" / "assets" / "languages"
         )
+        self._english_language_data: dict | None = None
+        self._language_data_cache: dict = {}
 
         self._load_all_themes()
         self._current_language = self.get_language()
+        self._refresh_language_data()
 
     def _read_json(self, path: Path, context: str) -> dict | None:
         if not path.exists():
@@ -223,6 +226,7 @@ class Controller(QObject):
     def save_language(self, index: int) -> None:
         self._update_settings(language=index)
         self._current_language = index
+        self._refresh_language_data()
         self.languageChanged.emit()
 
     @Slot(result=int)
@@ -242,16 +246,45 @@ class Controller(QObject):
             names.append(data.get("language", filename) if data else filename)
         return names
 
-    @Slot(result=dict)
-    def get_language_data(self) -> dict:
+    def _refresh_language_data(self) -> None:
         idx = self.get_language()
+        data = None
         if 0 <= idx < len(self._language_files):
             data = self._read_json(
                 self._languages_path / self._language_files[idx], "language data"
             )
-            if data is not None:
-                return data
-        return {}
+        self._language_data_cache = data if data is not None else {}
+
+    @Slot(result=dict)
+    def get_language_data(self) -> dict:
+        if not self._language_data_cache:
+            self._refresh_language_data()
+        return self._language_data_cache
+
+    def _english_data(self) -> dict:
+        if self._english_language_data is None:
+            data = self._read_json(self._languages_path / "en.json", "english language")
+            self._english_language_data = data if data is not None else {}
+        return self._english_language_data
+
+    @staticmethod
+    def _lookup_language_value(data: dict, key: str):
+        cur = data
+        for part in key.split("."):
+            if isinstance(cur, dict) and part in cur:
+                cur = cur[part]
+            else:
+                return None
+        return cur
+
+    @Slot(str, result=str)
+    def translate(self, key: str, default: str = "") -> str:
+        value = self._lookup_language_value(self.get_language_data(), key)
+        if not isinstance(value, str):
+            value = self._lookup_language_value(self._english_data(), key)
+        if not isinstance(value, str):
+            return default if default else key
+        return value
 
     @Slot(result=dict)
     def get_shortcuts(self) -> dict:

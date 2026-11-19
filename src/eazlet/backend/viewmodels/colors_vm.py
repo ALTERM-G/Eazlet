@@ -406,7 +406,7 @@ class ColorsVM(BaseVM):
         if self._picking:
             return
         self._set_picking(True)
-        self._set_input_error("Click any pixel on screen to pick its color.")
+        self._set_input_error(self.tr("pages.colors.msgPickPixel", "Click any pixel on screen to pick its color."))
 
         worker = ScreenColorWorker(pick_screen_color)
         thread = QThread(self)
@@ -497,7 +497,7 @@ class ColorsVM(BaseVM):
                 self._set_input_error("")
                 return True
 
-        self._set_input_error("Use HEX, rgb(), hsl(), hsv(), or cmyk().")
+        self._set_input_error(self.tr("pages.colors.msgInvalidColor", "Use HEX, rgb(), hsl(), hsv(), or cmyk()."))
         return False
 
     @Slot(float, float, float)

@@ -314,7 +314,7 @@ def test_vm_switches_math_tools(qtbot):
         pass
     assert vm.error == ""
     assert vm.status == "Solved"
-    assert "Solutions: 2" in vm.result
+    assert "Solved: 2" in vm.result
 
 
 def test_vm_accepts_greek_variable(qtbot):
@@ -326,7 +326,7 @@ def test_vm_accepts_greek_variable(qtbot):
     with qtbot.waitSignal(vm.resultChanged, timeout=15000):
         pass
     assert vm.error == ""
-    assert "Derivative: 2 \\theta" in vm.result
+    assert "Differentiated: 2 \\theta" in vm.result
 
 
 def test_vm_rejects_invalid_variable_before_worker():

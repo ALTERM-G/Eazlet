@@ -7,25 +7,39 @@ import components
 Item {
     id: page
 
+    readonly property var borderStyleIds: ["none", "single", "double", "rounded", "ascii", "bold", "stars", "dots", "hash", "block"]
+    readonly property var borderOptions: [
+        { label: Lang.pages.asciiArt.borderNone },
+        { label: Lang.pages.asciiArt.borderSingle },
+        { label: Lang.pages.asciiArt.borderDouble },
+        { label: Lang.pages.asciiArt.borderRounded },
+        { label: Lang.pages.asciiArt.borderAscii },
+        { label: Lang.pages.asciiArt.borderBold },
+        { label: Lang.pages.asciiArt.borderStars },
+        { label: Lang.pages.asciiArt.borderDots },
+        { label: Lang.pages.asciiArt.borderHash },
+        { label: Lang.pages.asciiArt.borderBlock }
+    ]
+
     function processAction() {
         asciiArtVM.process()
     }
 
     PreviewBrowser {
         id: fontBrowser
-        title: "Choose a font"
-        searchPlaceholderText: "Search fonts…"
+        title: Lang.pages.asciiArt.chooseFont
+        searchPlaceholderText: Lang.pages.asciiArt.searchFonts
         items: asciiArtVM.fonts
         currentItem: asciiArtVM.font
         favorites: asciiArtVM.favorites
         recents: asciiArtVM.recents
         sampleText: asciiArtVM.input
         itemSampleLength: 4
-        itemNameSingular: "font"
-        itemNamePlural: "fonts"
-        noRecentsLabel: "No recent fonts yet"
-        nothingSelectedLabel: "No font selected"
-        previewPlaceholderText: "Select a font from the list"
+        itemNameSingular: Lang.pages.asciiArt.fontSingular
+        itemNamePlural: Lang.pages.asciiArt.fontPlural
+        noRecentsLabel: Lang.pages.asciiArt.noRecentFonts
+        nothingSelectedLabel: Lang.pages.asciiArt.noFontSelected
+        previewPlaceholderText: Lang.pages.asciiArt.selectFontPrompt
         showPreview: false
         previewProvider: function(item, text) {
             return asciiArtVM.preview(item, text)
@@ -67,7 +81,7 @@ Item {
 
                 Title {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: "ASCII Art"
+                    text: Lang.pages.asciiArt.title
                     textColor: Theme.textColor
                     pixelSize: Typography.h2
                 }
@@ -76,7 +90,7 @@ Item {
                     bold: false
                     width: parent.width
                     horizontalAlignment: Text.AlignHCenter
-                    text: "Convert text into ASCII art using FIGlet fonts."
+                    text: Lang.pages.asciiArt.subtitle
                     textColor: Theme.dividerColor
                     pixelSize: Typography.h6
                     wrapMode: Text.WordWrap
@@ -88,22 +102,127 @@ Item {
                     color: Theme.dividerColor
                 }
 
-                Column {
+                Row {
+                    id: controlsRow
                     anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: LayoutMetrics.spacing.xxs
+                    spacing: LayoutMetrics.spacing.lg
 
-                    Label {
-                        bold: false
-                        text: "Font"
-                        textColor: Theme.textColor
-                        pixelSize: Typography.h6
+                    Column {
+                        spacing: LayoutMetrics.spacing.xxs
+                        Label {
+                            width: fontButton.width
+                            horizontalAlignment: Text.AlignHCenter
+                            bold: false
+                            text: Lang.pages.asciiArt.font
+                            textColor: Theme.textColor
+                            pixelSize: Typography.h6
+                        }
+                        Button {
+                            id: fontButton
+                            buttonText: asciiArtVM.font
+                            iconPath: SVGLibrary.dropDown
+                            width: Math.max(LayoutMetrics.size.buttonWidth * 1.8, implicitWidth)
+                            heightMultiplier: 1.5
+                            onPressed: fontBrowser.open()
+                        }
                     }
 
-                    Button {
-                        id: fontButton
-                        buttonText: asciiArtVM.font
-                        iconPath: SVGLibrary.dropDown
-                        onPressed: fontBrowser.open()
+                    Column {
+                        spacing: LayoutMetrics.spacing.xxs
+                        Label {
+                            width: borderCombo.width
+                            horizontalAlignment: Text.AlignHCenter
+                            bold: false
+                            text: Lang.pages.asciiArt.border
+                            textColor: Theme.textColor
+                            pixelSize: Typography.h6
+                        }
+                        ComboBox {
+                            id: borderCombo
+                            width: LayoutMetrics.size.comboBoxWidth * 0.8
+                            textRole: "label"
+                            model: page.borderOptions
+                            Component.onCompleted: {
+                                var idx = page.borderStyleIds.indexOf(asciiArtVM.borderStyle)
+                                if (idx >= 0) currentIndex = idx
+                            }
+                            onActivated: function(index) {
+                                if (index >= 0 && index < page.borderStyleIds.length) {
+                                    var id = page.borderStyleIds[index]
+                                    if (id !== asciiArtVM.borderStyle)
+                                        asciiArtVM.setBorderStyle(id)
+                                }
+                            }
+                            onCurrentIndexChanged: {
+                                if (currentIndex >= 0 && currentIndex < page.borderStyleIds.length) {
+                                    var id = page.borderStyleIds[currentIndex]
+                                    if (id !== asciiArtVM.borderStyle)
+                                        asciiArtVM.setBorderStyle(id)
+                                }
+                            }
+                        }
+                    }
+
+                    Column {
+                        spacing: LayoutMetrics.spacing.xxs
+                        Label {
+                            width: hPadSpin.width
+                            horizontalAlignment: Text.AlignHCenter
+                            bold: false
+                            text: Lang.pages.asciiArt.hPadding
+                            textColor: Theme.textColor
+                            pixelSize: Typography.h6
+                        }
+                        SpinBox {
+                            id: hPadSpin
+                            from: 0
+                            to: 20
+                            value: asciiArtVM.borderHPadding
+                            onValueChanged: {
+                                if (value !== asciiArtVM.borderHPadding)
+                                    asciiArtVM.setBorderHPadding(value)
+                            }
+                        }
+                    }
+
+                    Column {
+                        spacing: LayoutMetrics.spacing.xxs
+                        Label {
+                            width: vPadSpin.width
+                            horizontalAlignment: Text.AlignHCenter
+                            bold: false
+                            text: Lang.pages.asciiArt.vPadding
+                            textColor: Theme.textColor
+                            pixelSize: Typography.h6
+                        }
+                        SpinBox {
+                            id: vPadSpin
+                            from: 0
+                            to: 10
+                            value: asciiArtVM.borderVPadding
+                            onValueChanged: {
+                                if (value !== asciiArtVM.borderVPadding)
+                                    asciiArtVM.setBorderVPadding(value)
+                            }
+                        }
+                    }
+
+                    Column {
+                        spacing: LayoutMetrics.spacing.xxs
+                        Label {
+                            width: outputSizeSpin.width
+                            horizontalAlignment: Text.AlignHCenter
+                            bold: false
+                            text: Lang.pages.asciiArt.outputSize
+                            textColor: Theme.textColor
+                            pixelSize: Typography.h6
+                        }
+                        SpinBox {
+                            id: outputSizeSpin
+                            from: 8
+                            to: 48
+                            value: Typography.body
+                        }
                     }
                 }
 
@@ -113,7 +232,7 @@ Item {
 
                     Button {
                         objectName: "exportSvgButton"
-                        buttonText: "Export SVG"
+                        buttonText: Lang.pages.asciiArt.exportSvg
                         primary: true
                         isometric: true
                         heightMultiplier: 1.2
@@ -121,13 +240,7 @@ Item {
                         onPressed: svgFileDialog.open()
                     }
                     Button {
-                        buttonText: "Copy"
-                        iconPath: SVGLibrary.copy
-                        enabled: asciiArtVM.output !== ""
-                        onPressed: asciiArtVM.copyOutput()
-                    }
-                    Button {
-                        buttonText: "Clear"
+                        buttonText: Lang.pages.asciiArt.clear
                         iconPath: SVGLibrary.eraser
                         onPressed: asciiArtVM.clear()
                     }
@@ -137,7 +250,7 @@ Item {
                     width: parent.width
                     horizontalAlignment: Text.AlignHCenter
                     bold: false
-                    text: "Input"
+                    text: Lang.pages.asciiArt.input
                     textColor: Theme.textColor
                     pixelSize: Typography.h4
                 }
@@ -153,7 +266,7 @@ Item {
                     id: inputEdit
                     width: parent.width
                     height: LayoutMetrics.unit * 14
-                    placeholderText: "Type text to convert…"
+                    placeholderText: Lang.pages.asciiArt.inputPlaceholder
                     text: asciiArtVM.input
                     onTextChanged: {
                         if (text !== asciiArtVM.input)
@@ -172,8 +285,9 @@ Item {
                         height: LayoutMetrics.size.iconS
                         path: SVGLibrary.checkMark
                         color: Theme.textColor
-                        visible: asciiArtVM.status === "Copied"
-                                 || asciiArtVM.status.indexOf("Saved") === 0
+                        visible: asciiArtVM.error === ""
+                                 && asciiArtVM.status !== Lang.pages.asciiArt.msgEnterText
+                                 && asciiArtVM.status !== Lang.pages.asciiArt.msgUnavailable
                     }
                     Label {
                         bold: false
@@ -211,7 +325,7 @@ Item {
                     width: parent.width
                     horizontalAlignment: Text.AlignHCenter
                     bold: false
-                    text: "Output"
+                    text: Lang.pages.asciiArt.output
                     textColor: Theme.textColor
                     pixelSize: Typography.h4
                 }
@@ -224,9 +338,9 @@ Item {
                     wrapMode: Text.NoWrap
                     horizontalScroll: true
                     fontFamily: "JetBrains Mono"
-                    fontPixelSize: Typography.body
+                    fontPixelSize: outputSizeSpin.value
                     text: asciiArtVM.output
-                    placeholderText: "ASCII art output will appear here"
+                    placeholderText: Lang.pages.asciiArt.outputPlaceholder
                     showCopyButton: true
                 }
 
@@ -240,10 +354,10 @@ Item {
 
     FileDialog {
         id: svgFileDialog
-        title: "Export ASCII art as SVG"
+        title: Lang.pages.asciiArt.exportDialogTitle
         fileMode: FileDialog.SaveFile
         defaultSuffix: "svg"
-        nameFilters: ["SVG images (*.svg)"]
+        nameFilters: [Lang.pages.asciiArt.svgFilter]
         onAccepted: asciiArtVM.exportSvg(
             selectedFile.toString(), Theme.textColor.toString()
         )

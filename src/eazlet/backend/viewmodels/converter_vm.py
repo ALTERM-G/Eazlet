@@ -297,11 +297,13 @@ class ConverterVM(BaseVM):
         if not self._files:
             self._status = ""
         elif self.sourceCategory == "unsupported":
-            self._status = "Unsupported file type"
+            self._status = self.tr(
+                "pages.converter.errors.unsupportedFileType", "Unsupported file type"
+            )
         elif self._valid_target_formats:
-            self._status = "Ready"
+            self._status = self.tr("common.ready", "Ready")
         else:
-            self._status = "No conversion available"
+            self._status = self.tr("messages.noConversionAvailable", "No conversion available")
         self.statusChanged.emit()
 
     @Slot(str)
@@ -383,7 +385,11 @@ class ConverterVM(BaseVM):
         try:
             os.replace(temp_path, final_path)
         except OSError as exc:
-            self._error = f"Could not replace original: {exc}"[:240]
+            self._error = self.tr(
+                "pages.converter.errors.couldNotReplaceOriginal",
+                "Could not replace original: {error}",
+                error=str(exc),
+            )[:240]
             self.errorChanged.emit()
             self._failed_files.append(source_path)
             return False
@@ -459,25 +465,27 @@ class ConverterVM(BaseVM):
         if self._converting:
             return
         if not self._files:
-            self._error = "Select a file to convert"
+            self._error = self.tr("messages.selectFileToConvert", "Select a file to convert")
             self.errorChanged.emit()
             return
         if self._target_format not in self._valid_target_formats:
-            self._error = "Choose a valid output format"
+            self._error = self.tr("messages.chooseValidOutputFormat", "Choose a valid output format")
             self.errorChanged.emit()
             return
         category = self.category_for(self._files[0].get("ext", ""))
         if category == "unsupported":
-            self._error = "Unsupported file type"
+            self._error = self.tr("messages.unsupportedFileType", "Unsupported file type")
             self.errorChanged.emit()
             return
         if category == "document":
             if self.sourceFormat == "pdf" and shutil.which("pdftotext") is None:
-                self._error = "pdftotext not found in PATH"
+                self._error = self.tr(
+                    "messages.pdftotextNotFound", "pdftotext not found in PATH"
+                )
                 self.errorChanged.emit()
                 return
         elif shutil.which("ffmpeg") is None:
-            self._error = "ffmpeg not found in PATH"
+            self._error = self.tr("messages.ffmpegNotFound", "ffmpeg not found in PATH")
             self.errorChanged.emit()
             return
         if not self._replace_original:
@@ -497,15 +505,15 @@ class ConverterVM(BaseVM):
         if self._current_index >= len(self._files):
             self._converting = False
             if self._failed_files:
-                self._status = f"Done with errors ({len(self._failed_files)} failed)"
+                self._status = self.tr("messages.doneWithErrors", "Done with errors ({count} failed)").replace("{count}", str(len(self._failed_files)))
                 if not self._error:
                     failed = ", ".join(Path(x).name for x in self._failed_files[:3])
-                    self._error = f"Failed: {failed}" + (
+                    self._error = self.tr("messages.failedPrefix", "Failed: {names}").replace("{names}", failed) + (
                         "..." if len(self._failed_files) > 3 else ""
                     )
                     self.errorChanged.emit()
             else:
-                self._status = "Done"
+                self._status = self.tr("common.done", "Done")
             self._progress = 1.0
             self.convertingChanged.emit()
             self.statusChanged.emit()
@@ -513,7 +521,11 @@ class ConverterVM(BaseVM):
             self._process = None
             return
         f = self._files[self._current_index]
-        self._status = f"Converting {f['name']}..."
+        self._status = self.tr(
+            "pages.converter.convertingFile",
+            "Converting {name}...",
+            name=f["name"],
+        )
         self.statusChanged.emit()
         src_ext = self.canonical_format(f.get("ext", ""))
         src_path = f["path"]
@@ -546,10 +558,14 @@ class ConverterVM(BaseVM):
                 os.close(handle)
                 os.unlink(write_path)
             except OSError as exc:
-                self._error = f"Could not write next to the source: {exc}"[:240]
+                self._error = self.tr(
+                    "pages.converter.errors.writeNextToSource",
+                    "Could not write next to the source: {error}",
+                    error=str(exc),
+                )[:240]
                 self._failed_files.append(src_path)
                 self._converting = False
-                self._status = "Conversion failed"
+                self._status = self.tr("common.conversionFailed", "Conversion failed")
                 self.errorChanged.emit()
                 self.statusChanged.emit()
                 self.convertingChanged.emit()
@@ -938,7 +954,9 @@ class ConverterVM(BaseVM):
             name = "file"
             if self._current_index < len(self._files):
                 name = Path(self._files[self._current_index].get("name", "file")).name
-            self._error = f"Conversion failed for {name}"
+            self._error = self.tr(
+                "messages.conversionFailedFor", "Conversion failed for {name}"
+            ).replace("{name}", name)
             self.errorChanged.emit()
         self._current_index += 1
         self._convert_next()
@@ -956,7 +974,7 @@ class ConverterVM(BaseVM):
             except Exception:
                 pass
         self._cleanup_temp_files()
-        self._status = "Cancelled"
+        self._status = self.tr("common.cancelled", "Cancelled")
         self._error = ""
         self._progress = 0.0
         self.convertingChanged.emit()

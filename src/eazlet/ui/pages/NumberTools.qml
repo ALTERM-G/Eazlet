@@ -17,6 +17,53 @@ Item {
     readonly property bool bitwiseCount: numberToolsVM.operation.indexOf("Shift") === 0
                                           || numberToolsVM.operation.indexOf("Rotate") === 0
 
+    readonly property var modeOptions: [
+        { id: "Base converter", label: Lang.pages.numberTools.modes.base },
+        { id: "GCD / LCM", label: Lang.pages.numberTools.modes.gcd },
+        { id: "Factors & divisors", label: Lang.pages.numberTools.modes.factors },
+        { id: "Bitwise", label: Lang.pages.numberTools.modes.bitwise }
+    ]
+    readonly property var fromBaseOptions: [
+        { id: "Auto", label: Lang.pages.numberTools.bases.auto },
+        { id: "2 (Binary)", label: Lang.pages.numberTools.bases.binary },
+        { id: "8 (Octal)", label: Lang.pages.numberTools.bases.octal },
+        { id: "10 (Decimal)", label: Lang.pages.numberTools.bases.decimal },
+        { id: "16 (Hex)", label: Lang.pages.numberTools.bases.hex },
+        { id: "36", label: "36" },
+        { id: "Custom", label: Lang.pages.numberTools.bases.custom }
+    ]
+    readonly property var toBaseOptions: [
+        { id: "All common", label: Lang.pages.numberTools.bases.allCommon },
+        { id: "2 (Binary)", label: Lang.pages.numberTools.bases.binary },
+        { id: "8 (Octal)", label: Lang.pages.numberTools.bases.octal },
+        { id: "10 (Decimal)", label: Lang.pages.numberTools.bases.decimal },
+        { id: "16 (Hex)", label: Lang.pages.numberTools.bases.hex },
+        { id: "36", label: "36" },
+        { id: "Custom", label: Lang.pages.numberTools.bases.custom }
+    ]
+    readonly property var operationOptions: [
+        { id: "AND", label: Lang.pages.numberTools.ops.and },
+        { id: "OR", label: Lang.pages.numberTools.ops.or },
+        { id: "XOR", label: Lang.pages.numberTools.ops.xor },
+        { id: "NOT", label: Lang.pages.numberTools.ops.not },
+        { id: "Shift left", label: Lang.pages.numberTools.ops.shl },
+        { id: "Shift right", label: Lang.pages.numberTools.ops.shr },
+        { id: "Rotate left", label: Lang.pages.numberTools.ops.rol },
+        { id: "Rotate right", label: Lang.pages.numberTools.ops.ror }
+    ]
+    readonly property var bitwiseWidthOptions: [
+        { id: "8", label: "8" },
+        { id: "16", label: "16" },
+        { id: "32", label: "32" },
+        { id: "64", label: "64" }
+    ]
+
+    function modeLabels() {
+        var out = []
+        for (var i = 0; i < modeOptions.length; i++) out.push(modeOptions[i].label)
+        return out
+    }
+
     Surface {
         anchors.centerIn: parent
         width: parent.width * 0.9
@@ -33,7 +80,7 @@ Item {
             Title {
                 id: pageTitle
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: "Number Tools"
+                text: Lang.pages.numberTools.title
                 textColor: Theme.textColor
                 pixelSize: Typography.h2
             }
@@ -43,7 +90,7 @@ Item {
                 bold: false
                 width: parent.width
                 horizontalAlignment: Text.AlignHCenter
-                text: "Base conversion, GCD/LCM, factors, and bitwise operations."
+                text: Lang.pages.numberTools.subtitle
                 textColor: Theme.dividerColor
                 pixelSize: Typography.h6
                 wrapMode: Text.WordWrap
@@ -52,7 +99,7 @@ Item {
             TabBar {
                 id: modeTabs
                 anchors.horizontalCenter: parent.horizontalCenter
-                tabData: numberToolsVM.modes
+                tabData: page.modeLabels()
                 active: page.visible
                 currentIndex: 0
                 Component.onCompleted: {
@@ -119,20 +166,24 @@ Item {
                         visible: page.modeBase || page.modeBitwise || page.modeGcd
 
                         Label {
+                            anchors.horizontalCenter: parent.horizontalCenter
                             bold: false
-                            text: "Input base"
+                            text: Lang.pages.numberTools.inputBase
                             textColor: Theme.textColor
                             pixelSize: Typography.h6
                         }
 
                         ComboBox {
+                            anchors.horizontalCenter: parent.horizontalCenter
                             width: Math.min(LayoutMetrics.unit * 22, parent.width * 0.38)
-                            model: numberToolsVM.fromBases
+                            model: page.fromBaseOptions
+                            textRole: "label"
+                            valueRole: "id"
                             scrollablePopup: true
                             maxVisibleItems: 10
-                            currentIndex: {
+                            Component.onCompleted: {
                                 var idx = numberToolsVM.fromBases.indexOf(numberToolsVM.fromBase)
-                                return idx >= 0 ? idx : 0
+                                if (idx >= 0) currentIndex = idx
                             }
                             onActivated: function(index) {
                                 if (index >= 0 && index < numberToolsVM.fromBases.length)
@@ -154,15 +205,17 @@ Item {
                         visible: (page.modeBase || page.modeBitwise || page.modeGcd) && numberToolsVM.fromBase === "Custom"
 
                         Label {
+                            anchors.horizontalCenter: parent.horizontalCenter
                             bold: false
-                            text: "Custom input base"
+                            text: Lang.pages.numberTools.customInputBase
                             textColor: Theme.textColor
                             pixelSize: Typography.h6
                         }
 
                         LineEdit {
+                            anchors.horizontalCenter: parent.horizontalCenter
                             width: Math.min(LayoutMetrics.unit * 18, parent.width * 0.3)
-                            placeholderText: "e.g. 43"
+                            placeholderText: Lang.placeholders.customBase
                             text: numberToolsVM.customFromBase
                             onTextEdited: numberToolsVM.setCustomFromBase(text)
                         }
@@ -174,20 +227,24 @@ Item {
                         visible: page.modeBase
 
                         Label {
+                            anchors.horizontalCenter: parent.horizontalCenter
                             bold: false
-                            text: "To base"
+                            text: Lang.pages.numberTools.toBase
                             textColor: Theme.textColor
                             pixelSize: Typography.h6
                         }
 
                         ComboBox {
+                            anchors.horizontalCenter: parent.horizontalCenter
                             width: Math.min(LayoutMetrics.unit * 22, parent.width * 0.38)
-                            model: numberToolsVM.toBases
+                            model: page.toBaseOptions
+                            textRole: "label"
+                            valueRole: "id"
                             scrollablePopup: true
                             maxVisibleItems: 10
-                            currentIndex: {
+                            Component.onCompleted: {
                                 var idx = numberToolsVM.toBases.indexOf(numberToolsVM.toBase)
-                                return idx >= 0 ? idx : 0
+                                if (idx >= 0) currentIndex = idx
                             }
                             onActivated: function(index) {
                                 if (index >= 0 && index < numberToolsVM.toBases.length)
@@ -209,15 +266,17 @@ Item {
                         visible: page.modeBase && numberToolsVM.toBase === "Custom"
 
                         Label {
+                            anchors.horizontalCenter: parent.horizontalCenter
                             bold: false
-                            text: "Custom base"
+                            text: Lang.pages.numberTools.customBase
                             textColor: Theme.textColor
                             pixelSize: Typography.h6
                         }
 
                         LineEdit {
+                            anchors.horizontalCenter: parent.horizontalCenter
                             width: Math.min(LayoutMetrics.unit * 18, parent.width * 0.3)
-                            placeholderText: "e.g. 43"
+                            placeholderText: Lang.placeholders.customBase
                             text: numberToolsVM.customToBase
                             onTextEdited: numberToolsVM.setCustomToBase(text)
                         }
@@ -225,46 +284,51 @@ Item {
 
                     Label {
                         bold: false
-                        text: page.modeGcd ? "Integers (space/comma separated)" : (page.modeBitwise ? "A" : "Value")
+                        text: page.modeGcd ? Lang.pages.numberTools.integersLabel
+                                           : (page.modeBitwise ? Lang.pages.numberTools.aLabel
+                                                               : Lang.pages.numberTools.valueLabel)
                         textColor: Theme.textColor
                         pixelSize: Typography.h4
                     }
 
                     LineEdit {
                         width: parent.width
-                        placeholderText: page.modeBase ? "e.g. 255, FF, 11111111"
-                                      : page.modeGcd ? "e.g. 48 18 30"
-                                      : page.modeFactors ? "e.g. 360"
-                                      : page.modeBitwise ? "e.g. 255 or FF"
-                                      : "e.g. 12"
+                        placeholderText: page.modeBase ? Lang.pages.numberTools.placeholderBase
+                                      : page.modeGcd ? Lang.pages.numberTools.placeholderGcd
+                                      : page.modeFactors ? Lang.pages.numberTools.placeholderFactors
+                                      : page.modeBitwise ? Lang.pages.numberTools.placeholderBitwiseA
+                                      : Lang.pages.numberTools.placeholderDefault
                         text: numberToolsVM.inputA
                         onTextEdited: numberToolsVM.setInputA(text)
                     }
 
                     Row {
-                        width: parent.width
+                        anchors.horizontalCenter: parent.horizontalCenter
                         spacing: LayoutMetrics.spacing.lg
                         visible: page.modeBitwise
 
                         Column {
-                            width: Math.min(LayoutMetrics.unit * 16, parent.width * 0.3)
+                            width: LayoutMetrics.unit * 22
                             spacing: LayoutMetrics.spacing.xxs
 
                             Label {
+                                anchors.horizontalCenter: parent.horizontalCenter
                                 bold: false
-                                text: "Operation"
+                                text: Lang.common.operation
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
                             }
 
                             ComboBox {
                                 width: parent.width
-                                model: numberToolsVM.operations
+                                model: page.operationOptions
+                                textRole: "label"
+                                valueRole: "id"
                                 scrollablePopup: true
                                 maxVisibleItems: 10
-                                currentIndex: {
+                                Component.onCompleted: {
                                     var idx = numberToolsVM.operations.indexOf(numberToolsVM.operation)
-                                    return idx >= 0 ? idx : 0
+                                    if (idx >= 0) currentIndex = idx
                                 }
                                 onActivated: function(index) {
                                     if (index >= 0 && index < numberToolsVM.operations.length)
@@ -281,24 +345,50 @@ Item {
                         }
 
                         Column {
-                            width: Math.min(LayoutMetrics.unit * 12, parent.width * 0.25)
+                            width: LayoutMetrics.unit * 18
+                            spacing: LayoutMetrics.spacing.xxs
+                            visible: numberToolsVM.operation !== "NOT"
+
+                            Label {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                bold: false
+                                text: page.bitwiseCount ? Lang.pages.numberTools.shiftRotateCount
+                                                        : Lang.pages.numberTools.bLabel
+                                textColor: Theme.textColor
+                                pixelSize: Typography.h6
+                            }
+
+                            LineEdit {
+                                width: parent.width
+                                placeholderText: page.bitwiseCount ? Lang.pages.numberTools.placeholderCount
+                                                                   : Lang.pages.numberTools.placeholderB
+                                text: numberToolsVM.inputB
+                                onTextEdited: numberToolsVM.setInputB(text)
+                            }
+                        }
+
+                        Column {
+                            width: LayoutMetrics.unit * 12
                             spacing: LayoutMetrics.spacing.xxs
 
                             Label {
+                                anchors.horizontalCenter: parent.horizontalCenter
                                 bold: false
-                                text: "Width"
+                                text: Lang.common.width
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
                             }
 
                             ComboBox {
                                 width: parent.width
-                                model: numberToolsVM.bitwiseWidths
+                                model: page.bitwiseWidthOptions
+                                textRole: "label"
+                                valueRole: "id"
                                 scrollablePopup: true
                                 maxVisibleItems: 4
-                                currentIndex: {
+                                Component.onCompleted: {
                                     var idx = numberToolsVM.bitwiseWidths.indexOf(numberToolsVM.bitwiseWidth)
-                                    return idx >= 0 ? idx : 3
+                                    if (idx >= 0) currentIndex = idx
                                 }
                                 onActivated: function(index) {
                                     if (index >= 0 && index < numberToolsVM.bitwiseWidths.length)
@@ -306,9 +396,9 @@ Item {
                                 }
                                 onCurrentIndexChanged: {
                                     if (currentIndex >= 0 && currentIndex < numberToolsVM.bitwiseWidths.length) {
-                                        var width = numberToolsVM.bitwiseWidths[currentIndex]
-                                        if (width && width !== numberToolsVM.bitwiseWidth)
-                                            numberToolsVM.setBitwiseWidth(width)
+                                        var w = numberToolsVM.bitwiseWidths[currentIndex]
+                                        if (w && w !== numberToolsVM.bitwiseWidth)
+                                            numberToolsVM.setBitwiseWidth(w)
                                     }
                                 }
                             }
@@ -317,18 +407,16 @@ Item {
 
                     Label {
                         bold: false
-                        visible: page.modeGcd || (page.modeBitwise && numberToolsVM.operation !== "NOT")
-                        text: page.modeGcd ? "Extra integer (optional)"
-                                           : page.bitwiseCount ? "Shift / rotate count" : "B"
+                        visible: page.modeGcd
+                        text: Lang.pages.numberTools.extraIntegerOptional
                         textColor: Theme.textColor
                         pixelSize: Typography.h4
                     }
 
                     LineEdit {
                         width: parent.width
-                        visible: page.modeGcd || (page.modeBitwise && numberToolsVM.operation !== "NOT")
-                        placeholderText: page.modeGcd ? "e.g. 12 (optional)"
-                                      : page.bitwiseCount ? "e.g. 3" : "e.g. 5"
+                        visible: page.modeGcd
+                        placeholderText: Lang.pages.numberTools.placeholderGcdB
                         text: numberToolsVM.inputB
                         onTextEdited: numberToolsVM.setInputB(text)
                     }
@@ -338,7 +426,7 @@ Item {
                         spacing: LayoutMetrics.spacing.sm
 
                         Button {
-                            buttonText: "Compute"
+                            buttonText: Lang.pages.numberTools.compute
                             primary: true
                             isometric: true
                             heightMultiplier: 1.3
@@ -346,7 +434,7 @@ Item {
                             onPressed: numberToolsVM.process()
                         }
                         Button {
-                            buttonText: "Clear"
+                            buttonText: Lang.common.clear
                             iconPath: SVGLibrary.eraser
                             enabled: !numberToolsVM.computing
                             onPressed: numberToolsVM.clear()
@@ -370,7 +458,10 @@ Item {
                             height: LayoutMetrics.size.iconS
                             path: SVGLibrary.checkMark
                             color: Theme.textColor
-                            visible: numberToolsVM.status === "Done" || numberToolsVM.status === "Copied"
+                            visible: numberToolsVM.status === Lang.common.done
+                                     || numberToolsVM.status === Lang.pages.numberTools.msgCopied
+                                     || numberToolsVM.status === "Done"
+                                     || numberToolsVM.status === "Copied"
                         }
                         Label {
                             bold: false
@@ -406,7 +497,7 @@ Item {
 
                     Label {
                         bold: false
-                        text: "Result"
+                        text: Lang.common.result
                         textColor: Theme.textColor
                         pixelSize: Typography.h4
                     }
@@ -419,7 +510,7 @@ Item {
                         fontFamily: "JetBrains Mono"
                         fontPixelSize: Typography.body
                         text: numberToolsVM.output
-                        placeholderText: "Results will appear here"
+                        placeholderText: Lang.pages.numberTools.resultPlaceholder
                         showCopyButton: true
                     }
 

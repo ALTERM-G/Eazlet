@@ -24,25 +24,25 @@ Controls.Popup {
     x: parent ? Math.round((parent.width - width) / 2) : 0
     y: parent ? Math.round((parent.height - height) / 2) : 0
 
-    property string title: "Select"
-    property string searchPlaceholderText: "Search…"
-    property string allLabel: "All"
-    property string favoritesLabel: "Favorites"
-    property string recentLabel: "Recent"
-    property string emptyLabel: "Nothing here yet"
-    property string noFavoritesLabel: "No favorites yet"
-    property string noRecentsLabel: "No recent items yet"
-    property string noMatchesLabel: "No matches"
+    property string title: Lang.common.select
+    property string searchPlaceholderText: Lang.common.search
+    property string allLabel: Lang.common.all
+    property string favoritesLabel: Lang.common.favorites
+    property string recentLabel: Lang.common.recent
+    property string emptyLabel: Lang.common.nothingHereYet
+    property string noFavoritesLabel: Lang.common.noFavoritesYet
+    property string noRecentsLabel: Lang.common.noRecentItemsYet
+    property string noMatchesLabel: Lang.common.noMatches
     property bool showPreview: true
-    property string itemNameSingular: "item"
-    property string itemNamePlural: "items"
-    property string previewLabel: "Preview"
-    property string previewPlaceholderText: "Select an item from the list"
-    property string nothingSelectedLabel: "Nothing selected"
-    property string favoriteLabel: "Favorite"
-    property string favoritedLabel: "Favorited"
-    property string cancelLabel: "Cancel"
-    property string applyLabel: "Apply"
+    property string itemNameSingular: Lang.common.item
+    property string itemNamePlural: Lang.common.items
+    property string previewLabel: Lang.common.preview
+    property string previewPlaceholderText: Lang.common.selectItemPrompt
+    property string nothingSelectedLabel: Lang.common.nothingSelected
+    property string favoriteLabel: Lang.common.favorite
+    property string favoritedLabel: Lang.common.favorited
+    property string cancelLabel: Lang.common.cancel
+    property string applyLabel: Lang.common.apply
 
     property var items: []
     property string currentItem: ""

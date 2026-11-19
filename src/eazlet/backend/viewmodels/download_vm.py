@@ -5,7 +5,7 @@ import shutil
 from pathlib import Path
 from urllib.parse import urlparse
 
-from PySide6.QtCore import Property, QObject, QProcess, QStandardPaths, Signal, Slot
+from PySide6.QtCore import Property, QObject, QProcess, Signal, Slot
 from PySide6.QtGui import QDesktopServices
 
 from .base_vm import BaseVM
@@ -150,11 +150,11 @@ class DownloadVM(BaseVM):
     @Slot()
     def addToQueue(self) -> None:
         if not self._url.strip():
-            self._error = "Enter a URL"
+            self._error = self.tr("messages.enterUrl", "Enter a URL")
             self.errorChanged.emit()
             return
         if not self._is_valid_url(self._url.strip()):
-            self._error = "Invalid URL"
+            self._error = self.tr("messages.invalidUrl", "Invalid URL")
             self.errorChanged.emit()
             return
         self._queue.append({"url": self._url.strip(), "destination": self._destination})
@@ -221,16 +221,16 @@ class DownloadVM(BaseVM):
         if self._downloading:
             return
         if not self._url.strip():
-            self._error = "Enter a URL"
+            self._error = self.tr("messages.enterUrl", "Enter a URL")
             self.errorChanged.emit()
             return
         if not self._is_valid_url(self._url.strip()):
-            self._error = "Invalid URL"
+            self._error = self.tr("messages.invalidUrl", "Invalid URL")
             self.errorChanged.emit()
             return
         aria2 = shutil.which("aria2c")
         if aria2 is None:
-            self._error = "aria2c not found in PATH"
+            self._error = self.tr("messages.aria2NotFound", "aria2c not found in PATH")
             self.errorChanged.emit()
             return
         Path(self._destination).mkdir(parents=True, exist_ok=True)
@@ -240,7 +240,7 @@ class DownloadVM(BaseVM):
         self._speed = ""
         self._eta = ""
         self._size = ""
-        self._status = "Starting..."
+        self._status = self.tr("common.starting", "Starting...")
         self._downloading = True
         self._paused = False
         self.progressChanged.emit()
@@ -292,7 +292,7 @@ class DownloadVM(BaseVM):
                 pass
         self._downloading = False
         self._paused = False
-        self._status = "Cancelled"
+        self._status = self.tr("common.cancelled", "Cancelled")
         self.downloadingChanged.emit()
         self.statusChanged.emit()
         self._process = None
@@ -304,7 +304,7 @@ class DownloadVM(BaseVM):
         try:
             os.kill(self._process.processId(), __import__("signal").SIGSTOP)
             self._paused = True
-            self._status = "Paused"
+            self._status = self.tr("common.pause", "Paused")
             self.statusChanged.emit()
         except Exception:
             pass
@@ -316,7 +316,7 @@ class DownloadVM(BaseVM):
         try:
             os.kill(self._process.processId(), __import__("signal").SIGCONT)
             self._paused = False
-            self._status = "Resuming..."
+            self._status = self.tr("common.resuming", "Resuming...")
             self.statusChanged.emit()
         except Exception:
             pass
@@ -383,7 +383,7 @@ class DownloadVM(BaseVM):
         self.downloadingChanged.emit()
         if code == 0:
             self._progress = 1.0
-            self._status = "Done"
+            self._status = self.tr("common.done", "Done")
             self.progressChanged.emit()
             self.statusChanged.emit()
             if self._url:
@@ -391,9 +391,11 @@ class DownloadVM(BaseVM):
                 self._add_to_history(self._url, path)
         else:
             if not self._error:
-                self._error = f"aria2 exited with code {code}"
+                self._error = self.tr(
+                    "messages.aria2ExitCode", "aria2c exited with code {code}"
+                ).replace("{code}", str(code))
                 self.errorChanged.emit()
-            self._status = "Failed"
+            self._status = self.tr("common.failed", "Failed")
             self.statusChanged.emit()
         self._process = None
         if was_downloading and self._queue:

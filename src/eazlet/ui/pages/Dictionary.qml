@@ -32,7 +32,7 @@ Item {
                 Layout.preferredWidth: contentLayout.width
                 Layout.maximumWidth: contentLayout.width
                 horizontalAlignment: Text.AlignHCenter
-                text: "Dictionary"
+                text: Lang.pages.dictionary.title
                 textColor: Theme.textColor
                 pixelSize: Typography.h2
                 elide: Text.ElideRight
@@ -44,7 +44,7 @@ Item {
                 Layout.maximumWidth: contentLayout.width
                 horizontalAlignment: Text.AlignHCenter
                 bold: false
-                text: "Look up meanings, examples, and synonyms for any English word."
+                text: Lang.pages.dictionary.subtitle
                 textColor: Theme.dividerColor
                 pixelSize: Typography.h6
                 wrapMode: Text.WordWrap
@@ -67,13 +67,13 @@ Item {
                     Layout.fillWidth: true
                     Layout.minimumWidth: 0
                     text: dictionaryVM.word
-                    placeholderText: "Type a word, then press Search"
+                    placeholderText: Lang.pages.dictionary.searchPlaceholder
                     onTextEdited: dictionaryVM.word = text
                     onAccepted: dictionaryVM.search()
                 }
 
                 Button {
-                    buttonText: dictionaryVM.searching ? "Searching…" : "Search"
+                    buttonText: dictionaryVM.searching ? Lang.pages.dictionary.searching : Lang.pages.dictionary.search
                     primary: true
                     isometric: true
                     heightMultiplier: 1.3
@@ -82,7 +82,7 @@ Item {
                 }
 
                 Button {
-                    buttonText: "Clear"
+                    buttonText: Lang.pages.dictionary.clear
                     iconPath: SVGLibrary.eraser
                     enabled: !dictionaryVM.searching
                     onPressed: dictionaryVM.clear()
@@ -115,7 +115,7 @@ Item {
 
                 Label {
                     bold: false
-                    text: "Source: dictionaryapi.dev"
+                    text: Lang.pages.dictionary.sourcePrefix + " dictionaryapi.dev"
                     textColor: Theme.dividerColor
                     pixelSize: Typography.caption
                     elide: Text.ElideRight
@@ -169,7 +169,7 @@ Item {
                     Label {
                         width: parent.width
                         horizontalAlignment: Text.AlignHCenter
-                        text: "No word yet"
+                        text: Lang.pages.dictionary.noWordTitle
                         textColor: Theme.textColor
                         pixelSize: Typography.h3
                     }
@@ -178,7 +178,7 @@ Item {
                         bold: false
                         width: parent.width
                         horizontalAlignment: Text.AlignHCenter
-                        text: "Type an English word above and press Search to see its parts of speech, definitions, examples, and synonyms."
+                        text: Lang.pages.dictionary.noWordHint
                         textColor: Theme.dividerColor
                         pixelSize: Typography.h6
                         wrapMode: Text.WordWrap

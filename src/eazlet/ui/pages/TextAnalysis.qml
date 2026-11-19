@@ -83,7 +83,7 @@ Item {
                 Layout.preferredWidth: contentLayout.width
                 Layout.maximumWidth: contentLayout.width
                 horizontalAlignment: Text.AlignHCenter
-                text: "Text Analysis"
+                text: Lang.pages.textAnalysis.title
                 textColor: Theme.textColor
                 pixelSize: Typography.h2
                 elide: Text.ElideRight
@@ -95,7 +95,7 @@ Item {
                 Layout.maximumWidth: contentLayout.width
                 horizontalAlignment: Text.AlignHCenter
                 bold: false
-                text: "Measure readability, word frequency, and text structure without leaving your machine."
+                text: Lang.pages.textAnalysis.subtitle
                 textColor: Theme.dividerColor
                 pixelSize: Typography.h6
                 wrapMode: Text.WordWrap
@@ -114,7 +114,7 @@ Item {
 
                 Switch {
                     Layout.alignment: Qt.AlignVCenter
-                    text: "Code / unusual"
+                    text: Lang.pages.textAnalysis.codeUnusual
                     checked: textAnalysisVM.mode === "code"
                     onCheckedChanged: {
                         var nextMode = checked ? "code" : "text"
@@ -125,14 +125,14 @@ Item {
 
                 Button {
                     Layout.alignment: Qt.AlignVCenter
-                    buttonText: "Open file"
+                    buttonText: Lang.pages.textAnalysis.openFile
                     iconPath: SVGLibrary.browse
                     onPressed: analysisFileDialog.open()
                 }
 
                 Button {
                     Layout.alignment: Qt.AlignVCenter
-                    buttonText: "Process"
+                    buttonText: Lang.common.process
                     primary: true
                     isometric: true
                     heightMultiplier: 1.3
@@ -141,7 +141,7 @@ Item {
 
                 Button {
                     Layout.alignment: Qt.AlignVCenter
-                    buttonText: "Clear"
+                    buttonText: Lang.common.clear
                     iconPath: SVGLibrary.eraser
                     onPressed: textAnalysisVM.clear()
                 }
@@ -154,8 +154,8 @@ Item {
                 Layout.preferredHeight: LayoutMetrics.unit * 10
                 text: textAnalysisVM.input
                 placeholderText: textAnalysisVM.mode === "code"
-                    ? "Paste code, a random string, or other unusual text, then press Process..."
-                    : "Paste or type text here, or open a .txt / .md file..."
+                    ? Lang.pages.textAnalysis.inputPlaceholderCode
+                    : Lang.pages.textAnalysis.inputPlaceholderText
                 onTextChanged: textAnalysisVM.input = text
             }
 
@@ -179,14 +179,15 @@ Item {
                     visible: textAnalysisVM.hasResults
                     text: textAnalysisVM.mode === "code"
                         ? textAnalysisVM.readabilityLabel
-                        : "Readability: " + textAnalysisVM.readabilityLabel
+                        : Lang.pages.textAnalysis.readabilityPrefix.replace(
+                              "{value}", textAnalysisVM.readabilityLabel)
                     textColor: Theme.dividerColor
                     pixelSize: Typography.body
                     elide: Text.ElideRight
                 }
 
                 Button {
-                    buttonText: "Copy report"
+                    buttonText: Lang.pages.textAnalysis.copyReport
                     iconPath: SVGLibrary.copy
                     visible: textAnalysisVM.hasResults
                     onPressed: textAnalysisVM.copyReport()
@@ -240,7 +241,7 @@ Item {
                     Label {
                         width: parent.width
                         horizontalAlignment: Text.AlignHCenter
-                        text: "No analysis yet"
+                        text: Lang.pages.textAnalysis.noAnalysisTitle
                         textColor: Theme.textColor
                         pixelSize: Typography.h3
                     }
@@ -249,7 +250,7 @@ Item {
                         bold: false
                         width: parent.width
                         horizontalAlignment: Text.AlignHCenter
-                        text: "Paste or type some text above, open a .txt / .md file, then press Process to see what the analyzer reports."
+                        text: Lang.pages.textAnalysis.noAnalysisHint
                         textColor: Theme.dividerColor
                         pixelSize: Typography.h6
                         wrapMode: Text.WordWrap
@@ -357,14 +358,16 @@ Item {
                             height: cardsGrid.columns > 1
                                     ? cardsGrid.firstRowHeight
                                     : Math.max(LayoutMetrics.unit * 20, contentHeight)
-                            heading: textAnalysisVM.mode === "code" ? "Top tokens" : "Top words"
+                            heading: textAnalysisVM.mode === "code"
+                                     ? Lang.pages.textAnalysis.topTokens
+                                     : Lang.pages.textAnalysis.topWords
                             subtitle: textAnalysisVM.topWords.length === 0
                                       ? (textAnalysisVM.mode === "code"
-                                         ? "Run an analysis to see frequent tokens."
-                                         : "Run an analysis to see frequent words.")
+                                         ? Lang.pages.textAnalysis.topTokensRunHint
+                                         : Lang.pages.textAnalysis.topWordsRunHint)
                                       : (textAnalysisVM.mode === "code"
-                                         ? "Most frequent tokens in the input."
-                                         : "Common stop words are skipped.")
+                                         ? Lang.pages.textAnalysis.topTokensDesc
+                                         : Lang.pages.textAnalysis.topWordsDesc)
 
                             Column {
                                 width: parent.width
@@ -437,16 +440,20 @@ Item {
                             height: cardsGrid.columns > 1
                                     ? cardsGrid.firstRowHeight
                                     : Math.max(LayoutMetrics.unit * 20, contentHeight)
-                            heading: textAnalysisVM.mode === "code" ? "Token length distribution" : "Word length distribution"
+                            heading: textAnalysisVM.mode === "code"
+                                     ? Lang.pages.textAnalysis.tokenLengthDistribution
+                                     : Lang.pages.textAnalysis.wordLengthDistribution
                             subtitle: textAnalysisVM.mode === "code"
-                                      ? "Number of tokens by character count."
-                                      : "Number of words by character count."
+                                      ? Lang.pages.textAnalysis.tokenLengthDesc
+                                      : Lang.pages.textAnalysis.wordLengthDesc
 
                             Label {
                                 bold: false
                                 width: parent.width
                                 visible: textAnalysisVM.wordLengths.length === 0
-                                text: textAnalysisVM.mode === "code" ? "No token length data yet." : "No word length data yet."
+                                text: textAnalysisVM.mode === "code"
+                                      ? Lang.pages.textAnalysis.noTokenLengthDataYet
+                                      : Lang.pages.textAnalysis.noWordLengthDataYet
                                 textColor: Theme.dividerColor
                                 pixelSize: Typography.h6
                                 wrapMode: Text.WordWrap
@@ -526,8 +533,8 @@ Item {
                             height: cardsGrid.columns > 1
                                     ? cardsGrid.secondRowHeight
                                     : Math.max(LayoutMetrics.unit * 20, contentHeight)
-                            heading: "Character composition"
-                            subtitle: "Letters, digits, whitespace, and punctuation."
+                            heading: Lang.pages.textAnalysis.charComposition
+                            subtitle: Lang.pages.textAnalysis.charCompositionDesc
 
                             Column {
                                 width: parent.width
@@ -631,16 +638,20 @@ Item {
                             height: cardsGrid.columns > 1
                                     ? cardsGrid.secondRowHeight
                                     : Math.max(LayoutMetrics.unit * 20, contentHeight)
-                            heading: textAnalysisVM.mode === "code" ? "Longest tokens" : "Longest words"
+                            heading: textAnalysisVM.mode === "code"
+                                     ? Lang.pages.textAnalysis.longestTokens
+                                     : Lang.pages.textAnalysis.longestWords
                             subtitle: textAnalysisVM.mode === "code"
-                                      ? "Distinct tokens, sorted by length."
-                                      : "Distinct words, sorted by length."
+                                      ? Lang.pages.textAnalysis.longestTokensDesc
+                                      : Lang.pages.textAnalysis.longestWordsDesc
 
                             Label {
                                 bold: false
                                 width: parent.width
                                 visible: textAnalysisVM.longestWords.length === 0
-                                text: textAnalysisVM.mode === "code" ? "No token data yet." : "No word data yet."
+                                text: textAnalysisVM.mode === "code"
+                                      ? Lang.pages.textAnalysis.noTokenDataYet
+                                      : Lang.pages.textAnalysis.noWordDataYet
                                 textColor: Theme.dividerColor
                                 pixelSize: Typography.h6
                                 wrapMode: Text.WordWrap
@@ -687,9 +698,9 @@ Item {
 
     FileDialog {
         id: analysisFileDialog
-        title: "Open a text file"
+        title: Lang.pages.textAnalysis.openFileDialogTitle
         fileMode: FileDialog.OpenFile
-        nameFilters: ["Text files (*.txt *.md *.markdown)", "All files (*)"]
+        nameFilters: [Lang.common.fileFilters.textFiles, Lang.common.fileFilters.allFiles]
         onAccepted: textAnalysisVM.loadFile(selectedFile.toString())
     }
 }

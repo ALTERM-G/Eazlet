@@ -135,7 +135,7 @@ Item {
 
         Label {
             objectName: "homeTagline"
-            text: "Simple tools. Easy workflow."
+            text: Lang.home.tagline
             bold: true
             pixelSize: Typography.body
             Layout.alignment: Qt.AlignHCenter
@@ -209,7 +209,7 @@ Item {
                         placeholderTextColor: Theme.borderColor
                         font.family: Typography.terminalFontFamily
                         font.pixelSize: Typography.h5
-                        placeholderText: "type here"
+                        placeholderText: Lang.home.placeholder
                         activeFocusOnTab: true
 
                         Component.onCompleted: commandInput.forceActiveFocus()
@@ -240,7 +240,7 @@ Item {
                             }
                         }
 
-                        Keys.onUpPressed: {
+                        Keys.onUpPressed: function(event) {
                             if (page.commandHistory.length === 0)
                                 return
                             page.historyCursor = Math.max(0, page.historyCursor - 1)
@@ -248,7 +248,7 @@ Item {
                             event.accepted = true
                         }
 
-                        Keys.onDownPressed: {
+                        Keys.onDownPressed: function(event) {
                             if (page.commandHistory.length === 0)
                                 return
                             page.historyCursor = Math.min(

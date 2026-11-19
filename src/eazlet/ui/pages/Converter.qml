@@ -16,11 +16,11 @@ Item {
 
     function categoryName(category) {
         switch (category) {
-        case "video": return "Video"
-        case "audio": return "Audio"
-        case "image": return "Image"
-        case "document": return "Document"
-        default: return "Unsupported"
+        case "video": return Lang.pages.converter.categoryVideo
+        case "audio": return Lang.pages.converter.categoryAudio
+        case "image": return Lang.pages.converter.categoryImage
+        case "document": return Lang.pages.converter.categoryDocument
+        default: return Lang.pages.converter.categoryUnsupported
         }
     }
 
@@ -28,16 +28,16 @@ Item {
         if (converterVM.files.length === 0)
             return ""
         if (converterVM.sourceCategory === "unsupported")
-            return "Unsupported file type" + (converterVM.sourceFormat !== "" ? " · ." + converterVM.sourceFormat.toUpperCase() : "")
+            return Lang.pages.converter.unsupportedFileType + (converterVM.sourceFormat !== "" ? " · ." + converterVM.sourceFormat.toUpperCase() : "")
         return categoryName(converterVM.sourceCategory) + " · ." + converterVM.sourceFormat.toUpperCase()
     }
 
     function noTargetMessage() {
         if (converterVM.sourceCategory === "unsupported")
-            return "This file type is not supported."
+            return Lang.pages.converter.unsupportedFileType + "."
         if (converterVM.sourceCategory === "document")
-            return "No document conversion is available for this file."
-        return "No conversion targets are available for this file."
+            return Lang.pages.converter.noDocumentTargets
+        return Lang.pages.converter.noTargets
     }
 
     Surface {
@@ -69,7 +69,7 @@ Item {
 
                 Title {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Converter"
+                    text: Lang.pages.converter.title
                     textColor: Theme.textColor
                     pixelSize: Typography.h2
                 }
@@ -78,7 +78,7 @@ Item {
                     width: parent.width
                     horizontalAlignment: Text.AlignHCenter
                     bold: false
-                    text: "Drop a file, choose a target format, and convert it locally."
+                    text: Lang.pages.converter.subtitle
                     textColor: Theme.dividerColor
                     pixelSize: Typography.h6
                     wrapMode: Text.WordWrap
@@ -93,9 +93,9 @@ Item {
                 DropZone {
                     width: parent.width
                     enabled: !converterVM.converting
-                    title: "Drop a file here"
-                    description: "Drag and drop a file, or click to browse"
-                    hint: "One file at a time — adding another replaces the current file"
+                    title: Lang.pages.converter.dropTitle
+                    description: Lang.pages.converter.dropDescription
+                    hint: Lang.pages.converter.dropHint
                     onClicked: fileDialog.open()
                     onFilesDropped: function(urls) {
                         if (urls.length > 0)
@@ -105,7 +105,7 @@ Item {
 
                 FileDialog {
                     id: fileDialog
-                    title: "Select a file to convert"
+                    title: Lang.pages.converter.selectDialogTitle
                     fileMode: FileDialog.OpenFile
                     onAccepted: converterVM.addFile(selectedFile.toString())
                 }
@@ -186,8 +186,9 @@ Item {
                     spacing: LayoutMetrics.spacing.xxs
                     visible: converterVM.files.length > 0 && converterVM.validTargetFormats.length > 0
                     Label {
+                        anchors.horizontalCenter: parent.horizontalCenter
                         bold: false
-                        text: "Convert to"
+                        text: Lang.pages.converter.convertTo
                         textColor: Theme.textColor
                         pixelSize: Typography.h6
                     }
@@ -245,7 +246,7 @@ Item {
 
                     Switch {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        text: "Replace original file"
+                        text: Lang.pages.converter.replaceOriginal
                         checked: converterVM.replaceOriginal
                         enabled: !converterVM.converting
                         onCheckedChanged: converterVM.replaceOriginal = checked
@@ -256,8 +257,8 @@ Item {
                         horizontalAlignment: Text.AlignHCenter
                         bold: false
                         text: converterVM.replaceOriginal
-                              ? "The source is deleted after conversion — only the new file stays on disk."
-                              : "A new converted copy is saved; the source stays untouched."
+                              ? Lang.pages.converter.replaceOn
+                              : Lang.pages.converter.replaceOff
                         textColor: Theme.dividerColor
                         pixelSize: Typography.caption
                         wrapMode: Text.WordWrap
@@ -267,7 +268,7 @@ Item {
                 Row {
                     anchors.horizontalCenter: parent.horizontalCenter
                     spacing: LayoutMetrics.spacing.sm
-                    Button { buttonText: "Open Folder"; onPressed: converterVM.openOutputDir() }
+                    Button { buttonText: Lang.pages.converter.openFolder; onPressed: converterVM.openOutputDir() }
                 }
 
                 Rectangle {
@@ -281,7 +282,7 @@ Item {
                     spacing: LayoutMetrics.spacing.md
 
                     Button {
-                        buttonText: "Convert"
+                        buttonText: Lang.pages.converter.convert
                         primary: true
                         isometric: true
                         heightMultiplier: 1.3
@@ -291,7 +292,7 @@ Item {
                     }
 
                     Button {
-                        buttonText: "Cancel"
+                        buttonText: Lang.pages.converter.cancel
                         visible: converterVM.converting
                         onPressed: converterVM.cancel()
                     }
@@ -313,7 +314,7 @@ Item {
                         height: LayoutMetrics.size.iconS
                         path: SVGLibrary.checkMark
                         color: Theme.textColor
-                        visible: converterVM.status === "Done"
+                        visible: converterVM.status === Lang.common.done || converterVM.status === "Done"
                     }
                     Label {
                         bold: false

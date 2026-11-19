@@ -181,6 +181,7 @@ class UnifiedDownloadVM(BaseVM):
         self._process = None
         self._formats_proc = None
         self._stderr_tail = ""
+        self._was_cancelled = False
         self._progress_re = re.compile(r"(\d+(?:\.\d+)?)%")
         self._aria_progress_re = re.compile(
             r"\[#\w+\s+([\d.]+)([KMG]i?B)/([\d.]+)([KMG]i?B)\((\d+)%\)"
@@ -223,19 +224,46 @@ class UnifiedDownloadVM(BaseVM):
 
     @Property(list, notify=downloaderChanged)
     def downloaders(self) -> list:
-        return DOWNLOADER_CHOICES
+        choices = [
+            {"id": "auto", "label": self.tr("pages.downloadUnified.autoByUrl", "Auto (by URL)")},
+            {"id": "direct", "label": self.tr("pages.downloadUnified.directFile", "Direct file")},
+        ]
+        labels = {
+            "khinsider-dl": self.tr("pages.downloadUnified.tools.khid", DOWNLOADERS["khinsider-dl"]["label"]),
+            "spotdl": self.tr("pages.downloadUnified.tools.spotdl", DOWNLOADERS["spotdl"]["label"]),
+            "bandcamp-dl": self.tr("pages.downloadUnified.tools.bandcamp", DOWNLOADERS["bandcamp-dl"]["label"]),
+            "yt-dlp": self.tr("pages.downloadUnified.tools.ytdlp", DOWNLOADERS["yt-dlp"]["label"]),
+            "gallery-dl": self.tr("pages.downloadUnified.tools.gallery", DOWNLOADERS["gallery-dl"]["label"]),
+        }
+        for tool_id, spec in DOWNLOADERS.items():
+            choices.append({"id": tool_id, "label": labels.get(tool_id, spec["label"])})
+        return choices
 
     @Property(str, notify=downloaderChanged)
     def title(self) -> str:
         if self._downloader == "direct":
-            return "Direct Download"
-        return DOWNLOADERS[self._downloader]["title"]
+            return self.tr("pages.downloadUnified.directTitle", "Direct Download")
+        titles = {
+            "khinsider-dl": self.tr("pages.downloadUnified.tools.khid", DOWNLOADERS["khinsider-dl"]["title"]),
+            "spotdl": self.tr("pages.downloadUnified.tools.spotdl", DOWNLOADERS["spotdl"]["title"]),
+            "bandcamp-dl": self.tr("pages.downloadUnified.tools.bandcamp", DOWNLOADERS["bandcamp-dl"]["title"]),
+            "yt-dlp": self.tr("pages.downloadUnified.tools.ytdlp", DOWNLOADERS["yt-dlp"]["title"]),
+            "gallery-dl": self.tr("pages.downloadUnified.tools.gallery", DOWNLOADERS["gallery-dl"]["title"]),
+        }
+        return titles.get(self._downloader, DOWNLOADERS.get(self._downloader, {}).get("title", ""))
 
     @Property(str, notify=downloaderChanged)
     def hint(self) -> str:
         if self._downloader == "direct":
-            return "Paste a direct file link, choose where to save it, then download."
-        return DOWNLOADERS[self._downloader]["hint"]
+            return self.tr("pages.downloadUnified.directHint", "Paste a direct file link, choose where to save it, then download.")
+        hints = {
+            "khinsider-dl": self.tr("pages.downloadUnified.hints.khid", DOWNLOADERS["khinsider-dl"]["hint"]),
+            "spotdl": self.tr("pages.downloadUnified.hints.spotdl", DOWNLOADERS["spotdl"]["hint"]),
+            "bandcamp-dl": self.tr("pages.downloadUnified.hints.bandcamp", DOWNLOADERS["bandcamp-dl"]["hint"]),
+            "yt-dlp": self.tr("pages.downloadUnified.hints.ytdlp", DOWNLOADERS["yt-dlp"]["hint"]),
+            "gallery-dl": self.tr("pages.downloadUnified.hints.gallery", DOWNLOADERS["gallery-dl"]["hint"]),
+        }
+        return hints.get(self._downloader, DOWNLOADERS.get(self._downloader, {}).get("hint", ""))
 
     @Property(bool, notify=downloaderChanged)
     def supportsFormats(self) -> bool:
@@ -373,14 +401,14 @@ class UnifiedDownloadVM(BaseVM):
             return
         ytdlp = shutil.which("yt-dlp")
         if ytdlp is None:
-            self._error = "yt-dlp not found in PATH"
+            self._error = self.tr("pages.downloadUnified.msgYtdlpNotFound", "yt-dlp not found in PATH")
             self.errorChanged.emit()
-            self._status = "Failed"
+            self._status = self.tr("common.failed", "Failed")
             self.statusChanged.emit()
             return
         self._error = ""
         self.errorChanged.emit()
-        self._status = "Fetching formats..."
+        self._status = self.tr("common.fetchingFormats", "Fetching formats...")
         self.statusChanged.emit()
         proc = QProcess(self)
         proc.setProgram(ytdlp)
@@ -403,12 +431,12 @@ class UnifiedDownloadVM(BaseVM):
                 if err.strip():
                     self._error = err.strip()[:240]
                 else:
-                    self._error = f"yt-dlp exited with code {code}"
+                    self._error = self.tr("pages.downloadUnified.msgProcessExited", "Process exited with code {code}").replace("{code}", str(code))
                 self.errorChanged.emit()
             except Exception:
-                self._error = "Failed to fetch formats"
+                self._error = self.tr("messages.failedFetchFormats", "Failed to fetch formats")
                 self.errorChanged.emit()
-            self._status = "Failed"
+            self._status = self.tr("common.failed", "Failed")
             self.statusChanged.emit()
             self._formats_proc = None
             return
@@ -419,9 +447,9 @@ class UnifiedDownloadVM(BaseVM):
             try:
                 info = json.loads(data)
             except Exception:
-                self._error = "Failed to parse formats"
+                self._error = self.tr("messages.failedParseFormats", "Failed to parse formats")
                 self.errorChanged.emit()
-                self._status = "Failed"
+                self._status = self.tr("common.failed", "Failed")
                 self.statusChanged.emit()
                 self._formats_proc = None
                 return
@@ -503,12 +531,12 @@ class UnifiedDownloadVM(BaseVM):
             fmts = uniq[:60]
             self._formats = [{"id": x["id"], "label": x["label"]} for x in fmts]
             self.formatsChanged.emit()
-            self._status = "Formats loaded" if fmts else "No formats found"
+            self._status = self.tr("common.formatsLoaded", "Formats loaded") if fmts else self.tr("common.noFormatsFound", "No formats found")
             self.statusChanged.emit()
         except Exception as e:
             self._error = str(e)[:240]
             self.errorChanged.emit()
-            self._status = "Error"
+            self._status = self.tr("common.error", "Error")
             self.statusChanged.emit()
         finally:
             self._formats_proc = None
@@ -518,7 +546,7 @@ class UnifiedDownloadVM(BaseVM):
         if self._downloading:
             return
         if not self._url.strip():
-            self._error = "Enter a URL"
+            self._error = self.tr("messages.enterUrl", "Enter a URL")
             self.errorChanged.emit()
             return
         try:
@@ -539,7 +567,8 @@ class UnifiedDownloadVM(BaseVM):
         self._size = ""
         self._speed = ""
         self._eta = ""
-        self._status = "Starting..."
+        self._was_cancelled = False
+        self._status = self.tr("common.starting", "Starting...")
         self._downloading = True
         self.progressChanged.emit()
         self.statusChanged.emit()
@@ -561,7 +590,7 @@ class UnifiedDownloadVM(BaseVM):
         self.errorChanged.emit()
         self._downloading = False
         self.downloadingChanged.emit()
-        self._status = "Failed"
+        self._status = self.tr("common.failed", "Failed")
         self.statusChanged.emit()
 
     def _start_process(
@@ -571,6 +600,7 @@ class UnifiedDownloadVM(BaseVM):
         working_directory: str | None = None,
     ) -> None:
         self._stderr_tail = ""
+        self._was_cancelled = False
         proc = QProcess(self)
         proc.setProgram(program)
         proc.setArguments(args)
@@ -585,7 +615,7 @@ class UnifiedDownloadVM(BaseVM):
     def _start_ytdlp(self) -> None:
         ytdlp = shutil.which("yt-dlp")
         if ytdlp is None:
-            self._fail("yt-dlp not found in PATH")
+            self._fail(self.tr("pages.downloadUnified.msgYtdlpNotFound", "yt-dlp not found in PATH"))
             return
         outtmpl = os.path.join(os.path.abspath(self._destination), "%(title)s.%(ext)s")
         if self._audio_only:
@@ -600,10 +630,7 @@ class UnifiedDownloadVM(BaseVM):
             ]
         elif self._selected_format:
             if shutil.which("ffmpeg") is None:
-                self._fail(
-                    "ffmpeg not found in PATH (required to merge video+audio). "
-                    "Install ffmpeg or choose a format that doesn't require merging."
-                )
+                self._fail(self.tr("pages.downloadUnified.msgFfmpegRequired", "ffmpeg not found in PATH (required to merge video+audio). Install ffmpeg or choose a format that doesn't require merging."))
                 return
             args = [
                 "-f",
@@ -641,7 +668,7 @@ class UnifiedDownloadVM(BaseVM):
     def _start_aria2(self) -> None:
         aria2 = shutil.which("aria2c")
         if aria2 is None:
-            self._fail("aria2c not found in PATH")
+            self._fail(self.tr("pages.downloadUnified.msgAria2NotFound", "aria2c not found in PATH"))
             return
         args = [
             "-d",
@@ -701,10 +728,10 @@ class UnifiedDownloadVM(BaseVM):
         binary = self._resolve_binary(spec)
         if binary is None:
             tried = ", ".join(spec["binaries"])
-            self._fail(f"{spec['label']} not found in PATH (tried {tried})")
+            self._fail(self.tr("pages.downloadUnified.msgToolNotFound", "{label} not found in PATH (tried {tried})").replace("{label}", spec["label"]).replace("{tried}", tried))
             return
         if spec["requires_ffmpeg"] and shutil.which("ffmpeg") is None:
-            self._fail(f"ffmpeg not found in PATH (required by {spec['label']})")
+            self._fail(self.tr("pages.downloadUnified.msgFfmpegRequiredBy", "ffmpeg not found in PATH (required by {label})").replace("{label}", spec["label"]))
             return
         destination = os.path.abspath(self._destination)
         args = self._tool_arguments(tool_id, self._url.strip(), destination, binary)
@@ -720,7 +747,8 @@ class UnifiedDownloadVM(BaseVM):
             except Exception:
                 pass
         self._downloading = False
-        self._status = "Cancelled"
+        self._was_cancelled = True
+        self._status = self.tr("common.cancelled", "Cancelled")
         self.downloadingChanged.emit()
         self.statusChanged.emit()
         self._process = None
@@ -812,14 +840,21 @@ class UnifiedDownloadVM(BaseVM):
         self.downloadingChanged.emit()
         if code == 0:
             self._progress = 1.0
-            self._status = "Done"
+            self._was_cancelled = False
+            self._status = self.tr("common.done", "Done")
             self.progressChanged.emit()
             self.statusChanged.emit()
         else:
-            if not self._error:
-                self._error = self._stderr_tail or f"Process exited with code {code}"
-                self.errorChanged.emit()
-            if self._status not in ("Failed", "Cancelled"):
-                self._status = "Failed"
+            if self._was_cancelled:
+                # Cancel already set status; keep it.
+                pass
+            else:
+                if not self._error:
+                    self._error = self._stderr_tail or self.tr(
+                        "pages.downloadUnified.msgProcessExited",
+                        "Process exited with code {code}",
+                    ).replace("{code}", str(code))
+                    self.errorChanged.emit()
+                self._status = self.tr("common.failed", "Failed")
                 self.statusChanged.emit()
         self._process = None

@@ -14,10 +14,11 @@ Item {
     readonly property bool latexMode: mathVM.mode === "LaTeX → PNG"
 
     // Tabs group related tools; the operation picker chooses within a group.
+    // names are localized for display, modes are stable IDs used by logic/VM.
     readonly property var modeGroups: [
-        { name: "Algebra", modes: ["Simplify", "Expand", "Factor", "Solve"] },
-        { name: "Calculus", modes: ["Derivative", "Integral", "Limit"] },
-        { name: "LaTeX → PNG", modes: ["LaTeX → PNG"] }
+        { name: Lang.pages.math.modeAlgebra, modes: ["Simplify", "Expand", "Factor", "Solve"] },
+        { name: Lang.pages.math.modeCalculus, modes: ["Derivative", "Integral", "Limit"] },
+        { name: Lang.pages.math.modeLatex, modes: ["LaTeX → PNG"] }
     ]
 
     property var rememberedModes: [null, null, null]
@@ -47,8 +48,13 @@ Item {
     }
 
     function isSuccessStatus(value) {
-        return ["Simplified", "Expanded", "Factored", "Solved", "Differentiated",
-                "Integrated", "Evaluated"].indexOf(value) >= 0
+        var ok = [Lang.pages.math.resultSimplified, Lang.pages.math.resultExpanded,
+                  Lang.pages.math.resultFactored, Lang.pages.math.resultSolved,
+                  Lang.pages.math.resultDifferentiated, Lang.pages.math.resultIntegrated,
+                  Lang.pages.math.resultEvaluated,
+                  "Simplified", "Expanded", "Factored", "Solved", "Differentiated",
+                  "Integrated", "Evaluated"]
+        return ok.indexOf(value) >= 0
     }
 
     function previewColor(value) {
@@ -71,23 +77,19 @@ Item {
     function algebraHint() {
         switch (mathVM.mode) {
         case "Solve":
-            return "Use a single '=' and choose the variable to solve for."
+            return Lang.pages.math.hintSolve
         case "Derivative":
-            return "Differentiates with respect to the chosen variable."
+            return Lang.pages.math.hintDerivative
         case "Integral":
-            return "Write \\int ... dx for an antiderivative, or \\int_{a}^{b} ... dx "
-                    + "for a definite integral."
+            return Lang.pages.math.hintIntegral
         case "Limit":
-            return "Evaluates the two-sided limit at the point; when the two "
-                    + "sides differ, their one-sided values are shown."
+            return Lang.pages.math.hintLimit
         case "Factor":
-            return "Factors polynomials and integer expressions."
+            return Lang.pages.math.hintFactor
         case "Expand":
-            return "Expands products and powers."
+            return Lang.pages.math.hintExpand
         default:
-            return "LaTeX only. Supported: \\frac, \\sqrt, powers, implicit multiplication "
-                    + "(2x), \\sin, \\cos, \\tan, \\log, \\exp, \\pi, \\infty, and Greek "
-                    + "letters such as \\alpha."
+            return Lang.pages.math.hintDefault
         }
     }
 
@@ -107,7 +109,7 @@ Item {
             Title {
                 id: pageTitle
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: "Math"
+                text: Lang.pages.math.title
                 textColor: Theme.textColor
                 pixelSize: Typography.h2
             }
@@ -117,8 +119,7 @@ Item {
                 bold: false
                 width: parent.width
                 horizontalAlignment: Text.AlignHCenter
-                text: "A local math workbench: algebra, calculus, equation solving, and LaTeX "
-                      + "rendered to PNG at any resolution."
+                text: Lang.pages.math.subtitle
                 textColor: Theme.dividerColor
                 pixelSize: Typography.h6
                 wrapMode: Text.WordWrap
@@ -196,26 +197,92 @@ Item {
                         spacing: LayoutMetrics.spacing.md
                         visible: !page.latexMode
 
-                        Column {
-                            width: parent.width
-                            spacing: LayoutMetrics.spacing.xxs
-                            visible: page.showOperationPicker
+                        Row {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            spacing: LayoutMetrics.spacing.lg
+                            visible: page.showOperationPicker || mathVM.requiresVariable
 
-                            Label {
-                                bold: false
-                                text: "Operation"
-                                textColor: Theme.textColor
-                                pixelSize: Typography.h6
+                            Column {
+                                width: Math.min(LayoutMetrics.unit * 24, algebraPanel.width * 0.45)
+                                spacing: LayoutMetrics.spacing.xxs
+                                visible: page.showOperationPicker
+
+                                Label {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    bold: false
+                                    text: Lang.common.operation
+                                    textColor: Theme.textColor
+                                    pixelSize: Typography.h6
+                                }
+
+                                ComboBox {
+                                    id: operationPicker
+                                    width: parent.width
+                                    readonly property var optionModel: {
+                                        var opts = []
+                                        var modes = page.groupModes
+                                        for (var i = 0; i < modes.length; i++) {
+                                            var m = modes[i]
+                                            var label = m
+                                            if (m === "Simplify") label = Lang.pages.math.opSimplify
+                                            else if (m === "Expand") label = Lang.pages.math.opExpand
+                                            else if (m === "Factor") label = Lang.pages.math.opFactor
+                                            else if (m === "Solve") label = Lang.pages.math.opSolve
+                                            else if (m === "Derivative") label = Lang.pages.math.opDerivative
+                                            else if (m === "Integral") label = Lang.pages.math.opIntegral
+                                            else if (m === "Limit") label = Lang.pages.math.opLimit
+                                            opts.push({ id: m, label: label })
+                                        }
+                                        return opts
+                                    }
+                                    model: optionModel
+                                    textRole: "label"
+                                    valueRole: "id"
+                                    currentIndex: page.groupModes.indexOf(mathVM.mode)
+                                    onActivated: function(index) {
+                                        if (index >= 0 && index < page.groupModes.length)
+                                            mathVM.setMode(page.groupModes[index])
+                                    }
+                                }
                             }
 
-                            ComboBox {
-                                id: operationPicker
-                                width: Math.min(LayoutMetrics.unit * 24, parent.width * 0.45)
-                                model: page.groupModes
-                                currentIndex: page.groupModes.indexOf(mathVM.mode)
-                                onActivated: function(index) {
-                                    if (index >= 0 && index < page.groupModes.length)
-                                        mathVM.setMode(page.groupModes[index])
+                            Column {
+                                spacing: LayoutMetrics.spacing.xxs
+                                visible: mathVM.requiresVariable
+
+                                Label {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    bold: false
+                                    text: Lang.pages.math.variable
+                                    textColor: Theme.textColor
+                                    pixelSize: Typography.h6
+                                }
+
+                                LineEdit {
+                                    width: LayoutMetrics.unit * 14
+                                    text: mathVM.variable
+                                    placeholderText: Lang.pages.math.variablePlaceholder
+                                    onTextEdited: mathVM.setVariable(text)
+                                }
+                            }
+
+                            Column {
+                                spacing: LayoutMetrics.spacing.xxs
+                                visible: mathVM.requiresVariable && mathVM.requiresPoint
+
+                                Label {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    bold: false
+                                    text: Lang.pages.math.point
+                                    textColor: Theme.textColor
+                                    pixelSize: Typography.h6
+                                }
+
+                                LineEdit {
+                                    width: LayoutMetrics.unit * 14
+                                    text: mathVM.point
+                                    placeholderText: Lang.pages.math.pointPlaceholder
+                                    onTextEdited: mathVM.setPoint(text)
                                 }
                             }
                         }
@@ -241,7 +308,7 @@ Item {
                             width: parent.width
                             height: LayoutMetrics.unit * 12
                             text: mathVM.expression
-                            placeholderText: "Write the LaTeX code"
+                            placeholderText: Lang.pages.math.latexPlaceholder
                             fontFamily: "JetBrains Mono"
                             fontPixelSize: Typography.body
                             wrapMode: Text.Wrap
@@ -257,54 +324,22 @@ Item {
                         }
 
                         Row {
-                            width: parent.width
-                            spacing: LayoutMetrics.spacing.lg
-                            visible: mathVM.requiresVariable
-
-                            Column {
-                                spacing: LayoutMetrics.spacing.xxs
-
-                                Label {
-                                    bold: false
-                                    text: "Variable"
-                                    textColor: Theme.textColor
-                                    pixelSize: Typography.h6
-                                }
-
-                                LineEdit {
-                                    width: LayoutMetrics.unit * 14
-                                    text: mathVM.variable
-                                    placeholderText: "x"
-                                    onTextEdited: mathVM.setVariable(text)
-                                }
-                            }
-
-                            Column {
-                                spacing: LayoutMetrics.spacing.xxs
-                                visible: mathVM.requiresPoint
-
-                                Label {
-                                    bold: false
-                                    text: "Point"
-                                    textColor: Theme.textColor
-                                    pixelSize: Typography.h6
-                                }
-
-                                LineEdit {
-                                    width: LayoutMetrics.unit * 14
-                                    text: mathVM.point
-                                    placeholderText: "0"
-                                    onTextEdited: mathVM.setPoint(text)
-                                }
-                            }
-                        }
-
-                        Row {
                             anchors.horizontalCenter: parent.horizontalCenter
                             spacing: LayoutMetrics.spacing.sm
 
                             Button {
-                                buttonText: mathVM.actionLabel
+                                buttonText: {
+                                    var m = mathVM.mode
+                                    if (m === "Simplify") return Lang.pages.math.actionSimplify
+                                    if (m === "Expand") return Lang.pages.math.actionExpand
+                                    if (m === "Factor") return Lang.pages.math.actionFactor
+                                    if (m === "Solve") return Lang.pages.math.actionSolve
+                                    if (m === "Derivative") return Lang.pages.math.actionDerivative
+                                    if (m === "Integral") return Lang.pages.math.actionIntegral
+                                    if (m === "Limit") return Lang.pages.math.actionLimit
+                                    if (m === "LaTeX → PNG") return Lang.pages.math.actionLatex
+                                    return Lang.pages.math.actionCompute
+                                }
                                 primary: true
                                 isometric: true
                                 heightMultiplier: 1.3
@@ -312,7 +347,7 @@ Item {
                                 onPressed: mathVM.process()
                             }
                             Button {
-                                buttonText: "Clear"
+                                buttonText: Lang.common.clear
                                 iconPath: SVGLibrary.eraser
                                 enabled: !mathVM.computing
                                 onPressed: mathVM.clear()
@@ -367,7 +402,7 @@ Item {
 
                         Label {
                             bold: false
-                            text: "Result"
+                            text: Lang.common.result
                             textColor: Theme.textColor
                             pixelSize: Typography.h4
                         }
@@ -380,7 +415,7 @@ Item {
                             fontFamily: "JetBrains Mono"
                             fontPixelSize: Typography.body
                             text: mathVM.result
-                            placeholderText: "The LaTeX result will appear here"
+                            placeholderText: Lang.pages.math.latexResultPlaceholder
                             showCopyButton: true
                         }
 
@@ -404,7 +439,7 @@ Item {
 
                         Label {
                             bold: false
-                            text: "LaTeX code"
+                            text: Lang.pages.math.latexCode
                             textColor: Theme.textColor
                             pixelSize: Typography.h4
                         }
@@ -414,7 +449,7 @@ Item {
                             width: parent.width
                             height: LayoutMetrics.unit * 8
                             text: mathVM.latexSource
-                            placeholderText: "Write the LaTeX code"
+                            placeholderText: Lang.pages.math.latexPlaceholder
                             fontFamily: "JetBrains Mono"
                             fontPixelSize: Typography.body
                             wrapMode: Text.Wrap
@@ -443,13 +478,15 @@ Item {
                             spacing: LayoutMetrics.spacing.xxs
 
                             Label {
+                                anchors.horizontalCenter: parent.horizontalCenter
                                 bold: false
-                                text: "Resolution"
+                                text: Lang.pages.math.resolution
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h6
                             }
 
                             Row {
+                                anchors.horizontalCenter: parent.horizontalCenter
                                 spacing: LayoutMetrics.spacing.sm
 
                                 ComboBox {
@@ -485,23 +522,44 @@ Item {
                                 Label {
                                     bold: false
                                     anchors.verticalCenter: parent.verticalCenter
-                                    text: "DPI"
+                                    text: Lang.pages.math.dpi
                                     textColor: Theme.dividerColor
                                     pixelSize: Typography.h6
                                 }
                             }
                         }
 
-                        Flow {
+                        Rectangle {
                             width: parent.width
+                            height: LayoutMetrics.spacing.xxs
+                            color: Theme.dividerColor
+                        }
+
+                        Flow {
+                            id: latexColorsFlow
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            readonly property real naturalContentWidth: {
+                                var total = 0, count = 0
+                                for (var i = 0; i < children.length; i++) {
+                                    var child = children[i]
+                                    if (!child || !child.visible)
+                                        continue
+                                    var w = child.implicitWidth > 0 ? child.implicitWidth : child.width
+                                    total += w
+                                    count++
+                                }
+                                return total + Math.max(0, count - 1) * spacing
+                            }
+                            width: Math.min(parent.width, naturalContentWidth)
                             spacing: LayoutMetrics.spacing.xl
 
                             ColumnLayout {
                                 spacing: LayoutMetrics.spacing.xxs
 
                                 Label {
+                                    Layout.alignment: Qt.AlignHCenter
                                     bold: false
-                                    text: "Background"
+                                    text: Lang.common.background
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
                                 }
@@ -534,14 +592,14 @@ Item {
                                         Layout.preferredWidth: LayoutMetrics.unit * 18
                                         Layout.preferredHeight: LayoutMetrics.size.lineEditHeight
                                         text: mathVM.latexBackground
-                                        placeholderText: "#FFFFFF"
+                                        placeholderText: Lang.pages.math.bgColorPlaceholder
                                         onTextEdited: mathVM.setLatexBackground(text)
                                     }
 
                                     Button {
                                         Layout.alignment: Qt.AlignVCenter
                                         Layout.preferredHeight: LayoutMetrics.size.controlHeight * 1.15
-                                        buttonText: "Pick"
+                                        buttonText: Lang.pages.math.pick
                                         onPressed: {
                                             backgroundDialog.selectedColor =
                                                 page.previewColor(mathVM.latexBackground)
@@ -555,8 +613,9 @@ Item {
                                 spacing: LayoutMetrics.spacing.xxs
 
                                 Label {
+                                    Layout.alignment: Qt.AlignHCenter
                                     bold: false
-                                    text: "Text colour"
+                                    text: Lang.pages.math.textColour
                                     textColor: Theme.textColor
                                     pixelSize: Typography.h6
                                 }
@@ -580,14 +639,14 @@ Item {
                                         Layout.preferredWidth: LayoutMetrics.unit * 18
                                         Layout.preferredHeight: LayoutMetrics.size.lineEditHeight
                                         text: mathVM.latexForeground
-                                        placeholderText: "#000000"
+                                        placeholderText: Lang.pages.math.textColorPlaceholder
                                         onTextEdited: mathVM.setLatexForeground(text)
                                     }
 
                                     Button {
                                         Layout.alignment: Qt.AlignVCenter
                                         Layout.preferredHeight: LayoutMetrics.size.controlHeight * 1.15
-                                        buttonText: "Pick"
+                                        buttonText: Lang.pages.math.pick
                                         onPressed: {
                                             foregroundDialog.selectedColor =
                                                 page.previewColor(mathVM.latexForeground)
@@ -596,14 +655,55 @@ Item {
                                     }
                                 }
                             }
+
+                            Column {
+                                spacing: LayoutMetrics.spacing.xxs
+
+                                Label {
+                                    bold: false
+                                    text: " "
+                                    textColor: "transparent"
+                                    pixelSize: Typography.h6
+                                }
+
+                                Switch {
+                                    text: Lang.pages.math.transparentBackground
+                                    checked: page.isTransparent(mathVM.latexBackground)
+                                    onToggled: {
+                                        var wantTransparent = checked
+                                        if (wantTransparent !== page.isTransparent(mathVM.latexBackground))
+                                            mathVM.setLatexBackground(wantTransparent ? "Transparent" : "#FFFFFF")
+                                    }
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            width: parent.width
+                            height: LayoutMetrics.spacing.xxs
+                            color: Theme.dividerColor
                         }
 
                         Flow {
-                            width: parent.width
-                            spacing: LayoutMetrics.spacing.sm
+                            id: latexActionsFlow
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            readonly property real naturalContentWidth: {
+                                var total = 0, count = 0
+                                for (var i = 0; i < children.length; i++) {
+                                    var child = children[i]
+                                    if (!child || !child.visible)
+                                        continue
+                                    var w = child.implicitWidth > 0 ? child.implicitWidth : child.width
+                                    total += w
+                                    count++
+                                }
+                                return total + Math.max(0, count - 1) * spacing
+                            }
+                            width: Math.min(parent.width, naturalContentWidth)
+                            spacing: LayoutMetrics.spacing.md
 
                             Button {
-                                buttonText: "Render PNG"
+                                buttonText: Lang.pages.math.renderPng
                                 primary: true
                                 isometric: true
                                 heightMultiplier: 1.3
@@ -612,23 +712,16 @@ Item {
                                 onPressed: mathVM.renderLatex()
                             }
                             Button {
-                                buttonText: "Clear"
+                                buttonText: Lang.common.clear
                                 iconPath: SVGLibrary.eraser
                                 enabled: !mathVM.latexRendering
                                 onPressed: mathVM.clear()
                             }
                             Button {
-                                buttonText: "Download"
+                                buttonText: Lang.common.download
                                 iconPath: SVGLibrary.downloader
                                 enabled: mathVM.latexImageSource !== ""
                                 onPressed: latexFileDialog.open()
-                            }
-                            Button {
-                                buttonText: page.isTransparent(mathVM.latexBackground)
-                                            ? "Transparent: On" : "Transparent: Off"
-                                onPressed: mathVM.setLatexBackground(
-                                    page.isTransparent(mathVM.latexBackground)
-                                    ? "#FFFFFF" : "Transparent")
                             }
                         }
 
@@ -649,7 +742,7 @@ Item {
 
                             Label {
                                 bold: false
-                                text: "Preview"
+                                text: Lang.common.preview
                                 textColor: Theme.textColor
                                 pixelSize: Typography.h4
                             }
@@ -733,7 +826,7 @@ Item {
                         Row {
                             spacing: LayoutMetrics.spacing.sm
                             visible: mathVM.latexStatus !== ""
-                                     && mathVM.latexStatus !== "Ready"
+                                     && mathVM.latexStatus !== "Ready" && mathVM.latexStatus !== Lang.pages.math.statusReady
 
                             SVGObject {
                                 anchors.verticalCenter: parent.verticalCenter
@@ -741,7 +834,7 @@ Item {
                                 height: LayoutMetrics.size.iconS
                                 path: SVGLibrary.checkMark
                                 color: Theme.textColor
-                                visible: mathVM.latexStatus === "Rendered"
+                                visible: mathVM.latexStatus === "Rendered" || mathVM.latexStatus === Lang.pages.math.statusRendered
                             }
                             Label {
                                 bold: false
@@ -791,9 +884,7 @@ Item {
                             bold: false
                             width: parent.width
                             horizontalAlignment: Text.AlignHCenter
-                            text: "Rendered locally with LaTeX and dvipng. Use math-mode commands "
-                                  + "such as \\frac, \\sqrt, \\sum, \\int, and \\alpha. Dollar "
-                                  + "delimiters are optional."
+                            text: Lang.pages.math.latexHint
                             textColor: Theme.dividerColor
                             pixelSize: Typography.caption
                             wrapMode: Text.WordWrap
@@ -811,22 +902,22 @@ Item {
 
     ColorDialog {
         id: backgroundDialog
-        title: "Background colour"
+        title: Lang.pages.math.bgColorDialogTitle
         onAccepted: mathVM.setLatexBackground(selectedColor.toString())
     }
 
     ColorDialog {
         id: foregroundDialog
-        title: "Text colour"
+        title: Lang.pages.math.textColorDialogTitle
         onAccepted: mathVM.setLatexForeground(selectedColor.toString())
     }
 
     FileDialog {
         id: latexFileDialog
-        title: "Save LaTeX PNG"
+        title: Lang.pages.math.savePngDialogTitle
         fileMode: FileDialog.SaveFile
         defaultSuffix: "png"
-        nameFilters: ["PNG images (*.png)"]
+        nameFilters: [Lang.common.fileFilters.pngImages]
         onAccepted: mathVM.saveLatex(selectedFile.toString())
     }
 }

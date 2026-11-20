@@ -8,7 +8,7 @@ Rectangle {
     property real offset: Math.max(1.5, LayoutMetrics.border.m * 1.5)
     property color ringColor: Theme.themeColor
     property Item focusItem: parent
-    property bool ringVisible: focusItem ? (focusItem.activeFocus && InputState.navigating) : false
+    property bool ringVisible: focusItem ? (focusItem.activeFocus && InputState.keyboard) : false
 
     x: -offset
     y: -offset

@@ -718,101 +718,159 @@ class TextToolsVM(BaseVM):
             err["error"] = mapping[msg]
         return err
 
+    def _record(self, action: str, input_text, output_text="") -> None:
+        try:
+            self.record_history("Text Tools", action, input_text or "", output_text or "")
+        except Exception:
+            pass
+
     @Slot(str, str, result=dict)
     def applyCase(self, text: str, mode: str) -> dict:
-        return result(change_case(text, mode))
+        res = result(change_case(text, mode))
+        self._record(f"Case: {mode}", text, res.get("text", ""))
+        return res
 
     @Slot(str, list, result=dict)
     def applyWhitespace(self, text: str, options: list) -> dict:
-        return result(normalize_whitespace(text, options))
+        res = result(normalize_whitespace(text, options))
+        self._record("Whitespace", text, res.get("text", ""))
+        return res
 
     @Slot(str, str, result=dict)
     def applyReverse(self, text: str, unit: str) -> dict:
-        return result(reverse_text(text, unit))
+        res = result(reverse_text(text, unit))
+        self._record(f"Reverse: {unit}", text, res.get("text", ""))
+        return res
 
     @Slot(str, str, str, str, bool, int, result=dict)
     def applyLineOp(self, text: str, op: str, prefix: str, suffix: str,
                     number: bool, start: int) -> dict:
-        return result(line_operation(text, op, prefix, suffix, number, start))
+        res = result(line_operation(text, op, prefix, suffix, number, start))
+        self._record(f"Line op: {op}", text, res.get("text", ""))
+        return res
 
     @Slot(str, str, str, bool, bool, result=dict)
     def replaceLiteral(self, text: str, find: str, replacement: str,
                        case_sensitive: bool, replace_all: bool) -> dict:
         if not find:
-            return self._localize_error(result(ok=False, error="Enter text to find"))
-        return result(replace_literal(text, find, replacement,
+            err = self._localize_error(result(ok=False, error="Enter text to find"))
+            self._record("Replace literal", text, err.get("error", ""))
+            return err
+        res = result(replace_literal(text, find, replacement,
                                       case_sensitive, replace_all))
+        self._record("Replace literal", f"find: {find}\nreplace: {replacement}\n---\n{text}", res.get("text", ""))
+        return res
 
     @Slot(str, list, bool, bool, bool, result=dict)
     def multiReplace(self, text: str, rules: list, case_sensitive: bool,
                      regex_mode: bool, whole_word: bool) -> dict:
-        return self._localize_error(multi_replace(text, rules, case_sensitive=case_sensitive,
+        res = self._localize_error(multi_replace(text, rules, case_sensitive=case_sensitive,
                              regex_mode=regex_mode, whole_word=whole_word))
+        if res.get("ok"):
+            self._record("Multi replace", text, res.get("text", ""))
+        else:
+            self._record("Multi replace", text, res.get("error", ""))
+        return res
 
     @Slot(str, str, list, result=dict)
     def findRegex(self, text: str, pattern: str, flags: list) -> dict:
         found = self._localize_error(regex_find(text, pattern, flags))
         if not found["ok"]:
+            self._record("Regex find", f"pattern: {pattern}\n---\n{text}", found.get("error", ""))
             return found
-        return result(text=found["text"], count=found["count"],
+        res = result(text=found["text"], count=found["count"],
                       matches=found["matches"])
+        self._record("Regex find", f"pattern: {pattern}\n---\n{text}", found.get("text", ""))
+        return res
 
     @Slot(str, str, str, list, bool, result=dict)
     def replaceRegex(self, text: str, pattern: str, replacement: str,
                      flags: list, replace_all: bool) -> dict:
-        return self._localize_error(regex_replace(text, pattern, replacement, flags, replace_all))
+        res = self._localize_error(regex_replace(text, pattern, replacement, flags, replace_all))
+        if res.get("ok"):
+            self._record("Regex replace", f"pattern: {pattern}\nreplace: {replacement}\n---\n{text}", res.get("text", ""))
+        else:
+            self._record("Regex replace", f"pattern: {pattern}\n---\n{text}", res.get("error", ""))
+        return res
 
     @Slot(str, str, list, int, result=dict)
     def splitRegex(self, text: str, pattern: str, flags: list,
                    max_split: int) -> dict:
-        return self._localize_error(regex_split(text, pattern, flags, max_split))
+        res = self._localize_error(regex_split(text, pattern, flags, max_split))
+        if res.get("ok"):
+            self._record("Regex split", f"pattern: {pattern}\n---\n{text}", res.get("text", ""))
+        else:
+            self._record("Regex split", f"pattern: {pattern}\n---\n{text}", res.get("error", ""))
+        return res
 
     @Slot(str, str, str, str, bool, bool, str, int, result=dict)
     def sortText(self, text: str, unit: str, key: str, order: str,
                  case_sensitive: bool, unique: bool, delimiter: str,
                  column: int) -> dict:
-        return result(sort_text(text, unit, key, order, case_sensitive,
+        res = result(sort_text(text, unit, key, order, case_sensitive,
                                 unique, delimiter, column))
+        self._record("Sort", text, res.get("text", ""))
+        return res
 
     @Slot(str, str, str, str, bool, bool, str, int, int, str, result=dict)
     def sortTextMulti(self, text: str, unit: str, key: str, order: str,
                       case_sensitive: bool, unique: bool, delimiter: str,
                       column: int, secondary_column: int,
                       secondary_order: str) -> dict:
-        return result(sort_text(text, unit, key, order, case_sensitive,
+        res = result(sort_text(text, unit, key, order, case_sensitive,
                                 unique, delimiter, column, secondary_column,
                                 secondary_order))
+        self._record("Sort", text, res.get("text", ""))
+        return res
 
     @Slot(str, str, int, result=dict)
     def shuffleText(self, text: str, unit: str, seed: int) -> dict:
-        return result(shuffle_text(text, unit, seed or None))
+        res = result(shuffle_text(text, unit, seed or None))
+        self._record("Shuffle", text, res.get("text", ""))
+        return res
 
     @Slot(str, str, bool, bool, result=dict)
     def delimitedToJson(self, text: str, delimiter: str, has_header: bool,
                         pretty: bool) -> dict:
         try:
-            return result(delimited_to_json(text, delimiter, has_header, pretty))
+            res = result(delimited_to_json(text, delimiter, has_header, pretty))
+            self._record("Delimited → JSON", text, res.get("text", ""))
+            return res
         except Exception as exc:  # noqa: BLE001 - surfaced to the UI
-            return result(ok=False, error=str(exc))
+            err = result(ok=False, error=str(exc))
+            self._record("Delimited → JSON", text, str(exc))
+            return err
 
     @Slot(str, str, str, result=dict)
     def jsonToDelimited(self, text: str, delimiter: str, fields: str) -> dict:
         try:
-            return result(json_to_delimited(text, delimiter, fields))
+            res = result(json_to_delimited(text, delimiter, fields))
+            self._record("JSON → Delimited", text, res.get("text", ""))
+            return res
         except Exception as exc:  # noqa: BLE001 - surfaced to the UI
-            return result(ok=False, error=str(exc))
+            err = result(ok=False, error=str(exc))
+            self._record("JSON → Delimited", text, str(exc))
+            return err
 
     @Slot(str, str, bool, result=dict)
     def delimitedToMarkdown(self, text: str, delimiter: str,
                             has_header: bool) -> dict:
         try:
-            return result(delimited_to_markdown(text, delimiter, has_header))
+            res = result(delimited_to_markdown(text, delimiter, has_header))
+            self._record("Delimited → Markdown", text, res.get("text", ""))
+            return res
         except Exception as exc:  # noqa: BLE001 - surfaced to the UI
-            return result(ok=False, error=str(exc))
+            err = result(ok=False, error=str(exc))
+            self._record("Delimited → Markdown", text, str(exc))
+            return err
 
     @Slot(str, str, int, result=dict)
     def extractColumn(self, text: str, delimiter: str, column: int) -> dict:
         try:
-            return result(extract_column(text, delimiter, column))
+            res = result(extract_column(text, delimiter, column))
+            self._record("Extract column", text, res.get("text", ""))
+            return res
         except Exception as exc:  # noqa: BLE001 - surfaced to the UI
-            return result(ok=False, error=str(exc))
+            err = result(ok=False, error=str(exc))
+            self._record("Extract column", text, str(exc))
+            return err

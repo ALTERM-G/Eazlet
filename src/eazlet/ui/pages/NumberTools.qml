@@ -127,7 +127,7 @@ Item {
             Rectangle {
                 id: divider
                 width: parent.width
-                height: LayoutMetrics.spacing.xxs
+                height: LayoutMetrics.divider.s
                 color: Theme.dividerColor
             }
 

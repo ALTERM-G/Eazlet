@@ -788,12 +788,25 @@ class NumberToolsVM(BaseVM):
         try:
             if self._mode == "Base converter":
                 self._run_base()
+                self.record_history("Number Tools", self._mode, self._input_a, self._output)
             elif self._mode == "GCD / LCM":
                 self._run_gcd_lcm()
+                self.record_history(
+                    "Number Tools",
+                    self._mode,
+                    f"{self._input_a} {self._input_b}".strip(),
+                    self._output,
+                )
             elif self._mode == "Factors & divisors":
                 self._start_factors()
             elif self._mode == "Bitwise":
                 self._run_bitwise()
+                self.record_history(
+                    "Number Tools",
+                    f"{self._mode}: {self._operation}",
+                    f"A={self._input_a} B={self._input_b} width={self._bitwise_width}",
+                    self._output,
+                )
             else:
                 self._set_output("")
                 self._set_status(self.tr("pages.numberTools.msgUnknownMode", "Unknown mode"))
@@ -802,6 +815,7 @@ class NumberToolsVM(BaseVM):
             self._set_output("")
             self._set_status(self.tr("common.error", "Error"))
             self._set_computing(False)
+            self.record_history("Number Tools", self._mode, self._input_a, str(e))
 
     def _run_base(self) -> None:
         n = self._parse_a()
@@ -888,6 +902,7 @@ class NumberToolsVM(BaseVM):
             self._set_error(error)
             self._set_output("")
             self._set_status(self.tr("common.error", "Error"))
+            self.record_history("Number Tools", "Factors & divisors", str(self._factors_n), str(error))
             return
         n = self._factors_n
         an = abs(n)
@@ -915,6 +930,7 @@ class NumberToolsVM(BaseVM):
         ]
         self._set_output("\n".join(lines))
         self._set_status(self.tr("common.done", "Done"))
+        self.record_history("Number Tools", "Factors & divisors", str(n), self._output)
 
     def _run_bitwise(self) -> None:
         op = self._operation

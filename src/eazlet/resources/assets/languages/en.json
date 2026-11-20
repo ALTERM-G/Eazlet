@@ -28,7 +28,28 @@
         "pressShortcut": "Press keys…",
         "shortcutInUse": "In use",
         "resetShortcut": "Reset",
-        "resetAllShortcuts": "Reset all"
+        "resetAllShortcuts": "Reset all",
+        "startupPage": "Startup page",
+        "version": "Version",
+        "firstVersion": "First version",
+        "resetSettings": "Reset settings",
+        "resetSettingsConfirm": "This will restore preferences to their defaults.",
+        "clearHistory": "Clear history",
+        "noHistory": "No history yet",
+        "historyTitle": "History",
+        "tool": "Tool",
+        "action": "Action",
+        "time": "Time",
+        "writer": "Writer",
+        "writerPlaceholder": "Write in Markdown…",
+        "preview": "Preview",
+        "edit": "Edit",
+        "saveFile": "Save file",
+        "savedFile": "Saved",
+        "unsavedChanges": "Unsaved changes",
+        "unsavedChangesPrompt": "Save changes before leaving?",
+        "dontSave": "Don't save",
+        "viewHistory": "View history"
     },
     "shortcuts": {
         "openSettings": "Open settings",
@@ -187,7 +208,8 @@
         "conversionFailed": "Conversion failed",
         "selectPlaceholder": "Select",
         "imageSingular": "image",
-        "imagePlural": "images"
+        "imagePlural": "images",
+        "back": "Back"
     },
     "home": {
         "tagline": "Simple tools. Easy workflow.",
@@ -427,28 +449,6 @@
             "msgEnterWord": "Enter a word to look up.",
             "msgLookupFailed": "Could not look up this word."
         },
-        "downloader": {
-            "title": "Downloader",
-            "urlPlaceholder": "URL",
-            "paste": "Paste",
-            "openFolder": "Open Folder",
-            "loadFormats": "Load Formats",
-            "audioOnlyMp3": "Audio only (MP3)",
-            "format": "Format",
-            "download": "Download",
-            "cancel": "Cancel",
-            "destination": "Destination",
-            "addToQueue": "Add to Queue",
-            "pause": "Pause",
-            "resume": "Resume",
-            "retry": "Retry",
-            "size": "Size:",
-            "speed": "Speed:",
-            "eta": "ETA:",
-            "queue": "Queue",
-            "clearQueue": "Clear Queue",
-            "history": "History"
-        },
         "generators": {
             "title": "Generators",
             "subtitle": "Generate passwords, placeholder text, random values, IP addresses, IDs, colors, and QR codes.",
@@ -616,7 +616,17 @@
             "errLatexBeginEnd": "Unsupported use of \\begin or \\end",
             "errVisibleColour": "Choose a visible text colour",
             "errHexColour": "Choose a colour in #RRGGBB format",
-            "transparentBackground": "Transparent background"
+            "transparentBackground": "Transparent background",
+            "expression": "Expression",
+            "latexInput": "LaTeX input",
+            "sympyPlaceholder": "Write a SymPy expression, e.g. x**2 + 2*x + 1",
+            "hintSolvePlain": "Use a single = and choose the variable to solve for. Example: x^2 - 4 = 0",
+            "hintDerivativePlain": "Differentiate with respect to the chosen variable. Example: sin(x)*x^2",
+            "hintIntegralPlain": "Enter the integrand to integrate with respect to the chosen variable. Example: sin(x)",
+            "hintLimitPlain": "Evaluate the two-sided limit at the point. Example: sin(x)/x at 0",
+            "hintFactorPlain": "Factor polynomials and integer expressions. Example: x^2 - 1",
+            "hintExpandPlain": "Expand products and powers. Example: (x + 1)^3",
+            "hintDefaultPlain": "Use SymPy-style math: x^2, 2*x, sqrt(x), sin(x), cos(x), log(x), exp(x), pi, E, oo."
         },
         "numberTools": {
             "title": "Number Tools",
@@ -894,22 +904,20 @@
                 "ytdlp": "Paste a video or track link from a supported site, choose a format, then download.",
                 "gallery": "Paste an image gallery link to download it with gallery-dl."
             },
-            "msgYtdlpNotFound": "yt-dlp not found in PATH",
-            "msgAria2NotFound": "aria2c not found in PATH",
+            "msgYtdlpNotFound": "yt-dlp not found in PATH. Install yt-dlp to enable this downloader.",
+            "msgAria2NotFound": "aria2c not found in PATH. Install aria2 to enable direct downloads.",
             "msgFfmpegRequired": "ffmpeg not found in PATH (required to merge video+audio). Install ffmpeg or choose a format that doesn't require merging.",
-            "msgToolNotFound": "{label} not found in PATH (tried {tried})",
-            "msgFfmpegRequiredBy": "ffmpeg not found in PATH (required by {label})",
-            "msgProcessExited": "Process exited with code {code}"
-        },
-        "socialMedia": {
-            "title": "Social Media Download",
-            "platforms": "Platforms: YouTube, TikTok, Instagram, Facebook, X, Reddit, Vimeo, Twitch",
-            "urlPlaceholder": "Social media URL (YouTube, TikTok, Instagram, Facebook, X, etc.)",
-            "fetchFormats": "Fetch Formats",
-            "destination": "Destination"
+            "msgToolNotFound": "{label} not found in PATH (tried {tried}). Install it to use this downloader.",
+            "msgFfmpegRequiredBy": "ffmpeg not found in PATH (required by {label}). Install ffmpeg.",
+            "msgProcessExited": "Process exited with code {code}",
+            "urlPlaceholder": "URL",
+            "downloaderLabel": "Downloader",
+            "loadFormats": "Load Formats",
+            "audioOnlyMp3": "Audio only (MP3)"
         },
         "repl": {
-            "startError": "[could not start Python: {message}]"
+            "startError": "[could not start Python: {message}]",
+            "sessionEnded": "[session ended (code {code})]"
         }
     },
     "placeholders": {
@@ -936,7 +944,7 @@
         "saved": "Saved",
         "enterUrl": "Enter a URL",
         "invalidUrl": "Invalid URL",
-        "ytdlpNotFound": "yt-dlp not found in PATH",
+        "ytdlpNotFound": "yt-dlp not found in PATH. Install yt-dlp to enable media downloads.",
         "failedFetchFormats": "Failed to fetch formats",
         "failedParseFormats": "Failed to parse formats",
         "noFilesToCompress": "No files to compress",
@@ -949,9 +957,9 @@
         "doneWithErrors": "Done with errors ({count} failed)",
         "failedPrefix": "Failed: {names}",
         "noFormatsFound": "No formats found",
-        "aria2NotFound": "aria2c not found in PATH",
-        "pdftotextNotFound": "pdftotext not found in PATH",
-        "ffmpegNotFound": "ffmpeg not found in PATH",
+        "aria2NotFound": "aria2c not found in PATH. Install aria2 to enable direct downloads.",
+        "pdftotextNotFound": "pdftotext not found in PATH. Install poppler/poppler-utils to enable PDF text extraction.",
+        "ffmpegNotFound": "ffmpeg not found in PATH. Install ffmpeg to enable media conversions.",
         "ytDlpExitCode": "yt-dlp exited with code {code}",
         "aria2ExitCode": "aria2c exited with code {code}",
         "conversionFailedFor": "Conversion failed for {name}",

@@ -93,8 +93,14 @@ QtObject {
 
     //--- Borders ---
     property QtObject border: QtObject {
-        property real s: lm.unit * 0.125
-        property real m: lm.unit * 0.25
-        property real l: lm.unit * 0.375
+        property real s: Math.max(1, lm.unit * 0.125)
+        property real m: Math.max(1, lm.unit * 0.25)
+        property real l: Math.max(1, lm.unit * 0.375)
+    }
+
+    //--- Dividers ---
+    // Hairline-safe separator thicknesses (remain visible at low scale).
+    property QtObject divider: QtObject {
+        property real s: Math.max(1, lm.unit * 0.25)
     }
 }

@@ -12,7 +12,7 @@ Rectangle {
     color: "transparent"
     property bool hovered: mouseArea.containsMouse
     signal pressed
-    activeFocusOnTab: true
+    activeFocusOnTab: false
     Keys.onReturnPressed: doPress()
     Keys.onEnterPressed: doPress()
     function doPress() { pressed(); }

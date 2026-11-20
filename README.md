@@ -1,6 +1,6 @@
 # Eazlet
 
-QML + PySide6 desktop application generated from the QML-PySide6 template.
+Eazlet is a simple, local-first application built with QML and PySide6. Its purpose is to provide users with easy access to a wide range of simple yet useful tools, many of which would otherwise require visiting multiple websites. Rather than relying on numerous scattered online services, Eazlet brings these tools together in one customizable, fast, and convenient application, making everyday tasks easier and more accessible.
 
 ## Requirements
 
@@ -22,6 +22,7 @@ python run.py
 # or, after install:
 eazlet
 ```
+**Note:** installation script available in the future!
 
 ## Project structure
 

@@ -60,7 +60,7 @@ Item {
 
                 Rectangle {
                     width: parent.width
-                    height: LayoutMetrics.spacing.xxs
+                    height: LayoutMetrics.divider.s
                     color: Theme.dividerColor
                 }
 

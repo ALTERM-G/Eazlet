@@ -104,7 +104,7 @@ Item {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.minimumWidth: 0
-                Layout.preferredHeight: LayoutMetrics.spacing.xxs
+                Layout.preferredHeight: LayoutMetrics.divider.s
                 color: Theme.dividerColor
             }
 
@@ -223,7 +223,7 @@ Item {
                 Layout.minimumWidth: 0
                 Layout.topMargin: LayoutMetrics.spacing.xs
                 Layout.bottomMargin: LayoutMetrics.spacing.xs
-                Layout.preferredHeight: LayoutMetrics.spacing.xxs
+                Layout.preferredHeight: LayoutMetrics.divider.s
                 color: Theme.dividerColor
             }
 

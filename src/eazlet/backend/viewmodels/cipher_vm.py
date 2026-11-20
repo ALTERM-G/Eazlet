@@ -478,11 +478,10 @@ class CipherVM(BaseVM):
         items = sorted(scores.items(), key=lambda item: -item[1])
         self._detections = [{"name": name, "prob": round(value * 100, 1)} for name, value in items]
         self.detectionChanged.emit()
-        self._set_tab_output(
-            "encoding",
-            "\n".join(f"{name}: {round(value * 100, 1)}%" for name, value in items),
-        )
+        out_text = "\n".join(f"{name}: {round(value * 100, 1)}%" for name, value in items)
+        self._set_tab_output("encoding", out_text)
         self._set_status(self.tr("pages.cipher.msgDetected", "Detected"))
+        self.record_history("Cipher", "Detect", text, out_text)
 
     # ------------------------------------------------------------------
     # State helpers
@@ -545,15 +544,23 @@ class CipherVM(BaseVM):
             cipher = self._cipher
             if cipher in self.HASH_ALGORITHMS:
                 result = hashlib.new(self.HASH_NAMES[cipher], text.encode("utf-8")).hexdigest()
+                action = f"Hash: {cipher}"
             elif cipher in ENCODING_SPECS:
                 encode, decode = ENCODING_SPECS[cipher]
-                result = (decode if self._mode == "decode" else encode)(text)
+                if self._mode == "decode":
+                    result = decode(text)
+                    action = f"Decode: {cipher}"
+                else:
+                    result = encode(text)
+                    action = f"Encode: {cipher}"
             elif cipher in CLASSICAL_SPECS:
                 result = self._transform_classical(text, self._mode)
+                action = f"Cipher {self._mode}: {cipher}"
             else:
                 raise ValueError(f"Unknown algorithm {cipher!r}")
             self._set_tab_output(tab, result)
             self._set_status(self.tr("common.done", "Done"))
+            self.record_history("Cipher", action, text, result)
         except Exception as exc:
             self._fail(str(exc)[:200])
 
@@ -595,7 +602,8 @@ class CipherVM(BaseVM):
                     else ChaCha20Poly1305(key)
                 )
                 payload = aead.encrypt(nonce, self._encryption_input.encode("utf-8"), header)
-            self._set_tab_output("encryption", base64.b64encode(header + payload).decode("ascii"))
+            out = base64.b64encode(header + payload).decode("ascii")
+            self._set_tab_output("encryption", out)
             self._set_status(
                 self.tr(
                     "pages.cipher.msgEncryptedWith",
@@ -603,6 +611,7 @@ class CipherVM(BaseVM):
                     algorithm=algorithm,
                 )
             )
+            self.record_history("Cipher", f"Encrypt: {algorithm}", self._encryption_input, out)
         except Exception as exc:
             self._fail(str(exc)[:200])
 
@@ -646,7 +655,8 @@ class CipherVM(BaseVM):
                     else ChaCha20Poly1305(key)
                 )
                 clear = aead.decrypt(nonce, payload, raw[:header_size])
-            self._set_tab_output("encryption", clear.decode("utf-8"))
+            out = clear.decode("utf-8")
+            self._set_tab_output("encryption", out)
             self._set_status(
                 self.tr(
                     "pages.cipher.msgDecryptedWith",
@@ -654,6 +664,7 @@ class CipherVM(BaseVM):
                     algorithm=algorithm,
                 )
             )
+            self.record_history("Cipher", f"Decrypt: {algorithm}", self._encryption_input, out)
         except (InvalidToken, InvalidTag):
             self._fail(
                 self.tr(

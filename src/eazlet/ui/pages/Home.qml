@@ -211,12 +211,17 @@ Item {
                         font.pixelSize: Typography.h5
                         placeholderText: Lang.home.placeholder
                         activeFocusOnTab: true
+                        KeyNavigation.priority: KeyNavigation.BeforeItem
 
                         Component.onCompleted: commandInput.forceActiveFocus()
 
-                        onAccepted: page.submitCommand()
-
                         Keys.onPressed: function(event) {
+                            if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter)
+                                && event.modifiers === Qt.NoModifier) {
+                                page.submitCommand()
+                                event.accepted = true
+                                return
+                            }
                             if (event.key === Qt.Key_L
                                 && (event.modifiers & Qt.ControlModifier)) {
                                 page.clearTerminal()

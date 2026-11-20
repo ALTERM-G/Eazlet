@@ -815,6 +815,7 @@ class GeneratorsVM(BaseVM):
         else:
             strength = self.tr("pages.generators.strengthVeryStrong", "Very strong")
         self._set_password_strength(strength)
+        self.record_history("Generators", "Password", f"length={length}", self._password)
 
     @Slot()
     def copyPassword(self) -> None:
@@ -835,6 +836,7 @@ class GeneratorsVM(BaseVM):
         if self._lorem_type == "Words":
             words = [random_source.choice(LOREM_WORDS) for _ in range(amount)]
             self._set_lorem_text(" ".join(words).capitalize() + ".")
+            self.record_history("Generators", f"Lorem ({self._lorem_type})", str(amount), self._lorem_text)
             return
 
         if self._lorem_type == "Sentences":
@@ -842,6 +844,7 @@ class GeneratorsVM(BaseVM):
                 self._lorem_sentence(random_source) for _ in range(amount)
             ]
             self._set_lorem_text(" ".join(sentences))
+            self.record_history("Generators", f"Lorem ({self._lorem_type})", str(amount), self._lorem_text)
             return
 
         paragraphs: list[str] = []
@@ -852,6 +855,7 @@ class GeneratorsVM(BaseVM):
                 sentences.append(self._lorem_sentence(random_source))
             paragraphs.append(" ".join(sentences))
         self._set_lorem_text("\n\n".join(paragraphs))
+        self.record_history("Generators", f"Lorem ({self._lorem_type})", str(amount), self._lorem_text)
 
     @Slot()
     def copyLorem(self) -> None:
@@ -890,6 +894,7 @@ class GeneratorsVM(BaseVM):
         elif self._random_sort == "Descending":
             values.sort(reverse=True)
         self._set_random_output(", ".join(str(value) for value in values))
+        self.record_history("Generators", "Random numbers", f"{minimum}-{maximum}, count={count}", self._random_output)
 
     @Slot()
     def copyRandom(self) -> None:
@@ -947,6 +952,7 @@ class GeneratorsVM(BaseVM):
             random_source.shuffle(characters)
             values.append("".join(characters))
         self._set_random_string_output("\n".join(values))
+        self.record_history("Generators", "Random strings", f"length={length}, count={self._random_string_count}", self._random_string_output)
 
     @Slot()
     def copyRandomString(self) -> None:

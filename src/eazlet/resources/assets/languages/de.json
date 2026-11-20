@@ -28,7 +28,28 @@
         "pressShortcut": "Tasten drücken…",
         "shortcutInUse": "Belegt",
         "resetShortcut": "Zurücksetzen",
-        "resetAllShortcuts": "Alle zurücksetzen"
+        "resetAllShortcuts": "Alle zurücksetzen",
+        "startupPage": "Startseite",
+        "version": "Version",
+        "firstVersion": "Erste Version",
+        "resetSettings": "Einstellungen zurücksetzen",
+        "resetSettingsConfirm": "Dadurch werden die Einstellungen auf die Standardwerte zurückgesetzt.",
+        "clearHistory": "Verlauf löschen",
+        "noHistory": "Noch kein Verlauf",
+        "historyTitle": "Verlauf",
+        "tool": "Werkzeug",
+        "action": "Aktion",
+        "time": "Zeit",
+        "writer": "Schreiber",
+        "writerPlaceholder": "In Markdown schreiben…",
+        "preview": "Vorschau",
+        "edit": "Bearbeiten",
+        "saveFile": "Datei speichern",
+        "savedFile": "Gespeichert",
+        "unsavedChanges": "Nicht gespeicherte Änderungen",
+        "unsavedChangesPrompt": "Änderungen vor dem Verlassen speichern?",
+        "dontSave": "Nicht speichern",
+        "viewHistory": "Verlauf anzeigen"
     },
     "shortcuts": {
         "openSettings": "Einstellungen öffnen",
@@ -187,7 +208,8 @@
         "conversionFailed": "Konvertierung fehlgeschlagen",
         "selectPlaceholder": "Auswählen",
         "imageSingular": "Bild",
-        "imagePlural": "Bilder"
+        "imagePlural": "Bilder",
+        "back": "Zurück"
     },
     "home": {
         "tagline": "Einfache Werkzeuge. Leichter Arbeitsablauf.",
@@ -427,28 +449,6 @@
             "msgEnterWord": "Geben Sie ein Wort zum Nachschlagen ein.",
             "msgLookupFailed": "Dieses Wort konnte nicht nachgeschlagen werden."
         },
-        "downloader": {
-            "title": "Downloader",
-            "urlPlaceholder": "URL",
-            "paste": "Einfügen",
-            "openFolder": "Ordner öffnen",
-            "loadFormats": "Formate laden",
-            "audioOnlyMp3": "Nur Audio (MP3)",
-            "format": "Format",
-            "download": "Herunterladen",
-            "cancel": "Abbrechen",
-            "destination": "Ziel",
-            "addToQueue": "Zur Warteschlange hinzufügen",
-            "pause": "Pause",
-            "resume": "Fortsetzen",
-            "retry": "Erneut versuchen",
-            "size": "Größe:",
-            "speed": "Geschwindigkeit:",
-            "eta": "Restzeit:",
-            "queue": "Warteschlange",
-            "clearQueue": "Warteschlange leeren",
-            "history": "Verlauf"
-        },
         "generators": {
             "title": "Generatoren",
             "subtitle": "Erzeuge Passwörter, Platzhaltertext, Zufallswerte, IP-Adressen, IDs, Farben und QR-Codes.",
@@ -616,7 +616,17 @@
             "errLatexBeginEnd": "Nicht unterstützte Verwendung von \\begin oder \\end",
             "errVisibleColour": "Wähle eine sichtbare Textfarbe",
             "errHexColour": "Wähle eine Farbe im Format #RRGGBB",
-            "transparentBackground": "Transparenter Hintergrund"
+            "transparentBackground": "Transparenter Hintergrund",
+            "expression": "Ausdruck",
+            "latexInput": "LaTeX-Eingabe",
+            "sympyPlaceholder": "Schreibe einen SymPy-Ausdruck, z. B. x**2 + 2*x + 1",
+            "hintSolvePlain": "Verwende ein einzelnes = und wähle die Variable zum Lösen. Beispiel: x^2 - 4 = 0",
+            "hintDerivativePlain": "Leite nach der gewählten Variable ab. Beispiel: sin(x)*x^2",
+            "hintIntegralPlain": "Gib den Integranden zur Integration nach der gewählten Variable ein. Beispiel: sin(x)",
+            "hintLimitPlain": "Berechne den beidseitigen Grenzwert am Punkt. Beispiel: sin(x)/x bei 0",
+            "hintFactorPlain": "Faktorisiere Polynome und ganzzahlige Ausdrücke. Beispiel: x^2 - 1",
+            "hintExpandPlain": "Entwickle Produkte und Potenzen. Beispiel: (x + 1)^3",
+            "hintDefaultPlain": "Verwende SymPy-Syntax: x^2, 2*x, sqrt(x), sin(x), cos(x), log(x), exp(x), pi, E, oo."
         },
         "numberTools": {
             "title": "Zahlenwerkzeuge",
@@ -894,22 +904,20 @@
                 "ytdlp": "Füge einen Video- oder Audio-Link einer unterstützten Seite ein, wähle ein Format und lade dann herunter.",
                 "gallery": "Füge einen Bildergalerie-Link ein, um sie mit gallery-dl herunterzuladen."
             },
-            "msgYtdlpNotFound": "yt-dlp wurde im PATH nicht gefunden",
-            "msgAria2NotFound": "aria2c wurde im PATH nicht gefunden",
+            "msgYtdlpNotFound": "yt-dlp wurde im PATH nicht gefunden. Installiere yt-dlp, um diesen Downloader zu verwenden.",
+            "msgAria2NotFound": "aria2c wurde im PATH nicht gefunden. Installiere aria2 für direkte Downloads.",
             "msgFfmpegRequired": "ffmpeg wurde im PATH nicht gefunden (erforderlich zum Zusammenführen von Video+Audio). Installiere ffmpeg oder wähle ein Format ohne Zusammenführen.",
-            "msgToolNotFound": "{label} wurde im PATH nicht gefunden (versucht: {tried})",
-            "msgFfmpegRequiredBy": "ffmpeg wurde im PATH nicht gefunden (erforderlich für {label})",
-            "msgProcessExited": "Prozess mit Code {code} beendet"
-        },
-        "socialMedia": {
-            "title": "Social-Media-Download",
-            "platforms": "Plattformen: YouTube, TikTok, Instagram, Facebook, X, Reddit, Vimeo, Twitch",
-            "urlPlaceholder": "Social-Media-URL (YouTube, TikTok, Instagram, Facebook, X usw.)",
-            "fetchFormats": "Formate laden",
-            "destination": "Ziel"
+            "msgToolNotFound": "{label} wurde im PATH nicht gefunden (versucht: {tried}). Installiere es, um diesen Downloader zu verwenden.",
+            "msgFfmpegRequiredBy": "ffmpeg wurde im PATH nicht gefunden (erforderlich für {label}). Installiere ffmpeg.",
+            "msgProcessExited": "Prozess mit Code {code} beendet",
+            "urlPlaceholder": "URL",
+            "downloaderLabel": "Downloader",
+            "loadFormats": "Formate laden",
+            "audioOnlyMp3": "Nur Audio (MP3)"
         },
         "repl": {
-            "startError": "[Python konnte nicht gestartet werden: {message}]"
+            "startError": "[Python konnte nicht gestartet werden: {message}]",
+            "sessionEnded": "[Sitzung beendet (Code {code})]"
         }
     },
     "placeholders": {
@@ -936,7 +944,7 @@
         "saved": "Gespeichert",
         "enterUrl": "URL eingeben",
         "invalidUrl": "Ungültige URL",
-        "ytdlpNotFound": "yt-dlp wurde im PATH nicht gefunden",
+        "ytdlpNotFound": "yt-dlp wurde im PATH nicht gefunden. Installiere yt-dlp für Medien-Downloads.",
         "failedFetchFormats": "Formate konnten nicht geladen werden",
         "failedParseFormats": "Formate konnten nicht analysiert werden",
         "noFilesToCompress": "Keine Dateien zum Komprimieren",
@@ -949,9 +957,9 @@
         "doneWithErrors": "Fertig mit Fehlern ({count} fehlgeschlagen)",
         "failedPrefix": "Fehlgeschlagen: {names}",
         "noFormatsFound": "Keine Formate gefunden",
-        "aria2NotFound": "aria2c wurde im PATH nicht gefunden",
-        "pdftotextNotFound": "pdftotext wurde im PATH nicht gefunden",
-        "ffmpegNotFound": "ffmpeg wurde im PATH nicht gefunden",
+        "aria2NotFound": "aria2c wurde im PATH nicht gefunden. Installiere aria2 für direkte Downloads.",
+        "pdftotextNotFound": "pdftotext wurde im PATH nicht gefunden. Installiere poppler/poppler-utils für die PDF-Textextraktion.",
+        "ffmpegNotFound": "ffmpeg wurde im PATH nicht gefunden. Installiere ffmpeg, um Medienkonvertierungen zu aktivieren.",
         "ytDlpExitCode": "yt-dlp wurde mit Code {code} beendet",
         "aria2ExitCode": "aria2c wurde mit Code {code} beendet",
         "conversionFailedFor": "Konvertierung fehlgeschlagen für {name}",

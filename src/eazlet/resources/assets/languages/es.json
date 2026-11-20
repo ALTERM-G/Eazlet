@@ -28,7 +28,28 @@
         "pressShortcut": "Pulsa las teclas…",
         "shortcutInUse": "En uso",
         "resetShortcut": "Restablecer",
-        "resetAllShortcuts": "Restablecer todo"
+        "resetAllShortcuts": "Restablecer todo",
+        "startupPage": "Página de inicio",
+        "version": "Versión",
+        "firstVersion": "Primera versión",
+        "resetSettings": "Restablecer ajustes",
+        "resetSettingsConfirm": "Esto restaurará las preferencias a sus valores predeterminados.",
+        "clearHistory": "Borrar historial",
+        "noHistory": "Aún no hay historial",
+        "historyTitle": "Historial",
+        "tool": "Herramienta",
+        "action": "Acción",
+        "time": "Hora",
+        "writer": "Editor",
+        "writerPlaceholder": "Escribe en Markdown…",
+        "preview": "Vista previa",
+        "edit": "Editar",
+        "saveFile": "Guardar archivo",
+        "savedFile": "Guardado",
+        "unsavedChanges": "Cambios sin guardar",
+        "unsavedChangesPrompt": "¿Guardar cambios antes de salir?",
+        "dontSave": "No guardar",
+        "viewHistory": "Ver historial"
     },
     "shortcuts": {
         "openSettings": "Abrir ajustes",
@@ -187,7 +208,8 @@
         "conversionFailed": "Error de conversión",
         "selectPlaceholder": "Seleccionar",
         "imageSingular": "imagen",
-        "imagePlural": "imágenes"
+        "imagePlural": "imágenes",
+        "back": "Atrás"
     },
     "home": {
         "tagline": "Herramientas simples. Flujo de trabajo fácil.",
@@ -427,28 +449,6 @@
             "msgEnterWord": "Introduce una palabra para buscar.",
             "msgLookupFailed": "No se pudo buscar esta palabra."
         },
-        "downloader": {
-            "title": "Descargador",
-            "urlPlaceholder": "URL",
-            "paste": "Pegar",
-            "openFolder": "Abrir carpeta",
-            "loadFormats": "Cargar formatos",
-            "audioOnlyMp3": "Solo audio (MP3)",
-            "format": "Formato",
-            "download": "Descargar",
-            "cancel": "Cancelar",
-            "destination": "Destino",
-            "addToQueue": "Añadir a la cola",
-            "pause": "Pausar",
-            "resume": "Reanudar",
-            "retry": "Reintentar",
-            "size": "Tamaño:",
-            "speed": "Velocidad:",
-            "eta": "Tiempo restante:",
-            "queue": "Cola",
-            "clearQueue": "Vaciar cola",
-            "history": "Historial"
-        },
         "generators": {
             "title": "Generadores",
             "subtitle": "Genera contraseñas, texto de relleno, valores aleatorios, direcciones IP, identificadores, colores y códigos QR.",
@@ -616,7 +616,17 @@
             "errLatexBeginEnd": "Uso no compatible de \\begin o \\end",
             "errVisibleColour": "Elige un color de texto visible",
             "errHexColour": "Elige un color en formato #RRGGBB",
-            "transparentBackground": "Fondo transparente"
+            "transparentBackground": "Fondo transparente",
+            "expression": "Expresión",
+            "latexInput": "Entrada LaTeX",
+            "sympyPlaceholder": "Escribe una expresión de SymPy, p. ej. x**2 + 2*x + 1",
+            "hintSolvePlain": "Usa un solo = y elige la variable a resolver. Ejemplo: x^2 - 4 = 0",
+            "hintDerivativePlain": "Deriva respecto a la variable elegida. Ejemplo: sin(x)*x^2",
+            "hintIntegralPlain": "Introduce el integrando para integrar respecto a la variable elegida. Ejemplo: sin(x)",
+            "hintLimitPlain": "Evalúa el límite bilateral en el punto. Ejemplo: sin(x)/x en 0",
+            "hintFactorPlain": "Factoriza polinomios y expresiones enteras. Ejemplo: x^2 - 1",
+            "hintExpandPlain": "Expande productos y potencias. Ejemplo: (x + 1)^3",
+            "hintDefaultPlain": "Usa sintaxis tipo SymPy: x^2, 2*x, sqrt(x), sin(x), cos(x), log(x), exp(x), pi, E, oo."
         },
         "numberTools": {
             "title": "Herramientas numéricas",
@@ -894,22 +904,20 @@
                 "ytdlp": "Pega un enlace de vídeo o audio de un sitio compatible, elige un formato y descárgalo.",
                 "gallery": "Pega un enlace de galería de imágenes para descargarla con gallery-dl."
             },
-            "msgYtdlpNotFound": "yt-dlp no se encontró en PATH",
-            "msgAria2NotFound": "aria2c no se encontró en PATH",
+            "msgYtdlpNotFound": "yt-dlp no se encontró en PATH. Instala yt-dlp para usar este descargador.",
+            "msgAria2NotFound": "aria2c no se encontró en PATH. Instala aria2 para habilitar descargas directas.",
             "msgFfmpegRequired": "ffmpeg no se encontró en PATH (necesario para unir vídeo+audio). Instala ffmpeg o elige un formato que no requiera unión.",
-            "msgToolNotFound": "{label} no se encontró en PATH (probado: {tried})",
-            "msgFfmpegRequiredBy": "ffmpeg no se encontró en PATH (necesario para {label})",
-            "msgProcessExited": "El proceso terminó con el código {code}"
-        },
-        "socialMedia": {
-            "title": "Descarga de redes sociales",
-            "platforms": "Plataformas: YouTube, TikTok, Instagram, Facebook, X, Reddit, Vimeo, Twitch",
-            "urlPlaceholder": "URL de red social (YouTube, TikTok, Instagram, Facebook, X, etc.)",
-            "fetchFormats": "Cargar formatos",
-            "destination": "Destino"
+            "msgToolNotFound": "{label} no se encontró en PATH (probado: {tried}). Instálalo para usar este descargador.",
+            "msgFfmpegRequiredBy": "ffmpeg no se encontró en PATH (necesario para {label}). Instala ffmpeg.",
+            "msgProcessExited": "El proceso terminó con el código {code}",
+            "urlPlaceholder": "URL",
+            "downloaderLabel": "Descargador",
+            "loadFormats": "Cargar formatos",
+            "audioOnlyMp3": "Solo audio (MP3)"
         },
         "repl": {
-            "startError": "[no se pudo iniciar Python: {message}]"
+            "startError": "[no se pudo iniciar Python: {message}]",
+            "sessionEnded": "[sesión finalizada (código {code})]"
         }
     },
     "placeholders": {
@@ -936,7 +944,7 @@
         "saved": "Guardado",
         "enterUrl": "Introduce una URL",
         "invalidUrl": "URL no válida",
-        "ytdlpNotFound": "yt-dlp no se encontró en PATH",
+        "ytdlpNotFound": "yt-dlp no se encontró en PATH. Instala yt-dlp para habilitar descargas multimedia.",
         "failedFetchFormats": "No se pudieron cargar los formatos",
         "failedParseFormats": "No se pudieron analizar los formatos",
         "noFilesToCompress": "No hay archivos para comprimir",
@@ -949,9 +957,9 @@
         "doneWithErrors": "Hecho con errores ({count} fallido(s))",
         "failedPrefix": "Fallido: {names}",
         "noFormatsFound": "No se encontraron formatos",
-        "aria2NotFound": "aria2c no se encontró en PATH",
-        "pdftotextNotFound": "pdftotext no se encontró en PATH",
-        "ffmpegNotFound": "ffmpeg no se encontró en PATH",
+        "aria2NotFound": "aria2c no se encontró en PATH. Instala aria2 para habilitar descargas directas.",
+        "pdftotextNotFound": "pdftotext no se encontró en PATH. Instala poppler/poppler-utils para extraer texto de PDF.",
+        "ffmpegNotFound": "ffmpeg no se encontró en PATH. Instala ffmpeg para habilitar las conversiones multimedia.",
         "ytDlpExitCode": "yt-dlp finalizó con el código {code}",
         "aria2ExitCode": "aria2c finalizó con el código {code}",
         "conversionFailedFor": "La conversión falló para {name}",

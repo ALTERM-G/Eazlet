@@ -108,6 +108,7 @@ Item {
 
         TextArea {
             id: area
+            activeFocusOnTab: true
             width: control.horizontalScroll
                    ? Math.max(view.availableWidth, implicitWidth)
                    : view.availableWidth
@@ -133,6 +134,18 @@ Item {
             }
 
             Keys.onPressed: function(event) {
+                if (event.key === Qt.Key_Tab) {
+                    if (area.nextItemInFocusChain(true))
+                        area.nextItemInFocusChain(true).forceActiveFocus(Qt.TabFocusReason)
+                    event.accepted = true
+                    return
+                }
+                if (event.key === Qt.Key_Backtab) {
+                    if (area.nextItemInFocusChain(false))
+                        area.nextItemInFocusChain(false).forceActiveFocus(Qt.BacktabFocusReason)
+                    event.accepted = true
+                    return
+                }
                 if (event.key === Qt.Key_Insert) {
                     area.overwriteMode = !area.overwriteMode
                     event.accepted = true
@@ -205,6 +218,7 @@ Item {
         visible: control.showCopyButton
         opacity: control.text.length > 0 ? 1.0 : 0.45
         enabled: control.text.length > 0
+        activeFocusOnTab: false
         buttonWidth: LayoutMetrics.size.iconM
         buttonHeight: LayoutMetrics.size.iconM
         iconPath: control.copyConfirmed ? SVGLibrary.checkMark : SVGLibrary.copy

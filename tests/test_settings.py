@@ -135,7 +135,6 @@ def test_downloader_dir_round_trip_and_propagation(isolated_controller, tmp_path
     controller.save_downloader_dir(f"file://{target}")
 
     assert controller.get_downloader_dir() == target
-    assert controller.downloadVM.destination == target
     assert controller.unifiedDownloadVM.destination == target
     assert controller.converterVM.outputDir == controller.get_converter_default_dir()
     assert controller.archiveVM.outputDir == controller.get_archive_default_dir()

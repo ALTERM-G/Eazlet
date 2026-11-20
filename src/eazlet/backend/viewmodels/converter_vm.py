@@ -34,6 +34,20 @@ class ConverterVM(BaseVM):
     sourceChanged = Signal()
     replaceOriginalChanged = Signal()
 
+    @staticmethod
+    def _missing_runtime_message(tool: str) -> str:
+        hints = {
+            "ffmpeg": "Required for audio/video/image conversions (install the 'ffmpeg' package).",
+            "pdftotext": "Required to convert PDF to text formats (install 'poppler' / poppler-utils).",
+        }
+        base = f"{tool} not found in PATH."
+        hint = hints.get(tool)
+        return f"{base} {hint}" if hint else base
+
+    @classmethod
+    def _has_runtime_tool(cls, tool: str) -> bool:
+        return shutil.which(tool) is not None
+
     VIDEO_FORMATS = ["mp4", "webm", "mkv", "avi", "mov", "flv", "wmv", "gif"]
     AUDIO_FORMATS = ["mp3", "aac", "flac", "wav", "ogg", "m4a", "opus", "aiff", "wma"]
     IMAGE_FORMATS = ["jpg", "png", "webp", "bmp", "tiff", "avif", "ico"]
@@ -114,6 +128,12 @@ class ConverterVM(BaseVM):
         if fmt in cls.DOC_INPUTS:
             return "document"
         return "unsupported"
+
+    @classmethod
+    def _doc_targets_for(cls, fmt: str) -> list[str]:
+        if fmt == "pdf":
+            return ["txt", "md", "html"] if shutil.which("pdftotext") else []
+        return list(cls.DOC_TARGETS.get(fmt, []))
 
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -255,7 +275,7 @@ class ConverterVM(BaseVM):
         elif category == "image":
             candidates = self.IMAGE_FORMATS
         elif category == "document":
-            candidates = self.DOC_TARGETS.get(source, [])
+            candidates = self._doc_targets_for(source)
         else:
             return []
 
@@ -438,10 +458,13 @@ class ConverterVM(BaseVM):
         return temp_path
 
     def _get_duration(self, filepath):
+        ffprobe = shutil.which("ffprobe")
+        if ffprobe is None:
+            return 0
         try:
             result = subprocess.run(
                 [
-                    "ffprobe",
+                    ffprobe,
                     "-v",
                     "error",
                     "-show_entries",
@@ -478,14 +501,16 @@ class ConverterVM(BaseVM):
             self.errorChanged.emit()
             return
         if category == "document":
-            if self.sourceFormat == "pdf" and shutil.which("pdftotext") is None:
+            if self.sourceFormat == "pdf" and not self._has_runtime_tool("pdftotext"):
                 self._error = self.tr(
-                    "messages.pdftotextNotFound", "pdftotext not found in PATH"
+                    "messages.pdftotextNotFound", self._missing_runtime_message("pdftotext")
                 )
                 self.errorChanged.emit()
                 return
-        elif shutil.which("ffmpeg") is None:
-            self._error = self.tr("messages.ffmpegNotFound", "ffmpeg not found in PATH")
+        elif not self._has_runtime_tool("ffmpeg"):
+            self._error = self.tr(
+                "messages.ffmpegNotFound", self._missing_runtime_message("ffmpeg")
+            )
             self.errorChanged.emit()
             return
         if not self._replace_original:
@@ -653,8 +678,16 @@ class ConverterVM(BaseVM):
         elif self._target_format == "wmv":
             args.extend(["-c:v", "wmv2", "-c:a", "wmav2"])
         args.append(write_path)
+        ffmpeg = shutil.which("ffmpeg")
+        if ffmpeg is None:
+            self._error = self.tr("messages.ffmpegNotFound", self._missing_runtime_message("ffmpeg"))
+            self.errorChanged.emit()
+            self._failed_files.append(f["path"])
+            self._current_index += 1
+            self._convert_next()
+            return
         proc = QProcess(self)
-        proc.setProgram("ffmpeg")
+        proc.setProgram(ffmpeg)
         proc.setArguments(args)
         proc.readyReadStandardError.connect(self._on_stderr)
         proc.finished.connect(self._on_finished)
@@ -818,10 +851,11 @@ class ConverterVM(BaseVM):
 
     def _extract_document_text(self, src, src_fmt):
         if src_fmt == "pdf":
-            if shutil.which("pdftotext") is None:
-                raise RuntimeError("pdftotext not found in PATH")
+            pdftotext = shutil.which("pdftotext")
+            if pdftotext is None:
+                raise RuntimeError(self._missing_runtime_message("pdftotext"))
             result = subprocess.run(
-                ["pdftotext", "-layout", "-enc", "UTF-8", src, "-"],
+                [pdftotext, "-layout", "-enc", "UTF-8", src, "-"],
                 capture_output=True,
                 timeout=120,
             )

@@ -425,9 +425,11 @@ class AsciiArtVM(BaseVM):
             self._set_status(self.tr("pages.asciiArt.msgError", "Error"))
             self._raw_output = ""
             self._apply_output("")
+            self.record_history("ASCII Art", f"Render ({self._font})", text, str(e))
             return
         self._apply_output(rendered.rstrip("\n"))
         self._set_status("")
+        self.record_history("ASCII Art", f"Render ({self._font})", text, self._output)
 
     @Slot()
     def processAction(self) -> None:

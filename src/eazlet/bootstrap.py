@@ -49,8 +49,26 @@ class InputTracker(QObject):
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         event_type = event.type()
         if event_type == QEvent.Type.KeyPress:
-            self._set_keyboard(True)
-            self._set_navigating(event.key() in (Qt.Key.Key_Tab, Qt.Key.Key_Backtab))
+            key = event.key()
+            if key in (Qt.Key.Key_Tab, Qt.Key.Key_Backtab):
+                self._set_keyboard(True)
+                self._set_navigating(True)
+            elif key in (
+                Qt.Key.Key_Control,
+                Qt.Key.Key_Shift,
+                Qt.Key.Key_Alt,
+                Qt.Key.Key_Meta,
+                Qt.Key.Key_AltGr,
+                Qt.Key.Key_Super_L,
+                Qt.Key.Key_Super_R,
+            ):
+                # Ignore modifier-only presses so they don't trigger keyboard
+                # focus visuals (e.g. focus rings) by themselves.
+                pass
+            else:
+                # Preserve keyboard-navigation mode for other keys (so focus
+                # rings stay visible after Tab) until mouse interaction.
+                pass
         elif event_type in (
             QEvent.Type.MouseMove,
             QEvent.Type.MouseButtonPress,
@@ -158,16 +176,10 @@ def build_engine(src_path: Path | None = None) -> QQmlApplicationEngine:
         banner_svg = ""
     engine.rootContext().setContextProperty("EazletBannerSvg", banner_svg)
 
-    app.setWindowIcon(
-        QIcon(str(src_path / "resources" / "assets" / "icons" / "icon.svg"))
-    )
-
     controller = Controller(app)
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("mainVM", controller.mainVM)
     engine.rootContext().setContextProperty("settingsVM", controller.settingsVM)
-    engine.rootContext().setContextProperty("downloadVM", controller.downloadVM)
-    engine.rootContext().setContextProperty("socialMediaVM", controller.socialMediaVM)
     engine.rootContext().setContextProperty("unifiedDownloadVM", controller.unifiedDownloadVM)
     engine.rootContext().setContextProperty("converterVM", controller.converterVM)
     engine.rootContext().setContextProperty("archiveVM", controller.archiveVM)
@@ -183,6 +195,18 @@ def build_engine(src_path: Path | None = None) -> QQmlApplicationEngine:
     engine.rootContext().setContextProperty("generatorsVM", controller.generatorsVM)
     engine.rootContext().setContextProperty("dictionaryVM", controller.dictionaryVM)
     engine.rootContext().setContextProperty("replVM", controller.replVM)
+
+    try:
+        theme_name = controller.get_current_theme()
+        safe_name = str(theme_name or "Alterm").replace(" ", "-")
+        icon_path = src_path / "resources" / "assets" / "icons" / "app_icons" / f"Eazlet_icon_{safe_name}.svg"
+        if not icon_path.exists():
+            icon_path = src_path / "resources" / "assets" / "icons" / "icon.svg"
+        app.setWindowIcon(QIcon(str(icon_path)))
+    except Exception:
+        app.setWindowIcon(
+            QIcon(str(src_path / "resources" / "assets" / "icons" / "icon.svg"))
+        )
 
     saved_family = controller.get_font_family()
     if saved_family and saved_family in all_families:

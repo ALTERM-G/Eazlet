@@ -21,3 +21,15 @@ class BaseVM(QObject):
             except Exception:
                 pass
         return text
+
+    def record_history(self, tool: str, action: str, input_text: str = "", output_text: str = "") -> None:
+        obj = self.parent()
+        while obj is not None:
+            recorder = getattr(obj, "record_history", None)
+            if callable(recorder):
+                try:
+                    recorder(tool, action, input_text, output_text)
+                    return
+                except Exception:
+                    pass
+            obj = obj.parent() if hasattr(obj, "parent") else None

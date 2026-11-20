@@ -18,7 +18,7 @@ Rectangle {
     height: LayoutMetrics.size.sideBarItemHeight
     color: "transparent"
     visible: !collapsed
-    activeFocusOnTab: true
+    activeFocusOnTab: false
     focusPolicy: Qt.TabFocus
 
     // Thin divider that marks the start of a new group of workspaces.
@@ -103,16 +103,8 @@ Rectangle {
         onClicked: root.clicked()
     }
 
-    Keys.onPressed: (event) => {
-        if (event.key === Qt.Key_Tab && !event.modifiers) {
-            event.accepted = false
-        } else if (event.key === Qt.Key_Tab && (event.modifiers & Qt.ShiftModifier)) {
-            event.accepted = false
-        }
-    }
-
     FocusRing {
         cornerRadius: 0
-        ringVisible: root.activeFocus && root.showFocusRing && InputState.keyboard
+        ringVisible: root.activeFocus && InputState.keyboard
     }
 }

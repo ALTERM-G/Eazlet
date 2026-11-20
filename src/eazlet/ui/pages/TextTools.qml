@@ -18,7 +18,6 @@ Item {
     property string dataDelimiter: ","
     property var replaceRules: []
 
-    readonly property real panelGap: LayoutMetrics.spacing.xl
     readonly property real controlHeight: LayoutMetrics.size.controlHeight * 2.3
 
     readonly property var caseOptions: [
@@ -332,128 +331,122 @@ Item {
                 onCurrentIndexChanged: page.refreshMatches()
             }
 
-            Item {
-                id: workspace
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: LayoutMetrics.divider.s
+                color: Theme.dividerColor
+            }
+
+            Flickable {
+                id: pageFlickable
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                contentWidth: width
+                contentHeight: contentColumn.implicitHeight
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                acceptedButtons: Qt.NoButton
 
-                readonly property real controlsWidth: (width - page.panelGap) * 0.58
-                readonly property real outputWidth: (width - page.panelGap) * 0.42
+                ScrollBar.vertical: AppScrollBar {}
+                WheelScrollArea { target: pageFlickable }
 
-                Rectangle {
-                    id: inputCard
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    width: workspace.controlsWidth
-                    height: LayoutMetrics.unit * 24
-                    radius: LayoutMetrics.radius.m
-                    color: Theme.inputBackgroundColor
-                    border.color: Theme.borderColor
-                    border.width: LayoutMetrics.border.m
+                Column {
+                    id: contentColumn
+                    width: pageFlickable.width
+                    spacing: LayoutMetrics.spacing.md
 
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: LayoutMetrics.spacing.md
-                        spacing: LayoutMetrics.spacing.xs
+                    Rectangle {
+                        id: inputCard
+                        width: parent.width
+                        height: inputLayout.implicitHeight + LayoutMetrics.spacing.md * 2
+                        radius: LayoutMetrics.radius.m
+                        color: Theme.inputBackgroundColor
+                        border.color: Theme.borderColor
+                        border.width: LayoutMetrics.border.m
 
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: LayoutMetrics.spacing.sm
+                        ColumnLayout {
+                            id: inputLayout
+                            anchors.fill: parent
+                            anchors.margins: LayoutMetrics.spacing.md
+                            spacing: LayoutMetrics.spacing.xs
 
-                            Label {
-                                bold: false
-                                text: Lang.pages.textTools.inputText
-                                textColor: Theme.textColor
-                                pixelSize: Typography.h5
-                            }
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: LayoutMetrics.spacing.xs
 
-                            Item { Layout.fillWidth: true }
+                                Label {
+                                    Layout.fillWidth: true
+                                    bold: false
+                                    text: Lang.pages.textTools.inputText
+                                    textColor: Theme.textColor
+                                    pixelSize: Typography.h5
+                                    elide: Text.ElideRight
+                                }
 
-                            Button {
-                                height: page.controlHeight
-                                Layout.preferredHeight: page.controlHeight
-                                buttonText: Lang.common.paste
-                                iconPath: SVGLibrary.paste
-                                onPressed: inputEdit.paste()
-                            }
-                            Button {
-                                height: page.controlHeight
-                                Layout.preferredHeight: page.controlHeight
-                                buttonText: Lang.common.clear
-                                iconPath: SVGLibrary.eraser
-                                onPressed: {
-                                    inputEdit.text = ""
-                                    outputEdit.text = ""
-                                    errorLabel.visible = false
-                                    statusLabel.text = Lang.pages.textTools.runHint
-                                    statusLabel.color = Theme.dividerColor
-                                    matchModel = []
-                                    regexMatches = []
-                                    regexError = ""
-                                    regexHintText = ""
+                                Flow {
+                                    Layout.fillWidth: true
+                                    spacing: LayoutMetrics.spacing.sm
+
+                                    Button {
+                                        height: page.controlHeight
+                                        Layout.preferredHeight: page.controlHeight
+                                        buttonText: Lang.common.paste
+                                        iconPath: SVGLibrary.paste
+                                        onPressed: inputEdit.paste()
+                                    }
+                                    Button {
+                                        height: page.controlHeight
+                                        Layout.preferredHeight: page.controlHeight
+                                        buttonText: Lang.common.clear
+                                        iconPath: SVGLibrary.eraser
+                                        onPressed: {
+                                            inputEdit.text = ""
+                                            outputEdit.text = ""
+                                            errorLabel.visible = false
+                                            statusLabel.text = Lang.pages.textTools.runHint
+                                            statusLabel.color = Theme.dividerColor
+                                            matchModel = []
+                                            regexMatches = []
+                                            regexError = ""
+                                            regexHintText = ""
+                                        }
+                                    }
                                 }
                             }
-                        }
 
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: LayoutMetrics.border.s
-                            color: Theme.dividerColor
-                        }
-
-                        ScrollView {
-                            id: inputView
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            clip: true
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: LayoutMetrics.divider.s
+                                color: Theme.dividerColor
+                            }
 
                             RegexTextEdit {
                                 id: inputEdit
-                                width: inputView.availableWidth
-                                height: Math.max(inputView.availableHeight, implicitHeight)
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: LayoutMetrics.unit * 10
+                                Layout.minimumHeight: LayoutMetrics.unit * 6
                                 placeholderText: Lang.pages.textTools.inputPlaceholder
                                 highlightColor: Qt.rgba(Theme.themeColor.r, Theme.themeColor.g,
                                                         Theme.themeColor.b, 0.35)
                                 matches: toolTabs.currentIndex === 1 ? page.regexMatches : []
                                 onTextChanged: page.refreshMatches()
                             }
+
+                            Label {
+                                Layout.fillWidth: true
+                                visible: toolTabs.currentIndex === 1 && page.regexError !== ""
+                                bold: false
+                                text: page.regexError
+                                textColor: "red"
+                                pixelSize: Typography.caption
+                                elide: Text.ElideRight
+                            }
                         }
-
-                        Label {
-                            Layout.fillWidth: true
-                            visible: toolTabs.currentIndex === 1 && page.regexError !== ""
-                            bold: false
-                            text: page.regexError
-                            textColor: "red"
-                            pixelSize: Typography.caption
-                            elide: Text.ElideRight
-                        }
-                    }
-                }
-
-                Flickable {
-                    id: controlsScroll
-                    objectName: "controlsScroll"
-                    anchors.left: parent.left
-                    anchors.top: inputCard.bottom
-                    anchors.topMargin: LayoutMetrics.spacing.md
-                    anchors.bottom: parent.bottom
-                    width: workspace.controlsWidth
-                    contentWidth: controlCard.width
-                    contentHeight: controlCard.height + LayoutMetrics.spacing.xs
-                    clip: true
-                    boundsBehavior: Flickable.StopAtBounds
-                    acceptedButtons: Qt.NoButton
-
-                    ScrollBar.vertical: AppScrollBar { autoGutter: false }
-
-                    WheelScrollArea {
-                        target: controlsScroll
                     }
 
                     Rectangle {
                         id: controlCard
-                        width: controlsScroll.width
+                        width: parent.width
                         height: toolContent.implicitHeight + LayoutMetrics.spacing.md * 2
                         radius: LayoutMetrics.radius.m
                         color: Theme.inputBackgroundColor
@@ -469,11 +462,11 @@ Item {
                             readonly property real fieldWidth: LayoutMetrics.size.comboBoxWidth
                             readonly property real textWidth: LayoutMetrics.size.lineEditWidth
 
-                        TabSlide {
-                            id: tabSlide
-                            tabBar: toolTabs
-                            target: toolContent
-                        }
+                            TabSlide {
+                                id: tabSlide
+                                tabBar: toolTabs
+                                target: toolContent
+                            }
 
                         Column {
                             width: parent.width
@@ -641,7 +634,9 @@ Item {
                                         id: prefixField
                                         height: page.controlHeight
                                         Layout.preferredHeight: page.controlHeight
-                                        Layout.preferredWidth: toolContent.textWidth
+                                        Layout.preferredWidth: Math.min(toolContent.textWidth, LayoutMetrics.unit * 16)
+                                        Layout.fillWidth: true
+                                        Layout.maximumWidth: LayoutMetrics.unit * 18
                                         Layout.alignment: Qt.AlignVCenter
                                         placeholderText: Lang.pages.textTools.prefix
                                     }
@@ -649,7 +644,9 @@ Item {
                                         id: suffixField
                                         height: page.controlHeight
                                         Layout.preferredHeight: page.controlHeight
-                                        Layout.preferredWidth: toolContent.textWidth
+                                        Layout.preferredWidth: Math.min(toolContent.textWidth, LayoutMetrics.unit * 16)
+                                        Layout.fillWidth: true
+                                        Layout.maximumWidth: LayoutMetrics.unit * 18
                                         Layout.alignment: Qt.AlignVCenter
                                         placeholderText: Lang.pages.textTools.suffix
                                     }
@@ -1496,86 +1493,86 @@ Item {
                                 }
                             }
                         }
+                        }
+
                     }
-                    }
-                }
 
-                Rectangle {
-                    id: outputPanel
-                    objectName: "outputPanel"
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                    width: workspace.outputWidth
-                    radius: LayoutMetrics.radius.m
-                    color: Theme.inputBackgroundColor
-                    border.color: Theme.borderColor
-                    border.width: LayoutMetrics.border.m
+                    Rectangle {
+                        id: outputPanel
+                        objectName: "outputPanel"
+                        width: parent.width
+                        height: outputLayout.implicitHeight + LayoutMetrics.spacing.md * 2
+                        radius: LayoutMetrics.radius.m
+                        color: Theme.inputBackgroundColor
+                        border.color: Theme.borderColor
+                        border.width: LayoutMetrics.border.m
 
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: LayoutMetrics.spacing.md
-                        spacing: LayoutMetrics.spacing.xs
+                        ColumnLayout {
+                            id: outputLayout
+                            anchors.fill: parent
+                            anchors.margins: LayoutMetrics.spacing.md
+                            spacing: LayoutMetrics.spacing.xs
 
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: LayoutMetrics.spacing.sm
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: LayoutMetrics.spacing.sm
+
+                                Label {
+                                    bold: false
+                                    text: Lang.pages.textTools.output
+                                    textColor: Theme.textColor
+                                    pixelSize: Typography.h5
+                                    Layout.alignment: Qt.AlignVCenter
+                                }
+
+                                Item { Layout.fillWidth: true }
+
+                                Button {
+                                    id: copyOutputButton
+                                    height: page.controlHeight
+                                    Layout.preferredHeight: page.controlHeight
+                                    buttonText: Lang.common.copy
+                                    iconPath: SVGLibrary.copy
+                                    onPressed: outputEdit.copy()
+                                }
+                            }
 
                             Label {
+                                id: statusLabel
+                                Layout.fillWidth: true
                                 bold: false
-                                text: Lang.pages.textTools.output
-                                textColor: Theme.textColor
-                                pixelSize: Typography.h5
-                                Layout.alignment: Qt.AlignVCenter
+                                text: Lang.pages.textTools.runHint
+                                textColor: Theme.dividerColor
+                                pixelSize: Typography.caption
+                                elide: Text.ElideRight
                             }
 
-                            Item { Layout.fillWidth: true }
-
-                            Button {
-                                id: copyOutputButton
-                                height: page.controlHeight
-                                Layout.preferredHeight: page.controlHeight
-                                buttonText: Lang.common.copy
-                                iconPath: SVGLibrary.copy
-                                onPressed: outputEdit.copy()
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: LayoutMetrics.divider.s
+                                color: Theme.dividerColor
                             }
-                        }
 
-                        Label {
-                            id: statusLabel
-                            Layout.fillWidth: true
-                            bold: false
-                            text: Lang.pages.textTools.runHint
-                            textColor: Theme.dividerColor
-                            pixelSize: Typography.caption
-                            elide: Text.ElideRight
-                        }
+                            TextEdit {
+                                id: outputEdit
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: LayoutMetrics.unit * 12
+                                Layout.minimumHeight: LayoutMetrics.unit * 8
+                                readOnly: true
+                                placeholderText: Lang.pages.textTools.outputPlaceholder
+                                wrapMode: Text.WrapAnywhere
+                            }
 
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: LayoutMetrics.border.s
-                            color: Theme.dividerColor
-                        }
-
-                        TextEdit {
-                            id: outputEdit
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            Layout.minimumHeight: LayoutMetrics.unit * 10
-                            readOnly: true
-                            placeholderText: Lang.pages.textTools.outputPlaceholder
-                            wrapMode: Text.WrapAnywhere
-                        }
-
-                        Label {
-                            id: errorLabel
-                            Layout.fillWidth: true
-                            bold: false
-                            visible: false
-                            text: ""
-                            textColor: "red"
-                            pixelSize: Typography.body
-                            wrapMode: Text.WordWrap
+                            Label {
+                                id: errorLabel
+                                Layout.fillWidth: true
+                                bold: false
+                                visible: false
+                                text: ""
+                                textColor: "red"
+                                pixelSize: Typography.body
+                                wrapMode: Text.WordWrap
+                            }
                         }
                     }
                 }

@@ -14,6 +14,18 @@ Rectangle {
     property bool keyboardNavigated: false
     property real resizeRatio: 1.0
     property real resizableWidth: LayoutMetrics.size.sideBarWidth * resizeRatio
+    property bool animateWidthChange: false
+
+    Timer {
+        id: widthAnimTimer
+        interval: 180
+        onTriggered: sidebar.animateWidthChange = false
+    }
+
+    function requestWidthAnimation() {
+        animateWidthChange = true
+        widthAnimTimer.restart()
+    }
 
     // Display order is grouped by purpose; `page` is the workspace index in
     // the stack layout. Keeping them separate lets us reorder the sidebar
@@ -113,8 +125,8 @@ Rectangle {
             releaseItemFocus()
     }
 
-    onExpandedChanged: updateItemFocus()
-    onCollapsedChanged: updateItemFocus()
+    onExpandedChanged: { requestWidthAnimation(); updateItemFocus() }
+    onCollapsedChanged: { requestWidthAnimation(); updateItemFocus() }
 
     width: !expanded ? 0 : (collapsed ? LayoutMetrics.spacing.xxl * 2.5 : resizableWidth)
     height: parent.height
@@ -122,7 +134,7 @@ Rectangle {
     clip: true
 
     Behavior on width {
-        enabled: !sidebar.resizing && LayoutMetrics.animationsEnabled
+        enabled: sidebar.animateWidthChange && !sidebar.resizing && LayoutMetrics.animationsEnabled
         NumberAnimation {
             duration: 150
             easing.type: Easing.OutCubic
@@ -192,6 +204,12 @@ Rectangle {
                     collapsed: sidebar.collapsed
                     showFocusRing: sidebar.keyboardNavigated
                     separatorBefore: modelData.separator === true
+                    activeFocusOnTab: sidebar.expanded && !sidebar.collapsed
+
+                    onActiveFocusChanged: {
+                        if (activeFocus)
+                            sidebar.keyboardNavigated = true
+                    }
 
                     Keys.onPressed: (event) => {
                         if (event.key === Qt.Key_Down) {
@@ -210,10 +228,7 @@ Rectangle {
                             } else {
                                 sidebarItemDelegate.focus = false
                                 sidebar.keyboardNavigated = false
-                                if (window && window.contentItem) {
-                                    window.contentItem.forceActiveFocus()
-                                }
-                                event.accepted = true
+                                event.accepted = false
                             }
                             return
                         } else if (event.key === Qt.Key_Tab && (event.modifiers & Qt.ShiftModifier)) {
@@ -224,10 +239,7 @@ Rectangle {
                             } else {
                                 sidebarItemDelegate.focus = false
                                 sidebar.keyboardNavigated = false
-                                if (window && window.contentItem) {
-                                    window.contentItem.forceActiveFocus()
-                                }
-                                event.accepted = true
+                                event.accepted = false
                             }
                             return
                         } else if (event.key === Qt.Key_Home) {

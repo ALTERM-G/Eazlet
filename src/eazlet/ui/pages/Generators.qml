@@ -85,7 +85,7 @@ Item {
             Rectangle {
                 id: divider
                 width: parent.width
-                height: LayoutMetrics.spacing.xxs
+                height: LayoutMetrics.divider.s
                 color: Theme.dividerColor
             }
 
@@ -1210,10 +1210,22 @@ Item {
                                 onPressed: generatorsVM.generateRandomColor()
                             }
                             Button {
+                                id: copyAllColorsButton
+                                property bool copyConfirmed: false
                                 buttonText: Lang.common.copy
-                                iconPath: SVGLibrary.copy
+                                iconPath: copyConfirmed ? SVGLibrary.checkMark : SVGLibrary.copy
                                 enabled: generatorsVM.randomColorOutput.length > 0
-                                onPressed: generatorsVM.copyRandomColor()
+                                onPressed: {
+                                    generatorsVM.copyRandomColor()
+                                    copyConfirmed = true
+                                    copyAllColorsTimer.restart()
+                                }
+
+                                Timer {
+                                    id: copyAllColorsTimer
+                                    interval: 1200
+                                    onTriggered: copyAllColorsButton.copyConfirmed = false
+                                }
                             }
                         }
 
@@ -1227,6 +1239,7 @@ Item {
 
                                 delegate: Rectangle {
                                     id: colorRow
+                                    property bool copyConfirmed: false
                                     width: parent.width
                                     height: LayoutMetrics.unit * 4.5
                                     radius: LayoutMetrics.radius.s
@@ -1266,7 +1279,7 @@ Item {
                                                 anchors.verticalCenter: parent.verticalCenter
                                                 width: LayoutMetrics.size.iconS * 0.75
                                                 height: width
-                                                path: SVGLibrary.copy
+                                                path: colorRow.copyConfirmed ? SVGLibrary.checkMark : SVGLibrary.copy
                                                 color: colorMouse.containsMouse
                                                        ? Theme.themeColor : Theme.dividerColor
                                             }
@@ -1278,9 +1291,19 @@ Item {
                                         anchors.fill: parent
                                         hoverEnabled: true
                                         cursorShape: Qt.PointingHandCursor
-                                        onClicked: generatorsVM.copyColorCode(
-                                                       generatorsVM.randomColorCodes[index]
-                                                       || modelData)
+                                        onClicked: {
+                                            generatorsVM.copyColorCode(
+                                                        generatorsVM.randomColorCodes[index]
+                                                        || modelData)
+                                            colorRow.copyConfirmed = true
+                                            rowCopyTimer.restart()
+                                        }
+                                    }
+
+                                    Timer {
+                                        id: rowCopyTimer
+                                        interval: 1200
+                                        onTriggered: colorRow.copyConfirmed = false
                                     }
                                 }
                             }

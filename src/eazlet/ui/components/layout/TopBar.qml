@@ -12,7 +12,7 @@ Rectangle {
 
     Rectangle {
         id: divider
-        height: LayoutMetrics.spacing.xxs
+        height: LayoutMetrics.divider.s
         color: Theme.dividerColor
         anchors.left: parent.left
         anchors.right: parent.right
@@ -27,6 +27,7 @@ Rectangle {
         anchors.left: parent.left
         anchors.leftMargin: Math.max(0, (LayoutMetrics.size.topBarHeight - height) / 2)
         anchors.verticalCenter: parent.verticalCenter
+        activeFocusOnTab: true
         onPressed: topBar.sidebarToggleClicked()
 
         ToolTip {

@@ -30,8 +30,8 @@ _IDENTIFIER_RE = re.compile(r"[A-Za-z][A-Za-z0-9]*")
 _SYMBOL_NAME_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 _DECIMAL_RE = re.compile(r"(?:\d+\.\d*|\.\d+)")
 
-# Inputs are LaTeX. The parser converts them to the small plain expression
-# language understood by the restricted SymPy parser below.
+# Inputs can be LaTeX or plain SymPy-style expressions. LaTeX is converted to
+# the small plain expression language understood by the restricted SymPy parser.
 MATH_MODES = [
     "Simplify",
     "Expand",
@@ -43,6 +43,8 @@ MATH_MODES = [
     "LaTeX → PNG",
 ]
 LATEX_MODE = "LaTeX → PNG"
+INPUT_SYNTAX_LATEX = "latex"
+INPUT_SYNTAX_PLAIN = "plain"
 
 _ACTION_LABELS = {
     "Simplify": "Simplify",
@@ -373,31 +375,31 @@ def _factor_rational(sympy, expression):
     return sympy.factor(numerator) / sympy.factor(denominator)
 
 
-def _simplify_expression(text: str) -> tuple[str, str]:
-    expression = parse_latex_expression(text)
+def _simplify_expression(text: str, latex: bool = True) -> tuple[str, str]:
+    expression = _parse_expr_input(text, latex)
     sympy = _import_sympy()
     parsed = _parse_expression(sympy, expression)
     simplified = _factor_rational(sympy, sympy.simplify(parsed))
     return text.strip(), _format_latex(sympy, simplified)
 
 
-def _expand_expression(text: str) -> tuple[str, str]:
-    expression = parse_latex_expression(text)
+def _expand_expression(text: str, latex: bool = True) -> tuple[str, str]:
+    expression = _parse_expr_input(text, latex)
     sympy = _import_sympy()
     parsed = _parse_expression(sympy, expression)
     return text.strip(), _format_latex(sympy, sympy.expand(parsed))
 
 
-def _factor_expression(text: str) -> tuple[str, str]:
-    expression = parse_latex_expression(text)
+def _factor_expression(text: str, latex: bool = True) -> tuple[str, str]:
+    expression = _parse_expr_input(text, latex)
     sympy = _import_sympy()
     parsed = _parse_expression(sympy, expression)
     return text.strip(), _format_latex(sympy, sympy.factor(parsed))
 
 
-def _solve_equation(text: str, variable: str = "x") -> tuple[str, str]:
-    left_text, right_text = parse_latex_equation(text)
-    variable = parse_latex_variable(variable)
+def _solve_equation(text: str, variable: str = "x", latex: bool = True) -> tuple[str, str]:
+    left_text, right_text = _parse_equation_input(text, latex)
+    variable = _parse_variable_input(variable, latex)
     sympy = _import_sympy()
     left = _parse_expression(sympy, left_text)
     right = _parse_expression(sympy, right_text)
@@ -410,25 +412,25 @@ def _solve_equation(text: str, variable: str = "x") -> tuple[str, str]:
     return text.strip(), ", ".join(_format_latex(sympy, solution) for solution in solutions)
 
 
-def _differentiate_expression(text: str, variable: str = "x") -> tuple[str, str]:
-    expression = parse_latex_expression(text)
-    variable = parse_latex_variable(variable)
+def _differentiate_expression(text: str, variable: str = "x", latex: bool = True) -> tuple[str, str]:
+    expression = _parse_expr_input(text, latex)
+    variable = _parse_variable_input(variable, latex)
     sympy = _import_sympy()
     parsed = _parse_expression(sympy, expression)
     result = sympy.simplify(sympy.diff(parsed, sympy.Symbol(variable)))
     return text.strip(), _format_latex(sympy, result)
 
 
-def _integrate_expression(text: str, variable: str = "x") -> tuple[str, str]:
-    integral = parse_latex_integral(text)
+def _integrate_expression(text: str, variable: str = "x", latex: bool = True) -> tuple[str, str]:
+    integral = parse_latex_integral(text) if latex else None
     if integral is None:
-        integrand = parse_latex_expression(text)
-        target = parse_latex_variable(variable)
+        integrand = _parse_expr_input(text, latex)
+        target = _parse_variable_input(variable, latex)
         lower = None
         upper = None
     else:
         integrand = integral.integrand
-        target = integral.variable or parse_latex_variable(variable)
+        target = integral.variable or _parse_variable_input(variable, latex)
         lower = integral.lower
         upper = integral.upper
 
@@ -476,10 +478,10 @@ def _two_sided_limit_message(sympy, symbol, point, left, right) -> str:
     )
 
 
-def _limit_expression(text: str, variable: str = "x", point: str = "0") -> tuple[str, str]:
-    expression = parse_latex_expression(text)
-    variable = parse_latex_variable(variable)
-    point_text = parse_latex_expression(point or "0")
+def _limit_expression(text: str, variable: str = "x", point: str = "0", latex: bool = True) -> tuple[str, str]:
+    expression = _parse_expr_input(text, latex)
+    variable = _parse_variable_input(variable, latex)
+    point_text = _parse_point_input(point, latex)
     sympy = _import_sympy()
     parsed = _parse_expression(sympy, expression)
     point_expression = _parse_expression(sympy, point_text)
@@ -507,50 +509,80 @@ def _limit_expression(text: str, variable: str = "x", point: str = "0") -> tuple
     return text.strip(), _format_latex(sympy, left)
 
 
-def _prepare_math_input(mode: str, text: str, variable: str, point: str) -> None:
+def _is_latex_input(syntax: str) -> bool:
+    return syntax != INPUT_SYNTAX_PLAIN
+
+
+def _parse_expr_input(text: str, latex: bool) -> str:
+    if latex:
+        return parse_latex_expression(text)
+    return _validate_expression(text)
+
+
+def _parse_equation_input(text: str, latex: bool) -> tuple[str, str]:
+    if latex:
+        return parse_latex_equation(text)
+    equation = _validate_equation(text)
+    left, right = (side.strip() for side in equation.split("=", 1))
+    return left, right
+
+
+def _parse_variable_input(text: str, latex: bool) -> str:
+    if latex:
+        return parse_latex_variable(text)
+    return _validate_variable(text)
+
+
+def _parse_point_input(text: str, latex: bool) -> str:
+    if latex:
+        return parse_latex_expression(text or "0")
+    return _validate_point(text or "0")
+
+
+def _prepare_math_input(mode: str, text: str, variable: str, point: str, latex: bool) -> None:
     """Validate a request without computing it, for instant UI feedback."""
 
     if mode == "Solve":
-        parse_latex_equation(text)
-        parse_latex_variable(variable)
+        _parse_equation_input(text, latex)
+        _parse_variable_input(variable, latex)
         return
     if mode == "Integral":
-        if parse_latex_integral(text) is None:
-            parse_latex_expression(text)
-        parse_latex_variable(variable)
+        if not (latex and parse_latex_integral(text) is not None):
+            _parse_expr_input(text, latex)
+        _parse_variable_input(variable, latex)
         return
     if mode in {"Simplify", "Expand", "Factor"}:
-        parse_latex_expression(text)
+        _parse_expr_input(text, latex)
         return
     if mode == "Derivative":
-        parse_latex_expression(text)
-        parse_latex_variable(variable)
+        _parse_expr_input(text, latex)
+        _parse_variable_input(variable, latex)
         return
     if mode == "Limit":
-        parse_latex_expression(text)
-        parse_latex_variable(variable)
-        parse_latex_expression(point or "0")
+        _parse_expr_input(text, latex)
+        _parse_variable_input(variable, latex)
+        _parse_point_input(point, latex)
         return
     raise ValueError(f"Unsupported math tool: {mode}")
 
 
 def _compute_math(
-    mode: str, expression: str, variable: str, point: str
+    mode: str, expression: str, variable: str, point: str, latex: bool
 ) -> tuple[str, str, str, str]:
     if mode == "Simplify":
-        original, result = _simplify_expression(expression)
+        original, result = _simplify_expression(expression, latex)
     elif mode == "Expand":
-        original, result = _expand_expression(expression)
+        original, result = _expand_expression(expression, latex)
     elif mode == "Factor":
-        original, result = _factor_expression(expression)
+        original, result = _factor_expression(expression, latex)
     elif mode == "Solve":
-        original, result = _solve_equation(expression, variable)
+        original, result = _solve_equation(expression, variable, latex)
     elif mode == "Derivative":
-        original, result = _differentiate_expression(expression, variable)
+        original, result = _differentiate_expression(expression, variable, latex)
     elif mode == "Integral":
-        original, result = _integrate_expression(expression, variable)
+        original, result = _integrate_expression(expression, variable, latex)
     elif mode == "Limit":
-        original, result = _limit_expression(expression, variable, point)
+        original, result = _limit_expression(expression, variable, point, latex)
     else:
         raise ValueError(f"Unsupported math tool: {mode}")
 
@@ -784,6 +816,7 @@ class _MathWorker(QThread):
         expression: str,
         variable: str,
         point: str,
+        latex: bool,
         parent: QObject | None = None,
     ) -> None:
         super().__init__(parent)
@@ -791,6 +824,7 @@ class _MathWorker(QThread):
         self._expression = expression
         self._variable = variable
         self._point = point
+        self._latex = latex
 
     def run(self) -> None:
         try:
@@ -799,6 +833,7 @@ class _MathWorker(QThread):
                 self._expression,
                 self._variable,
                 self._point,
+                self._latex,
             )
         except Exception as error:  # SymPy raises a wide range of parse errors.
             self.failed.emit(str(error))
@@ -857,6 +892,7 @@ class MathVM(BaseVM):
     latexStatusChanged = Signal()
     latexDimensionsChanged = Signal()
     latexSavedMessageChanged = Signal()
+    inputSyntaxChanged = Signal()
 
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -870,6 +906,7 @@ class MathVM(BaseVM):
         self._mode = MATH_MODES[0]
         self._variable = "x"
         self._point = "0"
+        self._input_syntax = INPUT_SYNTAX_LATEX
 
         self._latex_source = ""
         self._latex_resolution = 300
@@ -884,6 +921,9 @@ class MathVM(BaseVM):
         self._latex_saved_message = ""
         self._latex_png = b""
 
+        self._refresh_latex_toolchain()
+
+    def _refresh_latex_toolchain(self) -> None:
         latex = shutil.which("latex")
         dvipng = shutil.which("dvipng")
         self._latex_available = bool(latex and dvipng)
@@ -892,13 +932,15 @@ class MathVM(BaseVM):
             for name, path in (("latex", latex), ("dvipng", dvipng))
             if not path
         ]
-        self._latex_toolchain_error = (
-            ""
-            if self._latex_available
-            else "LaTeX rendering needs the "
-            + " and ".join(f"'{name}'" for name in missing)
-            + " commands. Install a TeX Live package that provides them."
-        )
+        if self._latex_available:
+            self._latex_toolchain_error = ""
+        else:
+            tools = " and ".join(f"'{name}'" for name in missing)
+            self._latex_toolchain_error = self.tr(
+                "pages.math.errLatexToolchain",
+                "LaTeX rendering needs {tools}. Install a TeX distribution (e.g. TeX Live) that provides them.",
+                tools=tools,
+            )
 
     @Property(str, notify=expressionChanged)
     def expression(self) -> str:
@@ -941,6 +983,7 @@ class MathVM(BaseVM):
         if value != self._mode:
             self._mode = value
             self.modeChanged.emit()
+            self.inputSyntaxChanged.emit()
             self._set_error("")
             self._set_status(self.tr("pages.math.statusReady", "Ready"))
             self._set_result("")
@@ -959,9 +1002,26 @@ class MathVM(BaseVM):
         }
         return labels.get(self._mode, self.tr("pages.math.actionCompute", "Compute"))
 
-    @Property(str, notify=modeChanged)
+    @Property(str, notify=inputSyntaxChanged)
+    def inputSyntax(self) -> str:
+        return self._input_syntax
+
+    @inputSyntax.setter
+    def inputSyntax(self, value: str) -> None:
+        value = value if value in (INPUT_SYNTAX_LATEX, INPUT_SYNTAX_PLAIN) else INPUT_SYNTAX_LATEX
+        if value != self._input_syntax:
+            self._input_syntax = value
+            self.inputSyntaxChanged.emit()
+
+    @Property(bool, notify=inputSyntaxChanged)
+    def isLatexInput(self) -> bool:
+        return self._input_syntax == INPUT_SYNTAX_LATEX
+
+    @Property(str, notify=inputSyntaxChanged)
     def inputLabel(self) -> str:
-        return self.tr("pages.math.latexCode", "LaTeX")
+        if self._mode == LATEX_MODE or self._input_syntax == INPUT_SYNTAX_LATEX:
+            return self.tr("pages.math.latexCode", "LaTeX")
+        return self.tr("pages.math.expression", "Expression")
 
     @Property(bool, notify=modeChanged)
     def requiresVariable(self) -> bool:
@@ -1150,6 +1210,10 @@ class MathVM(BaseVM):
         self.point = value
 
     @Slot(str)
+    def setInputSyntax(self, value: str) -> None:
+        self.inputSyntax = value
+
+    @Slot(str)
     def setLatexSource(self, value: str) -> None:
         self.latexSource = value
 
@@ -1175,8 +1239,9 @@ class MathVM(BaseVM):
             return
 
         self._set_error("")
+        latex = _is_latex_input(self._input_syntax)
         try:
-            _prepare_math_input(self._mode, self._expression, self._variable, self._point)
+            _prepare_math_input(self._mode, self._expression, self._variable, self._point, latex)
         except ValueError as error:
             self._set_error(str(error))
             self._set_result("")
@@ -1201,6 +1266,7 @@ class MathVM(BaseVM):
             self._expression,
             self._variable,
             self._point,
+            latex,
             self,
         )
         worker.finishedResult.connect(self._on_finished)
@@ -1238,6 +1304,7 @@ class MathVM(BaseVM):
         lines = [f"{input_prefix}:      {original}", f"{display_label}: {result}"]
         self._set_result("\n".join(lines))
         self._set_status(display_status)
+        self.record_history("Math", self._mode, original, result)
         self._set_computing(False)
 
     def _translate_math_error(self, error: str) -> str:
@@ -1265,6 +1332,7 @@ class MathVM(BaseVM):
         self._set_error(translated or self.tr("pages.math.msgComputeFailed", "Could not compute this expression"))
         self._set_result("")
         self._set_status(self.tr("pages.math.statusError", "Error"))
+        self.record_history("Math", self._mode, self._expression, translated or error or "")
         self._set_computing(False)
 
     @Slot()
@@ -1274,6 +1342,7 @@ class MathVM(BaseVM):
 
         self._set_latex_error("")
         self._set_latex_saved_message("")
+        self._refresh_latex_toolchain()
         if not self._latex_available:
             self._set_latex_error(self._latex_toolchain_error)
             self._set_latex_status(self.tr("pages.math.statusUnavailable", "Unavailable"))

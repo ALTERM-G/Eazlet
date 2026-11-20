@@ -88,15 +88,15 @@ Item {
 
                 Rectangle {
                     width: parent.width
-                    height: LayoutMetrics.spacing.xxs
+                    height: LayoutMetrics.divider.s
                     color: Theme.dividerColor
                 }
 
                 DropZone {
                     width: parent.width
                     title: Lang.pages.archive.dropTitle
-                    description: Lang.pages.archive.dropDescription
-                    hint: Lang.pages.archive.dropHint
+                    description: ""
+                    hint: ""
                     onClicked: fileDialog.open()
                     onFilesDropped: function(urls) {
                         archiveVM.addFiles(urls)
@@ -176,7 +176,7 @@ Item {
 
                         Rectangle {
                             width: parent.width
-                            height: LayoutMetrics.spacing.xxs
+                            height: LayoutMetrics.divider.s
                             color: Theme.dividerColor
                         }
 
@@ -361,7 +361,7 @@ Item {
 
                 Rectangle {
                     width: parent.width
-                    height: LayoutMetrics.spacing.xxs
+                    height: LayoutMetrics.divider.s
                     color: Theme.dividerColor
                 }
 

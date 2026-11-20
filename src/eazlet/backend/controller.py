@@ -1,8 +1,9 @@
 import json
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
 
-from PySide6.QtCore import Property, QIODevice, QObject, QSaveFile, Signal, Slot
+from PySide6.QtCore import Property, QIODevice, QObject, QSaveFile, QUrl, Signal, Slot
 
 from .viewmodels import (
     ArchiveVM,
@@ -11,7 +12,6 @@ from .viewmodels import (
     ColorsVM,
     ConverterVM,
     DictionaryVM,
-    DownloadVM,
     GeneratorsVM,
     MainVM,
     MathVM,
@@ -19,7 +19,6 @@ from .viewmodels import (
     OrganizerVM,
     ReplVM,
     SettingsVM,
-    SocialMediaVM,
     TextAnalysisVM,
     TextToolsVM,
     TierListVM,
@@ -34,6 +33,7 @@ DEFAULT_THEME = "Alterm"
 class Controller(QObject):
     languageChanged = Signal()
     storageError = Signal(str)
+    historyChanged = Signal()
 
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -51,8 +51,6 @@ class Controller(QObject):
 
         self._main_vm = MainVM(self)
         self._settings_vm = SettingsVM(self)
-        self._download_vm = DownloadVM(self)
-        self._social_media_vm = SocialMediaVM(self)
         self._unified_download_vm = UnifiedDownloadVM(self)
         self._converter_vm = ConverterVM(self)
         self._archive_vm = ArchiveVM(self)
@@ -346,7 +344,6 @@ class Controller(QObject):
 
     @Slot()
     def apply_saved_settings(self) -> None:
-        self._download_vm.destination = self.get_downloader_dir()
         self._unified_download_vm.destination = self.get_downloader_dir()
         self._converter_vm.outputDir = self.get_converter_dir()
         self._archive_vm.outputDir = self.get_archive_dir()
@@ -365,7 +362,6 @@ class Controller(QObject):
     def save_downloader_dir(self, path: str) -> None:
         directory = self._normalise_dir(path, self._default_downloads_dir())
         self._update_settings(downloaderDir=directory)
-        self._download_vm.destination = directory
         self._unified_download_vm.destination = directory
 
     @Slot(result=str)
@@ -398,6 +394,134 @@ class Controller(QObject):
         self._update_settings(archiveOutputDir=directory)
         self._archive_vm.outputDir = directory
 
+    @Slot(result=str)
+    def get_app_version(self) -> str:
+        try:
+            from importlib.metadata import PackageNotFoundError, version
+
+            return version("eazlet")
+        except Exception:
+            return "0.1.0"
+
+    @Slot(result=int)
+    def get_startup_page(self) -> int:
+        try:
+            idx = int(self._load_settings().get("startupPage", 0))
+        except (TypeError, ValueError):
+            idx = 0
+        return idx if 0 <= idx <= 14 else 0
+
+    @Slot(int)
+    def save_startup_page(self, index: int) -> None:
+        try:
+            idx = int(index)
+        except (TypeError, ValueError):
+            idx = 0
+        if idx < 0 or idx > 14:
+            idx = 0
+        self._update_settings(startupPage=idx)
+
+    @Slot(result=list)
+    def get_history(self) -> list:
+        data = self._load_settings().get("ioHistory", [])
+        return data if isinstance(data, list) else []
+
+    @Slot()
+    def clear_history(self) -> None:
+        self._update_settings(ioHistory=[])
+        self.historyChanged.emit()
+
+    @Slot(str, str, str, str)
+    def record_history(
+        self, tool: str, action: str, input_text: str = "", output_text: str = ""
+    ) -> None:
+        try:
+            tool = str(tool or "")
+            action = str(action or "")
+            input_text = "" if input_text is None else str(input_text)
+            output_text = "" if output_text is None else str(output_text)
+            if len(input_text) > 4000:
+                input_text = input_text[:4000] + "…"
+            if len(output_text) > 4000:
+                output_text = output_text[:4000] + "…"
+            entry = {
+                "time": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
+                "tool": tool,
+                "action": action,
+                "input": input_text,
+                "output": output_text,
+            }
+            history = self.get_history()
+            history.insert(0, entry)
+            if len(history) > 200:
+                history = history[:200]
+            self._update_settings(ioHistory=history)
+            self.historyChanged.emit()
+        except Exception as e:
+            logger.warning("Could not record history: %s", e)
+
+    @Slot(str, str, result=str)
+    def save_text_file(self, path: str, content: str) -> str:
+        try:
+            if not path:
+                return ""
+            local = path
+            if local.startswith("file://"):
+                local = QUrl(local).toLocalFile() or local
+            if local.startswith("file:"):
+                local = QUrl(local).toLocalFile() or local[len("file:"):]
+            file_path = Path(local).expanduser()
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            file_path.write_text(content or "", encoding="utf-8")
+            return str(file_path)
+        except Exception as e:
+            logger.warning("Could not save text file: %s", e)
+            self.storageError.emit(f"Could not save file: {e}")
+            return ""
+
+    @Slot(str)
+    def apply_app_icon(self, theme_name: str) -> None:
+        try:
+            from PySide6.QtGui import QGuiApplication, QIcon
+
+            app = QGuiApplication.instance()
+            if app is None:
+                return
+            safe_name = str(theme_name or DEFAULT_THEME).replace(" ", "-")
+            base = Path(__file__).parent.parent / "resources" / "assets" / "icons"
+            icon_path = base / "app_icons" / f"Eazlet_icon_{safe_name}.svg"
+            if not icon_path.exists():
+                icon_path = base / "icon.svg"
+            if icon_path.exists():
+                app.setWindowIcon(QIcon(str(icon_path)))
+        except Exception as e:
+            logger.warning("Could not set app icon: %s", e)
+
+    @Slot()
+    def reset_settings(self) -> None:
+        settings = self._load_settings()
+        for key in (
+            "scaleFactor",
+            "cornerRadius",
+            "animationsEnabled",
+            "isContinuous",
+            "fontFamily",
+            "language",
+            "shortcuts",
+            "startupPage",
+            "downloaderDir",
+            "downloadDir",
+            "converterOutputDir",
+            "archiveOutputDir",
+        ):
+            settings.pop(key, None)
+        self._save_settings(settings)
+        self.save_theme(DEFAULT_THEME)
+        self._current_language = 0
+        self._refresh_language_data()
+        self.apply_saved_settings()
+        self.languageChanged.emit()
+
     @Property(QObject, constant=True)
     def mainVM(self) -> MainVM:
         return self._main_vm
@@ -405,14 +529,6 @@ class Controller(QObject):
     @Property(QObject, constant=True)
     def settingsVM(self) -> SettingsVM:
         return self._settings_vm
-
-    @Property(QObject, constant=True)
-    def downloadVM(self) -> DownloadVM:
-        return self._download_vm
-
-    @Property(QObject, constant=True)
-    def socialMediaVM(self) -> SocialMediaVM:
-        return self._social_media_vm
 
     @Property(QObject, constant=True)
     def unifiedDownloadVM(self) -> UnifiedDownloadVM:

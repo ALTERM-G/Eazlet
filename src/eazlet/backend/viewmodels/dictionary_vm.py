@@ -322,6 +322,7 @@ class DictionaryVM(BaseVM):
         self._set_entries(data.get("entries") or [])
         self._set_status(self.tr("pages.dictionary.msgFound", "Found"))
         self._set_searching(False)
+        self.record_history("Dictionary", "Search", self._word, self._output)
 
     @Slot(str)
     def _on_failed(self, error: str) -> None:
@@ -336,6 +337,7 @@ class DictionaryVM(BaseVM):
         self._set_entries([])
         self._set_status(self.tr("pages.dictionary.msgError", "Error"))
         self._set_searching(False)
+        self.record_history("Dictionary", "Search", self._word, self._error)
 
     @Slot()
     def clear(self) -> None:

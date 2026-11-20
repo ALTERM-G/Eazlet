@@ -101,7 +101,7 @@ Item {
 
                 Rectangle {
                     width: parent.width
-                    height: LayoutMetrics.spacing.xxs
+                    height: LayoutMetrics.divider.s
                     color: Theme.dividerColor
                 }
 
@@ -111,7 +111,7 @@ Item {
                     LineEdit {
                         id: unifiedUrl
                         width: Math.max(0, parent.width - pasteBtn.width - parent.spacing)
-                        placeholderText: Lang.pages.downloader.urlPlaceholder
+                        placeholderText: Lang.pages.downloadUnified.urlPlaceholder
                         text: unifiedDownloadVM.url
                         onTextChanged: unifiedDownloadVM.url = text
                     }
@@ -139,7 +139,7 @@ Item {
                     Label {
                         anchors.horizontalCenter: parent.horizontalCenter
                         bold: false
-                        text: Lang.pages.downloader.title
+                        text: Lang.pages.downloadUnified.downloaderLabel
                         textColor: Theme.textColor
                         pixelSize: Typography.h6
                     }
@@ -178,12 +178,12 @@ Item {
                         spacing: LayoutMetrics.spacing.md
                         Button {
                             Layout.alignment: Qt.AlignVCenter
-                            buttonText: Lang.pages.downloader.loadFormats
+                            buttonText: Lang.pages.downloadUnified.loadFormats
                             onPressed: unifiedDownloadVM.fetchFormats()
                         }
                         Switch {
                             Layout.alignment: Qt.AlignVCenter
-                            text: Lang.pages.downloader.audioOnlyMp3
+                            text: Lang.pages.downloadUnified.audioOnlyMp3
                             checked: unifiedDownloadVM.audioOnly
                             onCheckedChanged: unifiedDownloadVM.audioOnly = checked
                         }
@@ -219,7 +219,7 @@ Item {
 
                 Rectangle {
                     width: parent.width
-                    height: LayoutMetrics.spacing.xxs
+                    height: LayoutMetrics.divider.s
                     color: Theme.dividerColor
                 }
 

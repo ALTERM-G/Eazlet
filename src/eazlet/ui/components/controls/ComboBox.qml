@@ -104,8 +104,10 @@ ComboBox {
         }
 
         function acceptHighlighted() {
-            if (highlightedIndex >= 0)
+            if (highlightedIndex >= 0) {
                 control.currentIndex = highlightedIndex
+                control.activated(highlightedIndex)
+            }
             dropdownPopup.close()
         }
 
@@ -246,6 +248,7 @@ ComboBox {
                                     onEntered: dropdownPopup.highlightedIndex = index
                                     onClicked: {
                                         control.currentIndex = index
+                                        control.activated(index)
                                         dropdownPopup.close()
                                     }
                                 }

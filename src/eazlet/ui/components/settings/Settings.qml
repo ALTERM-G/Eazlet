@@ -25,7 +25,7 @@ import "tabs"
 
     readonly property int scaleMin: 0
     readonly property int scaleMax: 200
-    readonly property int scaleStep: 10
+    readonly property int scaleStep: 4
 
     readonly property int radiusMin: 0
     readonly property int radiusMax: 100
@@ -36,11 +36,12 @@ import "tabs"
         controller.save_corner_radius(factor)
     }
 
-    function applyScale(scale) {
+    function applyScale(scale, persist) {
         var factor = 0.5 + scale / 200
         LayoutMetrics.scaleFactor = factor
         Typography.scaleFactor = factor
-        controller.save_scale_factor(factor)
+        if (persist === undefined || persist)
+            controller.save_scale_factor(factor)
     }
 
     function applyFont(family) {
@@ -74,6 +75,13 @@ import "tabs"
         tabSlide.start()
     }
 
+    Timer {
+        id: scalePersistTimer
+        interval: 500
+        repeat: false
+        onTriggered: settingsMenu.applyScale(settingsMenu.appearanceCommittedScale, true)
+    }
+
     function nudgeScale(direction) {
         var base = settingsPopup.opened ? appearancePendingScale : appearanceCommittedScale
         var next = Math.max(scaleMin, Math.min(scaleMax, base + direction * scaleStep))
@@ -81,14 +89,17 @@ import "tabs"
             return
         appearancePendingScale = next
         appearanceCommittedScale = next
-        applyScale(next)
         if (settingsPopup.opened)
             appearanceTab.setScaleValue(next)
+
+        applyScale(next, false)
+        scalePersistTimer.restart()
     }
 
     function applyAppearanceChanges() {
+        scalePersistTimer.stop()
         Theme.setTheme(appearancePendingTheme)
-        applyScale(appearancePendingScale)
+        applyScale(appearancePendingScale, true)
         LayoutMetrics.isContinuous = appearancePendingResponsive
         Typography.isContinuous = appearancePendingResponsive
         controller.save_is_continuous(appearancePendingResponsive)
@@ -105,6 +116,7 @@ import "tabs"
     }
 
     function cancelAppearanceChanges() {
+        scalePersistTimer.stop()
         appearancePendingTheme = appearanceCommittedTheme
         appearancePendingScale = appearanceCommittedScale
         appearancePendingResponsive = appearanceCommittedResponsive
@@ -114,7 +126,7 @@ import "tabs"
         appearanceTab.resetControls()
         applyRadius(appearanceCommittedRadius)
         Theme.setTheme(appearanceCommittedTheme)
-        applyScale(appearanceCommittedScale)
+        applyScale(appearanceCommittedScale, false)
         LayoutMetrics.isContinuous = appearanceCommittedResponsive
         Typography.isContinuous = appearanceCommittedResponsive
         applyFont(appearanceCommittedFont)
@@ -127,6 +139,26 @@ import "tabs"
         } else {
             settingsPopup.open()
         }
+    }
+
+    function resetAllToDefaults() {
+        controller.reset_settings()
+        Theme.setTheme(controller.get_current_theme())
+        var factor = controller.get_scale_factor()
+        LayoutMetrics.setScaleFactor(factor)
+        Typography.scaleFactor = factor
+        var cont = controller.get_is_continuous()
+        LayoutMetrics.setIsContinuous(cont)
+        Typography.isContinuous = cont
+        LayoutMetrics.setCornerRadiusFactor(controller.get_corner_radius())
+        LayoutMetrics.setAnimationsEnabled(controller.get_animations_enabled())
+        Theme.animationsEnabled = LayoutMetrics.animationsEnabled
+        Typography.fontFamily = controller.get_font_family()
+        Shortcuts.resetAll()
+        scalePersistTimer.stop()
+        loadAppearance()
+        appearanceTab.resetControls()
+        generalTab.resetControls()
     }
 
     ParallelAnimation {
@@ -160,7 +192,7 @@ import "tabs"
             settingsMenu.loadAppearance()
             appearanceTab.resetControls()
             generalTab.resetControls()
-            settingsPopup.forceActiveFocus()
+            settingsBackButton.forceActiveFocus()
         }
     }
 
@@ -186,6 +218,7 @@ import "tabs"
         buttonWidth: LayoutMetrics.size.iconButton
         buttonHeight: LayoutMetrics.size.iconButton
         iconPath: SVGLibrary.settings
+        activeFocusOnTab: true
 
         ToolTip {
             text: Lang.titles.settings
@@ -198,10 +231,12 @@ import "tabs"
 
     Popup {
         id: settingsPopup
-        width: LayoutMetrics.window.width * 0.8
-        height: (LayoutMetrics.window.height - LayoutMetrics.size.topBarHeight) * 0.8
-        x: (LayoutMetrics.window.width - width) / 2
-        y: LayoutMetrics.size.topBarHeight + (LayoutMetrics.window.height - LayoutMetrics.size.topBarHeight - height) / 2
+        width: Math.min(LayoutMetrics.unit * 46, LayoutMetrics.window.width - LayoutMetrics.spacing.lg * 2)
+        height: Math.min(LayoutMetrics.window.height - LayoutMetrics.size.topBarHeight - LayoutMetrics.spacing.lg * 2,
+                         LayoutMetrics.unit * 64)
+        x: LayoutMetrics.window.width - width - LayoutMetrics.spacing.sm
+        y: LayoutMetrics.size.topBarHeight + LayoutMetrics.spacing.xs
+        transformOrigin: Item.TopRight
         padding: 0
         background: Item {}
         focus: true
@@ -209,7 +244,7 @@ import "tabs"
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
         onOpened: {
             Shortcuts.overlayOpen = true
-            settingsPopup.forceActiveFocus()
+            settingsBackButton.forceActiveFocus()
         }
         onClosed: {
             Shortcuts.capturing = false
@@ -279,6 +314,8 @@ import "tabs"
             anchors.fill: parent
 
             IconButton {
+                id: settingsBackButton
+                activeFocusOnTab: true
                 anchors.top: parent.top
                 anchors.topMargin: LayoutMetrics.spacing.xl
                 anchors.left: parent.left
@@ -315,7 +352,7 @@ import "tabs"
                 anchors.topMargin: LayoutMetrics.spacing.md
                 anchors.left: parent.left
                 anchors.right: parent.right
-                height: LayoutMetrics.spacing.xxs
+                height: LayoutMetrics.divider.s
                 color: Theme.dividerColor
             }
 
@@ -325,7 +362,8 @@ import "tabs"
                 anchors.right: parent.right
                 anchors.top: tabBar.bottom
                 anchors.topMargin: LayoutMetrics.spacing.md + LayoutMetrics.spacing.xxs
-                anchors.bottom: parent.bottom
+                anchors.bottom: generalFooter.visible ? generalFooter.top : parent.bottom
+                anchors.bottomMargin: generalFooter.visible ? LayoutMetrics.spacing.md : 0
                 contentHeight: scrollContent.height
                 clip: true
                 ScrollBar.vertical.policy: ScrollBar.AlwaysOff
@@ -390,11 +428,34 @@ import "tabs"
                                 settingsTabBar: tabBar
                             }
                         }
+                    }
+                }
+            }
+
+            Column {
+                id: generalFooter
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: LayoutMetrics.spacing.lg
+                anchors.horizontalCenter: parent.horizontalCenter
+                visible: tabBar.currentIndex === 0
+                spacing: LayoutMetrics.spacing.xs
+
+                Label {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: Lang.labels.version
+                    style_2: true
+                }
+
+                Label {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    bold: false
+                    text: controller.get_app_version() + " — " + Lang.labels.firstVersion
+                    textColor: Theme.dividerColor
+                    pixelSize: Typography.h6
                 }
             }
         }
     }
-}
 
     Shortcut {
         sequences: Shortcuts.chords("zoomIn")

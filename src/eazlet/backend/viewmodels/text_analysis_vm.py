@@ -420,6 +420,7 @@ class TextAnalysisVM(BaseVM):
         self.analysisChanged.emit()
         self._status = self.tr("pages.textAnalysis.analysisComplete", "Analysis complete")
         self.statusChanged.emit()
+        self.record_history("Text Analysis", "Analyze (text)", self._input, self._report_text)
 
     def _process_code(self, text):
         tokens = self.TOKEN_RE.findall(text)
@@ -534,6 +535,7 @@ class TextAnalysisVM(BaseVM):
         self.analysisChanged.emit()
         self._status = self.tr("pages.textAnalysis.analysisComplete", "Analysis complete")
         self.statusChanged.emit()
+        self.record_history("Text Analysis", "Analyze (code)", self._input, self._report_text)
 
     @Slot()
     def clear(self):

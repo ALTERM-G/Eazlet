@@ -11,6 +11,8 @@ Column {
     required property QtObject settingsTabBar
 
     visible: settingsTabBar.currentIndex === 1
+    height: visible ? implicitHeight : 0
+    clip: true
     anchors.horizontalCenter: parent.horizontalCenter
     spacing: LayoutMetrics.spacing.md
 

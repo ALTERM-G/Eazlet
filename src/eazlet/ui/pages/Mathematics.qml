@@ -75,21 +75,22 @@ Item {
     }
 
     function algebraHint() {
+        var plain = mathVM.inputSyntax !== "latex"
         switch (mathVM.mode) {
         case "Solve":
-            return Lang.pages.math.hintSolve
+            return plain ? Lang.pages.math.hintSolvePlain : Lang.pages.math.hintSolve
         case "Derivative":
-            return Lang.pages.math.hintDerivative
+            return plain ? Lang.pages.math.hintDerivativePlain : Lang.pages.math.hintDerivative
         case "Integral":
-            return Lang.pages.math.hintIntegral
+            return plain ? Lang.pages.math.hintIntegralPlain : Lang.pages.math.hintIntegral
         case "Limit":
-            return Lang.pages.math.hintLimit
+            return plain ? Lang.pages.math.hintLimitPlain : Lang.pages.math.hintLimit
         case "Factor":
-            return Lang.pages.math.hintFactor
+            return plain ? Lang.pages.math.hintFactorPlain : Lang.pages.math.hintFactor
         case "Expand":
-            return Lang.pages.math.hintExpand
+            return plain ? Lang.pages.math.hintExpandPlain : Lang.pages.math.hintExpand
         default:
-            return Lang.pages.math.hintDefault
+            return plain ? Lang.pages.math.hintDefaultPlain : Lang.pages.math.hintDefault
         }
     }
 
@@ -157,7 +158,7 @@ Item {
             Rectangle {
                 id: divider
                 width: parent.width
-                height: LayoutMetrics.spacing.xxs
+                height: LayoutMetrics.divider.s
                 color: Theme.dividerColor
             }
 
@@ -296,6 +297,22 @@ Item {
                             }
                         }
 
+                        Switch {
+                            id: inputSyntaxSwitch
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: Lang.pages.math.latexInput
+                            checked: mathVM.inputSyntax === "latex"
+                            onToggled: mathVM.setInputSyntax(checked ? "latex" : "plain")
+                        }
+
+                        Connections {
+                            target: mathVM
+                            function onInputSyntaxChanged() {
+                                if (inputSyntaxSwitch.checked !== (mathVM.inputSyntax === "latex"))
+                                    inputSyntaxSwitch.checked = (mathVM.inputSyntax === "latex")
+                            }
+                        }
+
                         Label {
                             bold: false
                             text: mathVM.inputLabel
@@ -308,7 +325,9 @@ Item {
                             width: parent.width
                             height: LayoutMetrics.unit * 12
                             text: mathVM.expression
-                            placeholderText: Lang.pages.math.latexPlaceholder
+                            placeholderText: mathVM.inputSyntax === "latex"
+                                             ? Lang.pages.math.latexPlaceholder
+                                             : Lang.pages.math.sympyPlaceholder
                             fontFamily: "JetBrains Mono"
                             fontPixelSize: Typography.body
                             wrapMode: Text.Wrap
@@ -531,7 +550,7 @@ Item {
 
                         Rectangle {
                             width: parent.width
-                            height: LayoutMetrics.spacing.xxs
+                            height: LayoutMetrics.divider.s
                             color: Theme.dividerColor
                         }
 
@@ -680,7 +699,7 @@ Item {
 
                         Rectangle {
                             width: parent.width
-                            height: LayoutMetrics.spacing.xxs
+                            height: LayoutMetrics.divider.s
                             color: Theme.dividerColor
                         }
 

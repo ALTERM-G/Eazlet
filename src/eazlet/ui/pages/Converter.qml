@@ -86,7 +86,7 @@ Item {
 
                 Rectangle {
                     width: parent.width
-                    height: LayoutMetrics.spacing.xxs
+                    height: LayoutMetrics.divider.s
                     color: Theme.dividerColor
                 }
 
@@ -94,8 +94,8 @@ Item {
                     width: parent.width
                     enabled: !converterVM.converting
                     title: Lang.pages.converter.dropTitle
-                    description: Lang.pages.converter.dropDescription
-                    hint: Lang.pages.converter.dropHint
+                    description: ""
+                    hint: ""
                     onClicked: fileDialog.open()
                     onFilesDropped: function(urls) {
                         if (urls.length > 0)
@@ -273,7 +273,7 @@ Item {
 
                 Rectangle {
                     width: parent.width
-                    height: LayoutMetrics.spacing.xxs
+                    height: LayoutMetrics.divider.s
                     color: Theme.dividerColor
                 }
 

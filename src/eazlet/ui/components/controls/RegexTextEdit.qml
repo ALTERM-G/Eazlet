@@ -145,6 +145,7 @@ Item {
 
         TextArea {
             id: area
+            activeFocusOnTab: true
             width: Math.max(0, view.width - view.gutter)
             height: Math.max(view.height, implicitHeight)
             leftPadding: LayoutMetrics.spacing.sm
@@ -176,6 +177,18 @@ Item {
             }
 
             Keys.onPressed: function(event) {
+                if (event.key === Qt.Key_Tab) {
+                    if (area.nextItemInFocusChain(true))
+                        area.nextItemInFocusChain(true).forceActiveFocus(Qt.TabFocusReason)
+                    event.accepted = true
+                    return
+                }
+                if (event.key === Qt.Key_Backtab) {
+                    if (area.nextItemInFocusChain(false))
+                        area.nextItemInFocusChain(false).forceActiveFocus(Qt.BacktabFocusReason)
+                    event.accepted = true
+                    return
+                }
                 if (event.key === Qt.Key_Insert) {
                     area.overwriteMode = !area.overwriteMode
                     event.accepted = true
